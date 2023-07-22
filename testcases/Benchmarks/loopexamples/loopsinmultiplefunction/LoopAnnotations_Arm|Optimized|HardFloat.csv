@@ -1,0 +1,3 @@
+# Type: Normal
+a|Loop in file loopsinmultiplefunction.c near line 6|BB#1:for.cond<header><exiting>_BB#2:for.body<latch>|12
+b|Loop in file loopsinmultiplefunction.c near line 13|BB#1:for.cond<header><exiting>_BB#2:for.body<latch>|3

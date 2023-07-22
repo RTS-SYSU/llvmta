@@ -1,0 +1,46 @@
+This is a list of all currently defined debug types in the llvmta source code.
+You can use them with the --debug-only=<type> command and add them to your own 
+code with the DEBUG_TYPE and DEBUG_WITH_TYPE macros.
+See <llvm-base>/include/llvm/Support/Debug.h for more information.
+
+TODO add some explanation to each of the types. (?) behind the explanation means
+that I don't know what its good for
+
+addrinfo
+	dumps all memory-accessing instructions (?)
+ca
+detailedStateGraph
+driver
+driver + Domainname
+	driverSED
+	driverCVD
+	driverCCD
+ecb
+flowConstraints
+graphbuild
+graphilp
+graphit
+ilp
+indv
+instructions
+loopbound
+memusage
+ooo
+ooocs
+persconstr
+	Prints persistence edges and persistent blocks
+persistence
+res
+split
+staddrprov
+ucb
+
+cachelineAccesses
+	Prints location (in the C file) of all accesses where the cacheline is
+	known but the precise address isn't
+datastrutureAccesses
+	Prints location (in the C file) of all accesses known to access a
+	datastructure where the cacheline isn't known
+unknownAccesses
+	Prints location (in the C file) of all accesses with completely unknown
+	address

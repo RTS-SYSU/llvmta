@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+set -u
+
+TYPE=""
+#TYPE="Persistence"
+
+if [[ "$TYPE" == "Persistence" ]]; then
+	CTX_WARN_MSG="[WARNING] lost stack pointer in a join - consider increasing context sensitivity
+[Warning] We omitted a potential persistence scope due to external function calls/missing context sensitivity."
+else
+	CTX_WARN_MSG="[WARNING] lost stack pointer in a join - consider increasing context sensitivity"
+fi
+
+MAX_CTX_SEN=10
+
+DIRPATH="$(dirname "$0")"
+#shellcheck source=util_scripts/OptionHandler.sh
+source "$DIRPATH/util_scripts/OptionHandler.sh"
+#shellcheck source=util_scripts/llvmta_utils.sh
+source "$DIRPATH/util_scripts/llvmta_utils.sh"
+source "$DIRPATH/util_scripts/pretty_print.sh"
+
+count=0
+getTestcases "$@" || count=$?
+shift $count
+
+init_options "$@"
+add_option "--ta-quiet"
+# ana-type=value was added to perform only value analysis. This significantly
+# saves time.
+add_option "--ta-ana-type=value"
+
+if [[ "$TYPE" == "Persistence" ]]; then
+	add_option "--ta-icache-persistence=setwise"
+	add_option "--ta-dcache-persistence=setwise"
+fi
+
+print_output() {
+	i=$1 && shift
+	values=( $@ )
+	print_info_n "\r$tc : "
+	for val in "${values[@]}"; do
+		if [[ $val -ge 0 ]]; then
+			print_success_n "$val "
+		else
+			print_error_n "$val "
+		fi
+	done
+	if [[ $i -ge 0 ]]; then
+		print_warn_n "$i"
+	fi
+}
+
+for tc in "${TESTCASES[@]}"; do
+	ctx_file="$DIRPATH/Benchmarks/$tc/ContextSensitivity$TYPE.txt"
+	# List of context values for each flag
+	ctx_vals=()
+	# Final output that will be saved to disk
+	ctx_output=""
+
+	for opts in "${ALL_OPTS[@]}"; do
+		i=1
+		# We must create the array here to split the input string into their
+		# components.
+		optsarr=( $opts )
+		flags=$(get_ctx_flags "${optsarr[@]}")
+		shortflags=$(cut -d "|" -f 2- <<< "${flags}")
+
+		# Keep incrementing the context sensitivity by 1 till we reach a point
+		# where the stack pointer is not lost
+		# The first time this is run on a new Benchmark, a human is required to see
+		# which tests get stuck due to recursion. Those should subsequently be
+		# blacklisted
+		while [ $i -le $MAX_CTX_SEN ]; do
+			print_output $i "${ctx_vals[@]}"
+			./runTestcase "$tc" "${optsarr[@]}" "${USEROPTS[@]}" \
+				--ta-num-callsite-tokens=$i \
+				2>&1 | grep -F "$CTX_WARN_MSG" &>/dev/null || break
+			((i=i+1))
+		done
+
+		# If the context sensitivity was at 10, then we assume that there is
+		# something wrong with the test program or our analysis cannot handle the
+		# program. Print a warning.
+		if [[ $i -eq $MAX_CTX_SEN ]]; then
+			ctx_vals+=( -1 )
+		else
+			ctx_vals+=( $i )
+			ctx_output="$ctx_output\n$shortflags $i"
+		fi
+	done
+
+	echo -e "$ctx_output" > "$ctx_file"
+	print_output -1 "${ctx_vals[@]}"
+	echo ""
+done

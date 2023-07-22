@@ -1,0 +1,2 @@
+# Type: Normal
+main|Loop in file goto.c near line 6|BB#1:loop<header>_BB#3:if.end_BB#2:if.then_BB#5:poss1<exiting>_BB#7:if.end3_BB#4:loop.backedge<latch>|100

@@ -1,0 +1,5 @@
+
+NotOptimized|HardFloat 1
+Optimized|HardFloat 1
+NotOptimized|SoftFloat 1
+Optimized|SoftFloat 1

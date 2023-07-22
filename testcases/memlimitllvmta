@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+set -u
+set -m
+
+llvmta "$@" &
+LLVMTAPID=$!
+if [[ -f /sys/fs/cgroup/memory/llvmtamem/cgroup.procs ]]; then
+	echo "[MEMLIMIT] Adding $LLVMTAPID to llvmtamem cgroup..."
+	echo "$LLVMTAPID" | tee /sys/fs/cgroup/memory/llvmtamem/cgroup.procs
+else
+	echo "[MEMLIMIT] Was not able to set memory-limiting, create cgroup first with crtmemcgrp.sh ..."
+fi
+# Take job back to focus, can then be killed by Ctrl+C
+fg

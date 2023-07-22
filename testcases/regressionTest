@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+set -u
+
+DIRPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTDIR="$DIRPATH/util_scripts"
+
+source "$SCRIPTDIR/OptionHandler.sh"
+source "$SCRIPTDIR/pretty_print.sh"
+source "$SCRIPTDIR/parallel.sh"
+
+if [[ $# -lt 1 ]]; then
+	echo "Usage: $0 (build|check) [llvmta opts]" >&2
+	exit 1
+fi
+
+_action="$1" && shift
+_regressions_base="$DIRPATH/regressions"
+_regressions_test="$DIRPATH/regressions_test"
+
+experimentPath="$("$SCRIPTDIR/getNormalisedExperimentPath2.sh" "$_regressions_base" "$@" || true)"
+expPath=
+readarray -t testcases <<< "$("$SCRIPTDIR/getBenchmarks.sh")"
+
+init_options "$@"
+llvmta_defaults
+
+# Compare files to check for differences. This abstracts away the logic for how
+# different files should be compared
+compare_files() {
+	local orig_file=$1
+	local test_file=$2
+	local GREP_PARAMS="-i -v -e timesTaken -e isStart -e isEnd -e maxTime -e maxNumRefreshes"
+	local ret=0
+
+	set +e
+	if [[ $orig_file == */PathAnalysis_*.txt ]]; then
+		diff -u <(grep $GREP_PARAMS "$orig_file") <(grep $GREP_PARAMS "$test_file")
+		ret=$?
+	else
+		diff -u "$orig_file" "$test_file"
+		ret=$?
+	fi
+	set -e
+
+	if [[ $ret -gt 0 ]]; then
+		echo "Regression in file: $test_file" >&2
+	fi
+	return $ret
+}
+
+run_test() {
+	local tc="$1" && shift
+	local pathname="$expPath/$tc"
+	print_info "Running $tc -> $pathname"
+	"$DIRPATH/runTestcase" "$tc" --llvmta-build-dir "$pathname" "$@"
+}
+
+run_build() {
+	run_test "$@"
+}
+
+run_check() {
+	local tc="$1"
+	run_test "$@"
+
+	local pathname="$expPath/$tc"
+	local basename="$basePath/$tc"
+
+	pushd "$basename"
+	readarray -t FILE_LIST < <(find . -type f \
+		! -name '*.ll' \
+		! -name '*.s' \
+		! -name '*Assembler.txt' \
+		! -name '*Statistics.txt')
+	popd
+
+	# Now we test for regressions
+	for orig in "${FILE_LIST[@]}"; do
+		file_name="${orig:2}"
+		test_file="$pathname/$file_name"
+
+		print_info "Checking file $file_name"
+
+		# First, test if the file exists
+		if [ ! -f "$test_file" ]; then
+			echo "File $file_name not found in current run" >&2
+			exit 2
+		fi
+		# Next, check if the contents are the same
+		compare_files "$basename/$file_name" "$test_file" || exit 3
+	done
+
+}
+
+build_regressions() {
+	if [ -d "$expPath" ]; then
+		rm -r "${expPath:?}"
+	fi
+
+	mkdir -p "$expPath"
+
+	print_info "Building Regressions Base at: $expPath"
+
+	run_parallel run_build "${USEROPTS[@]}"
+}
+
+check_regressions() {
+	basePath="$_regressions_base/$experimentPath"
+
+	if [ ! -d "$basePath" ]; then
+		echo "Cannot find Regressions Base ($basePath)" >&2
+		exit 1
+	fi
+
+	if [ -d "$expPath" ]; then
+		rm -r "${expPath:?}"
+	fi
+
+	print_info "Testing for Regressions. Base: $basePath"
+
+	export basePath
+
+	run_parallel run_check "${USEROPTS[@]}"
+}
+
+export expPath
+export DIRPATH
+export -f compare_files
+export -f run_test
+export -f run_check
+export -f run_build
+
+case $_action in
+	"build") expPath="$_regressions_base/$experimentPath";
+		build_regressions;;
+	"check") expPath="$_regressions_test/$experimentPath";
+		check_regressions;;
+	*) echo "Unknown Action $_action" >&2; exit 1;;
+esac

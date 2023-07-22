@@ -1,0 +1,48 @@
+A. Saarland University Software Release License
+
+Copyright (C) 2022 Saarland University. All rights reserved.
+
+Saarland University hereby grants permission, free of charge, to any person obtaining a copy
+of this software and associated documentation files (hereafter the "Software"), to use, copy,
+modify, merge, publish, distribute and sublicense the Software for non-commercial research
+purposes only, and to permit persons to whom the Software is furnished to do so, subject to
+the following conditions:
+1. Redistributions of source code must retain the above copyright notice, this list of 
+   conditions and the following disclaimers.
+2. Redistributions in binary form must reproduce the above copyright notice, this list of
+   conditions and the following disclaimers in the documentation and/or materials provided
+   with the distribution.
+3. Neither the names of Saarland University, nor the names of its contributors may be used
+   to endorse or promote products derived from this Software without specific prior written
+   permission by Saarland University.
+
+B. Disclaimer
+
+THIS SOFTWARE IS PROVIDED "AS IS", WITHOUT ANY EXPRESSED OR IMPLIED
+WARRANTIES, INCLUDING BUT NOT LIMITED TO, THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT. IN NO EVENT SHALL THE SAARLAND UNIVERSITY, THE
+CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DIRECT,
+INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING BUT NOT LIMITED TO PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED OR OTHER LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY, TORT OR OTHERWISE, ARISING IN ANY WAY FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH THE
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH A DAMAGE.
+
+C. Copyrights and Licenses for Third Party Software distributed with this software
+
+This software contains code written by third parties.  Such code will have its own individual
+license file which is provided in the repository of this software. Each license file will describe
+the copyrights, license, and restrictions which apply to that code.
+
+The disclaimer in the Saarland University Software Release License applies to all code in
+this Software distribution, and nothing in any of the other licenses gives permission to use
+the names of Saarland University to endorse or promote products derived from this Software.
+
+The following pieces of code have additional or alternate copyrights, licenses, and/or restrictions:
+
+Program                 Directory                 License
+LLVM contributions      tools/driver/llvmta.cpp   University of Illinois Open Source License 
+                                                  (see tools/driver/LLVMLICENSE.TXT)

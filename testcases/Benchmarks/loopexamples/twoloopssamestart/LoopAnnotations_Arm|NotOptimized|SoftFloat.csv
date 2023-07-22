@@ -1,0 +1,2 @@
+# Type: Normal
+main|Loop in file twoloopssamestart.c near line 5|BB#1:start<header><exiting>_BB#3:if.end_BB#5:if.else_BB#8:loop2rest_BB#4:if.then2_BB#6:loop1rest_BB#7:start.backedge<latch>|100

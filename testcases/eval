@@ -1,0 +1,143 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+set -u
+
+DIRPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTDIR="$DIRPATH/util_scripts"
+
+if [[ "$DIRPATH" != "$PWD" ]]; then
+	echo "Please execute this script from the root of llvmta_testcases only" >&2
+	exit 1
+fi
+
+# shellcheck source=util_scripts/OptionHandler.sh
+source "$SCRIPTDIR/OptionHandler.sh"
+# shellcheck source=util_scripts/pretty_print.sh
+source "$SCRIPTDIR/pretty_print.sh"
+# shellcheck source=util_scripts/parallel.sh
+source "$SCRIPTDIR/parallel.sh"
+
+_eval_base="$DIRPATH/evaluations"
+
+opts=( "$@" )
+
+count=0
+getTestcases "$@" || count=$?
+
+init_options "${opts[@]:$count}"
+llvmta_defaults
+add_option "--ta-quiet=true"
+
+gitpath=$(which llvmta)
+gitpath=${gitpath%/build*/*bin/llvmta}
+gitpath=${gitpath}/llvm/tools/llvmta/.git
+
+gitrev=$(git --git-dir="$gitpath" rev-parse HEAD)
+gitrevshort="$(git --git-dir="$gitpath" rev-parse --short HEAD)"
+gitdatetimeunix=$(git --git-dir="$gitpath" show -s --format=%ct "$gitrev")
+gitdatetime=$(date -d @"$gitdatetimeunix" +"%F_%k-%M-%S")
+
+experimentPath="$("$SCRIPTDIR/getNormalisedExperimentPath2.sh" "$_eval_base" "${USEROPTS[@]}" || true)"
+expPath="$_eval_base/$experimentPath/$gitrevshort"
+
+if [ -d "$expPath" ]; then
+	rm -r "${expPath:?}"
+fi
+
+mkdir -p "$expPath"
+
+echo "Storing Evaluation Resuts at: $expPath" >&2
+
+resultsfile="$expPath/Results.txt.tmp"
+resultsfile_final="$expPath/Results.txt"
+statsfile="$expPath/Stats.xml.tmp"
+statsfile_final="$expPath/Stats.xml"
+lockfile="$statsfile.lock"
+
+echo  -e "TEST\tBOUND(cycles)\tRUNTIME(s)\tMAXRSS(kiB)" > "$resultsfile"
+
+{
+	echo "<root>
+	<infos>
+		<gitrev>$gitrev</gitrev>
+		<options>$*</options>
+	</infos>"
+} > "$statsfile"
+
+run_test() {
+	set -o pipefail
+	set -u
+	local tc="$1" && shift
+	local pathname="$expPath/$tc"
+	local tmpfile
+	local tcstats="$pathname/*/Statistics.txt"
+	local totalbounds="$pathname/*/TotalBound.xml"
+	local retval=0
+	local timingbound=""
+	print_info "Running $tc -> $pathname"
+
+	tmpfile=$(mktemp)
+
+	"$DIRPATH/runTestcase" "$tc" \
+		--llvmta-concise-resource-stats \
+		--llvmta-build-dir "$pathname" \
+		"$@" 2>&1 | tee "$tmpfile"
+
+
+	retval=$?
+	if [ $retval -ne 0 ]; then
+		timingbound="FAILED"
+		analysisstatus="FAILED"
+	else
+		grepcmd='Calculated Timing Bound:'
+		timingbound="$(grep "$grepcmd" "$tmpfile" | cut -d':' -f2)"
+		analysisstatus="SUCCESS"
+	fi
+
+	local memusage=( $(grep "Runtime/Memory" "$tmpfile" | cut -d':' -f2-) )
+	mutex_lock "$lockfile"
+	echo -e "$tc\t$timingbound\t${memusage[*]}" >> "$resultsfile"
+	{
+		echo "<testcase><name>$tc</name>"
+		echo "<AnalysisStatus>$analysisstatus</AnalysisStatus>"
+		echo "<measurement><id>Complete Tool Run</id>"
+		echo "<memory>${memusage[1]}</memory><time>${memusage[0]}</time>"
+		echo "</measurement>"
+		if [ $retval -eq 0 ]; then
+			# Disable shellcheck complaining about quoting. We rely on the fact
+			# that these variables need to be expanded (glob expansion) to find
+			# the right files
+			# shellcheck disable=SC2086
+			cat $tcstats $totalbounds
+		fi
+		echo "</testcase>"
+	} >> "$statsfile"
+	mutex_unlock "$lockfile"
+	return $retval
+}
+
+export -f run_test
+export -f print_info
+export DIRPATH
+export expPath
+export resultsfile
+export statsfile
+export lockfile
+
+close() {
+	echo "</root>" >> "$statsfile"
+	xmllint --format "$statsfile" > "$statsfile_final"
+
+	{
+		echo "Git Revision: $gitrevshort
+Complete Hash: $gitrev
+Commit Date: $gitdatetime"
+		column -t "$resultsfile"
+	} > "$resultsfile_final"
+	rm "$statsfile" "$resultsfile"
+}
+
+trap close EXIT
+run_parallel run_test "${opts[@]:0:$count}" "${USEROPTS[@]}"

@@ -1,0 +1,2 @@
+# Type: Normal
+b|Loop in file callFromLoop.c near line 5|BB#1:for.cond<header><exiting>_BB#2:for.body<latch>|10

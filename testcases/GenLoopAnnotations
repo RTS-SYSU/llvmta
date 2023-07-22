@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+set -u
+
+DIRPATH="$(dirname "$0")"
+source "$DIRPATH/util_scripts/OptionHandler.sh"
+source "$DIRPATH/util_scripts/llvmta_utils.sh"
+source "$DIRPATH/util_scripts/pretty_print.sh"
+
+# These testcasesMUST be manually annotated because they contain weird edge
+# cases that the script is unable to handle. If the script is ever updated to
+# handle such cases, please remove the tests from this list
+ManualAnnotations_All=(
+	# Contains #ifdef'd code which is very difficult to parse with a simple
+	# script
+	"taclebench/sequential/gsm_encode"
+)
+ManualAnnotations_NonOpt=( "${ManualAnnotations_All[@]}" )
+ManualAnnotations_Opt=( "${ManualAnnotations_All[@]}" )
+
+BaseFlags="$(get_ctx_flags "")"
+
+# Parse and remove options passed to identify which Benchmarks to execute
+count=0
+getTestcases "$@" || count=$?
+shift $count
+
+# Create the argument vectors
+init_options "$@"
+llvmta_defaults
+add_option "--ta-ana-type=timing"		# Only timing analysis required
+add_option "--ta-output-unknown-loops"	# Output unknown loops for annotation
+add_option "--ta-quiet"					# No extra output required
+
+FLAGS=$(get_ctx_flags "${USEROPTS[@]}")
+
+if [[ "$FLAGS" != "$BaseFlags" ]]; then
+	is_base="False"
+else
+	is_base="True"
+fi
+
+if [[ "$FLAGS" =~ ^Optimized ]]; then
+	ManualAnnotations=( "${ManualAnnotations_Opt[@]}" )
+else
+	ManualAnnotations=( "${ManualAnnotations_NonOpt[@]}" )
+fi
+
+manual=0
+success=0
+failure=0
+warning=0
+
+for tc in "${TESTCASES[@]}"; do
+	tc_status=0
+	print_info_n "Running $tc "
+
+	TESTDIR="$DIRPATH/Benchmarks/$tc"
+	BUILDDIR="$TESTDIR/build"
+	LBTmp="$TESTDIR/LoopAnnotationsRaw.csv"
+	LBFinal="$TESTDIR/LoopAnnotations_${FLAGS}.csv"
+
+	# Run LLVMTA and get a list of loops which require annotation
+	./runTestcase "$tc" "${USEROPTS[@]}" &> /dev/null
+
+	# We run the following code for each of the entry points that LLVMTA
+	# identified. This is because the set of loops for each entry point may be
+	# vastly different
+	has_loops=false
+	for ent_dir in $(find "$BUILDDIR" -maxdepth 1 -mindepth 1 -type d); do
+		LBFile="$ent_dir/LoopAnnotations.csv"
+
+		# If the current entry point has no loops, take the fast path and exit
+		if [[ ! -s "$LBFile" ]]; then
+			continue
+		fi
+
+		has_loops=true
+
+		error=false
+		ret=0
+		./"$DIRPATH"/util_scripts/LoopAnnotationHelper.py \
+			--basecase "$BaseFlags" \
+			--is-base="$is_base" \
+			"$TESTDIR" \
+			"$LBFile" \
+			"$FLAGS" \
+			&> /dev/null || ret=$?
+		if [[ $ret -ne 0 ]]; then
+			((tc_status=0-ret))
+			break
+		fi
+		((tc_status=tc_status+1))
+	done
+
+	if optIn "$tc" "${ManualAnnotations[@]}"; then
+		((manual=manual+1))
+		print_warn "Manual"
+		continue
+	fi
+
+	if [[ $has_loops == false ]]; then
+		((success=success+1))
+		print_success "SKIP (No Loops)"
+	elif [[ $tc_status -ge 0 ]]; then
+		((success=success+1))
+		print_success "Done ($tc_status entrypoints)"
+	elif [[ $tc_status -eq -1 ]]; then
+		((failure=failure+1))
+		print_error "Fail (No. of Loops != AnnotationCount)"
+	elif [[ $tc_status -eq -2 ]]; then
+		((failure=failure+1))
+		print_error "Fail (Base Not Found)"
+	elif [[ $tc_status -eq -3 ]]; then
+		((failure=failure+1))
+		print_error "Fail (Non-Matching Loops)"
+	elif [[ $tc_status -eq -4 ]]; then
+		((warning=warning+1))
+		print_warn "Unknown Loops"
+	else
+		((failure=failure+1))
+		print_error "Fail (Unknown)"
+	fi
+done
+
+echo "Total Tests: $((manual+success+failure+warning))"
+echo "Success: $success"
+echo "Warnings: $warning"
+echo "Must Check Manually: $manual"
+echo "Failures: $failure"

@@ -1,0 +1,2 @@
+# Type: Normal
+main|Loop in file goto.c near line 6|BB#2:loop<header>_BB#1:if.end_BB#3:if.then<exiting>_BB#4:if.end3|100

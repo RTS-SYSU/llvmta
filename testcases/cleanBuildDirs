@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Find all build directories in the Benchmarks/ dir and delete them
+# This script should only be run from the top level directory
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [[ "$(pwd)" != "$SCRIPT_DIR" ]]; then
+	echo "Please use this script only from the top level directory"
+	exit 1
+fi
+
+find Benchmarks -type d -wholename "*/build" -exec rm -r {} \+

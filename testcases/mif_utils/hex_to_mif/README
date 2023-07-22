@@ -1,0 +1,13 @@
+The pourpose of this program is to convert an hex file into a mif.
+This is necessary because the formatted style used in the hex file
+makes it impossible to simulate directly with vsim.
+
+how to use: from terminal call "hex2mif <name of hex file without extension>"
+				e.g. "hex2mif my_function"
+
+right now the conversion is only available for memory of dimension 8192 and
+width of 32. If you have different parameters, change the source and compile.
+
+compile using standard c++11
+
+e.g. for linux: g++ -std=c++11 hex2mif.cpp

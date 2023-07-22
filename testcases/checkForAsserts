@@ -1,0 +1,21 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+set -u
+
+DIRPATH="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$DIRPATH/util_scripts/pretty_print.sh"
+source "$DIRPATH/util_scripts/parallel.sh"
+
+check() {
+	tc="$1" && shift
+	print_info "Running $tc"
+	./runTestcase "$tc" "$@" --ta-quiet
+}
+
+export -f print_info
+export -f check
+
+
+run_parallel check "$@"

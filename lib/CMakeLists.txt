@@ -1,0 +1,8 @@
+add_subdirectory(AnalysisFramework)
+add_subdirectory(LLVMPasses)
+add_subdirectory(Memory)
+add_subdirectory(MicroarchitecturalAnalysis)
+add_subdirectory(PartitionUtil)
+add_subdirectory(PathAnalysis)
+add_subdirectory(PreprocessingAnalysis)
+add_subdirectory(Util)

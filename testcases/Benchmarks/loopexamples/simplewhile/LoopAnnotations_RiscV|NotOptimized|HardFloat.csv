@@ -1,0 +1,2 @@
+# Type: Normal
+main|Loop in file simplewhile.c near line 4|BB#1:while.cond<header><exiting>_BB#2:while.body<latch>|50

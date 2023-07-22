@@ -1,0 +1,3 @@
+# Type: Normal
+main|Loop in file StandardNativeTree.c near line 20|BB#1:for.cond<header><exiting>_BB#2:for.body_BB#3:if.then_BB#4:if.end_BB#5:for.inc<latch>|1
+StandardNativeTree_predict0|Loop in file StandardNativeTree.c near line 2171|BB#1:while.body<header>_BB#2:if.then_BB#3:lor.lhs.false<exiting>_BB#4:if.then15_BB#6:if.end_BB#7:if.else22_BB#8:lor.lhs.false29<exiting>_BB#9:if.then36_BB#11:if.end44_BB#12:if.end45<latch>|21

@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+
+# This script is a replaica of the original script "runTestcase", but with
+# various cleanups. The changes were large enough that it made more sense to
+# rewrite the script than try to fix it.
+
+# runTestcase is a wrapper script around runllvmta.sh. This script's job is to
+# identify and automatically add all deducable parameters for llvmta to work
+# correctly. Any change to the options should be made here, runllvmta.sh is a
+# dumb shell script which simply executes a bunch of commands to run the
+# analysis
+
+# Set up bash options to ensure no silent failures during executions
+set -e
+set -o pipefail
+set -u
+
+# Define some constants
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BENCHMARK_DIR="$SCRIPT_DIR/Benchmarks"
+
+if [ $# -lt 1 ]; then
+	echo "Usage: $0 testcase [options]" >&2
+	exit 1
+fi
+readonly TESTCASE="$1"
+shift
+
+# Source the script for handling options. This script exports the $USEROPTS
+# variable which holds the final set of options that should be passed to
+# runllvmta.sh
+source "$SCRIPT_DIR/util_scripts/OptionHandler.sh"
+source "$SCRIPT_DIR/util_scripts/llvmta_utils.sh"
+
+# Initialize the USEROPTS variable with the user input
+init_options $*
+llvmta_defaults
+
+# Search and find the testcase that was requested
+# The testcase may either:
+#   1. Not Exist
+#   2. Exists as part of multiple benchmarks
+#
+# Since the entry point of some tests is the same as the test name, we must
+# prevent any false positives caused by this. Hence, all "build" directories
+# are excluded when trying to search for a valid testcase
+# We need to uniquely identify the testcase that the user requested
+TESTCASE_DIR=$(find "$BENCHMARK_DIR" \
+					-type d \
+					-wholename "*/$TESTCASE" \
+					! -wholename "*/build/*")
+# This check ensures that both the cases mentioned earlier are flagged and the
+# script can make an early exit
+if [ ! -d "$TESTCASE_DIR" ]; then
+	echo "Unable to (uniquely) find testcase \"$TESTCASE\"" >&2
+	echo -e "Potential testcases found: \n${TESTCASE_DIR}" >&2
+	exit 2
+fi
+
+# At this point, we have uniquely found the testcase that the user requested.
+
+# CTX FLAGS are options passed to the script which define the context in which
+# the analysis is run. It is used to determine some of the options which will
+# eventually be passed to llvmta
+CTXFLAGS=$(get_ctx_flags "${USEROPTS[@]}")
+
+loopanno="${TESTCASE_DIR}/LoopAnnotations_${CTXFLAGS}.csv"
+ctxsensloopanno="${TESTCASE_DIR}/CtxSensLoopAnnotations_${CTXFLAGS}.csv"
+extfuncanno="${TESTCASE_DIR}/ExtFuncAnnotations.csv"
+if [ -z ${CTXSENSFILE+x} ]; then
+	ctxsensitivity="${TESTCASE_DIR}/ContextSensitivity.txt"
+else
+	ctxsensitivity="${TESTCASE_DIR}/${CTXSENSFILE}"
+fi
+spoptions="${TESTCASE_DIR}/SpecialOptions.txt"
+
+# Add the Annotated Loop Bounds if available
+if [ -f "$loopanno" ]; then
+	add_option_multiple "--ta-loop-bounds-file=$loopanno"
+fi
+
+# If the Context Sensitive Loop Bounds are available, pass those too.
+if [ -f "$ctxsensloopanno" ]; then
+	add_option_multiple "--ta-loop-bounds-file=$ctxsensloopanno"
+fi
+
+# Add the external function annotations if they are available
+if [ -f "$extfuncanno" ]; then
+	add_option "--ta-restart-after-external"
+	add_option "--ta-extfunc-annotation-file=$extfuncanno"
+fi
+
+# Use the Context provided by CTX_FLAGS to find the right Context Sensitivity
+# for this analysis.
+if [ -f "$ctxsensitivity" ]; then
+	if ! optIn "--ta-num-callsite-tokens" "${USEROPTS[@]}"; then
+		SHORTCTXFLAGS=$(cut -d "|" -f 2- <<< "${CTXFLAGS}")
+		CTXSENS=$(grep "^$SHORTCTXFLAGS [[:digit:]]" "$ctxsensitivity" | awk '{print $2}' || true)
+		if [ -z $CTXSENS ]; then
+			echo "Context Sensitivity data not found for options: $SHORTCTXFLAGS." >&2
+		else
+			add_option "--ta-num-callsite-tokens=$CTXSENS"
+		fi
+	fi
+fi
+
+# Some tests require special options to be passed to llvmta. These are put in
+# the SpecialOptions.txt file. Read it if available
+if [ -f "$spoptions" ]; then
+	while read -r line; do
+		add_option "$line"
+	done < "$spoptions"
+fi
+
+# runllvmta.sh expects that the command line provided to it does not contain
+# the "--ta-analysis-entry-point" option. This is because it unconditionally
+# adds that option when running the analysis. However, to allow the user to
+# override the analysis, it provides a new option: "--llvmta-entry-point".
+# In this script, we convert any user provided "ta-analysis-entry-point"
+# options to a "--llvmta-entry-point" option for runllvmta.sh
+entry_point="$(get_option "ta-analysis-entry-point")" || true
+if [[ -n $entry_point ]]; then
+	rm_option "ta-analysis-entry-point"
+	add_option "--llvmta-entry-point=${entry_point}"
+fi
+
+# Generate the final command line that will be executed. We do this in order to
+# be able to print the entire command line to stdout.
+cmdline=("${SCRIPT_DIR}/runllvmta.sh" "$TESTCASE_DIR" "${USEROPTS[@]}")
+
+echo "${cmdline[@]}"
+exec "${cmdline[@]}"

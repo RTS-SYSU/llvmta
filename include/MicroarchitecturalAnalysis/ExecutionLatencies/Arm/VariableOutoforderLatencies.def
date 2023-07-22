@@ -1,0 +1,282 @@
+// This is inspired by the latency given for the Cortex-A72 in its Software Optimization Guide
+{
+		/*************
+		 * Branching *
+		 *************/
+		//branching or similar
+		{ARM::BX_RET, {1}},
+		{ARM::LDMIA_RET, {1}},
+		{ARM::BL, {1}},
+		{ARM::BL_pred, {1}},
+		{ARM::Bcc, {1}},
+		{ARM::B, {1}},
+
+		// Jump-Table stuff
+		{ARM::LEApcrelJT, {1}},
+		{ARM::BR_JTr, {1}},
+		{ARM::BR_JTm_rs, {1}},
+		{ARM::BR_JTm_i12, {1}},
+
+		/********************************
+		 * Data-processing instructions *
+		 ********************************/
+		// Move
+		{ARM::MOVr, {1}},
+		{ARM::MOVi, {1}},
+		{ARM::MOVsi, {2}},
+		{ARM::MOVsr, {2}},
+		{ARM::MVNi, {1}},
+		{ARM::MVNr, {1}},
+		{ARM::MVNsi, {2}},
+		{ARM::MVNsr, {2}},
+
+		// Subtraction
+		{ARM::SUBri, {1}},
+		{ARM::SUBrr, {1}},
+		{ARM::SUBrsi, {2}},
+		{ARM::SUBrsr, {2}},
+		{ARM::SBCri, {1}},
+		{ARM::SBCrr, {1}},
+		{ARM::SBCrsi, {2}},
+
+		// Reverse Subtraction
+		{ARM::RSBri, {1}},
+		{ARM::RSBrsi, {2}},
+		{ARM::RSCri, {1}},
+		{ARM::RSCrsi, {2}},
+
+		// Addition
+		{ARM::ADDrr, {1}},
+		{ARM::ADDrsi, {2}},
+		{ARM::ADDrsr, {2}},
+		{ARM::ADDri, {1}},
+		{ARM::ADCrr, {1}},
+		{ARM::ADCri, {1}},
+		{ARM::ADCrsi, {2}},
+		{ARM::LEApcrel, {1}}, // becomes either an add or a sub
+
+		// Exclusive Or
+		{ARM::EORrsr, {2}},
+		{ARM::EORrsi, {2}},
+		{ARM::EORrr, {1}},
+		{ARM::EORri, {1}},
+
+		// Or
+		{ARM::ORRri, {1}},
+		{ARM::ORRrsi, {2}},
+		{ARM::ORRrsr, {2}},
+		{ARM::ORRrr, {1}},
+
+		// And
+		{ARM::ANDrsi, {2}},
+		{ARM::ANDri, {1}},
+		{ARM::ANDrr, {1}},
+		{ARM::ANDrsr, {2}},
+
+		// Bit clear, register AND NOT operand2
+		{ARM::BICri, {1}},
+		{ARM::BICrr, {1}},
+		{ARM::BICrsi, {2}},
+		{ARM::BICrsr, {2}},
+
+		// Test, Update CPSR flags on register AND operand2
+		{ARM::TSTri, {1}},
+		{ARM::TSTrr, {1}},
+		{ARM::TSTrsr, {2}},
+		{ARM::TSTrsi, {2}},
+
+		{ARM::TEQri, {1}},
+		{ARM::TEQrr, {1}},
+		{ARM::TEQrsr, {2}},
+
+		// Compare, Update CPSR flags on register - operand2
+		{ARM::CMPrr, {1}},
+		{ARM::CMPri, {1}},
+		{ARM::CMPrsi, {2}},
+		{ARM::CMPrsr, {2}},
+		{ARM::CMNri, {1}},
+		{ARM::CMNzrr, {1}},
+
+		// Misc Data-Processing
+		{ARM::RBIT, {1}},
+		{ARM::CLZ, {1}},
+
+		/******************
+		 * Multiplication *
+		 ******************/
+		{ARM::MULv5, {3}},
+		{ARM::MLAv5, {3}},
+		{ARM::SMULLv5, {4}},
+		{ARM::UMULLv5, {4}},
+		{ARM::UMLALv5, {4}},
+		{ARM::MUL, {3}},
+		{ARM::SMMUL, {3}},
+		{ARM::SMULBB, {3}},
+		{ARM::SMULBT, {3}},
+		{ARM::UMULL, {4}},
+		{ARM::MLS, {3}},
+		{ARM::MLA, {3}},
+		{ARM::SMMLA, {3}},
+		{ARM::SMLABB, {3}},
+		// ARMv8
+		// {ARM::UDIV, {4,5,6,7,8,9,10,11,12}},
+		// {ARM::SDIV, {4,5,6,7,8,9,10,11,12}},
+
+		/*********************
+		 * Memory operations *
+		 *********************/
+		// Load/Store Multiple
+		{ARM::LDMIA, {1}},
+		{ARM::LDMIB, {1}},
+		{ARM::LDMDA, {1}},
+		{ARM::LDMDB, {1}},
+		{ARM::STMIA, {1}},
+		{ARM::STMIB, {1}},
+		{ARM::STMDA, {1}},
+		{ARM::STMDB, {1}},
+		{ARM::LDMIA_UPD, {1}},
+		{ARM::LDMIB_UPD, {1}},
+		{ARM::LDMDA_UPD, {1}},
+		{ARM::LDMDB_UPD, {1}},
+		{ARM::STMIA_UPD, {1}},
+		{ARM::STMIB_UPD, {1}},
+		{ARM::STMDA_UPD, {1}},
+		{ARM::STMDB_UPD, {1}},
+
+		// Thos load/stores with a scaled/shifted register take a cycle more
+		// Store word
+		{ARM::STRi12, {1}},
+		{ARM::STRrs, {2}},
+		{ARM::STR_PRE_IMM, {1}},
+		{ARM::STR_PRE_REG, {2}},
+		{ARM::STR_POST_IMM, {1}},
+		{ARM::STR_POST_REG, {2}},
+		// Store halfword
+		{ARM::STRH, {1}},
+		{ARM::STRH_PRE, {1}},
+		{ARM::STRH_POST, {1}},
+		// Store byte
+		{ARM::STRBrs, {2}},
+		{ARM::STRB_POST_IMM, {1}},
+		{ARM::STRB_PRE_REG, {2}},
+		{ARM::STRB_PRE_IMM, {1}},
+		{ARM::STRBi12, {1}},
+		// Store double-word
+		{ARM::STRD, {1}},
+
+		// Load word
+		{ARM::LDRi12, {1}},
+		{ARM::LDRrs, {2}},
+		{ARM::LDRcp, {1}},
+		{ARM::LDR_PRE_REG, {2}},
+		{ARM::LDR_PRE_IMM, {1}},
+		{ARM::LDR_POST_REG, {2}},
+		{ARM::LDR_POST_IMM, {1}},
+		// Load halfword
+		{ARM::LDRH, {1}},
+		{ARM::LDRH_PRE, {1}},
+		{ARM::LDRH_POST, {1}},
+		{ARM::LDRSH, {1}},
+		{ARM::LDRSH_PRE, {1}},
+		{ARM::LDRSH_POST, {1}},
+		// Load byte
+		{ARM::LDRB_POST_IMM, {1}},
+		{ARM::LDRB_PRE_REG, {2}},
+		{ARM::LDRB_PRE_IMM, {1}},
+		{ARM::LDRBi12, {1}},
+		{ARM::LDRBrs, {2}},
+		{ARM::LDRSB, {1}},
+		{ARM::LDRSB_PRE, {1}},
+
+		/*******************************
+		 * Floating-Point Instructions *
+		 *******************************/
+		{ARM::VMOVSR, {1}},
+		{ARM::VMOVRS, {1}},
+		{ARM::VMOVDRR, {1}},
+		{ARM::VMOVRRD, {1}},
+		{ARM::VMOVD, {1}},
+		{ARM::VMOVS, {1}},
+		{ARM::VSELEQD, {4}},
+		{ARM::VABSD, {3}},
+		{ARM::VABSS, {3}},
+		{ARM::VSITOD, {3}},
+		{ARM::VSITOS, {3}},
+		{ARM::VCVTDS, {3}},
+		{ARM::VCVTSD, {3}},
+		{ARM::VUITOS, {3}}, // vcvt
+		{ARM::VUITOD, {3}}, // vcvt
+		{ARM::VTOSIZS, {3}}, // vcvt
+		{ARM::VTOUIZD, {3}}, // vcvt
+		{ARM::VTOUIZS, {3}},
+		{ARM::VMULD, {4}},
+		{ARM::VMULS, {4}},
+		{ARM::VNMULS, {4}},
+		{ARM::VNMULD, {4}},
+		{ARM::VMLAD, {4,5,6,7}},
+		{ARM::VMLAS, {4,5,6,7}},
+		{ARM::VMLSD, {4,5,6,7}},
+		{ARM::VNMLSD, {4,5,6,7}},
+		{ARM::VNMLSS, {4,5,6,7}},
+		{ARM::VMLSS, {4,5,6,7}},
+
+		{ARM::VSUBD, {4}},
+		{ARM::VSUBS, {4}},
+		{ARM::VADDD, {4}},
+		{ARM::VADDS, {4}},
+		{ARM::VDIVS, {6,7,8,9,10,11}},
+		{ARM::VDIVD, {6,7,8,9,10,11,12,13,14,15,16,17,18}},
+		{ARM::VSQRTD, {6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32}},
+		{ARM::VNEGD, {3}},
+		{ARM::VNEGS, {3}},
+		{ARM::VTOSIZD, {3}},
+		{ARM::FCONSTD, {3}},
+		{ARM::FCONSTS, {3}},
+		{ARM::FMSTAT, {3}},
+		{ARM::VCMPS, {6}},
+		{ARM::VCMPD, {6}},
+		{ARM::VCMPZS, {6}},
+		{ARM::VCMPZD, {6}},
+		{ARM::VCMPED, {6}},
+		{ARM::VCMPES, {6}},
+		{ARM::VCMPEZD, {6}},
+		{ARM::VCMPEZS, {6}},
+		// Load/Store
+		{ARM::VLDRD, {1}},
+		{ARM::VLDRS, {1}},
+		{ARM::VSTRD, {1}},
+		{ARM::VSTRS, {1}},
+		{ARM::VLDMSIA, {1}},
+		{ARM::VLDMSIA_UPD, {1}},
+		{ARM::VLDMDIA, {1}},
+		{ARM::VSTMDIA, {1}},
+		{ARM::VLDMDIA_UPD, {1}},
+		{ARM::VLDMDDB_UPD, {1}},
+		{ARM::VSTMDIA_UPD, {1}},
+		{ARM::VSTMDDB_UPD, {1}},
+
+//		// ARM8 necessary instructions
+		{ARM::UXTAB, {1}},
+		{ARM::MOVi16, {1}},
+		{ARM::MOVTi16, {1}},
+		{ARM::SXTH, {1}},
+		{ARM::SXTB, {1}},
+		{ARM::UXTH, {1}},
+		{ARM::UXTB, {1}},
+		{ARM::UXTAH, {1}},
+		{ARM::BFC, {1}},
+		{ARM::BFI, {1}},
+		{ARM::UBFX, {1}},
+
+		// Prefetch Instructions
+		{ARM::PLIi12, {1}},
+		{ARM::PLDi12, {1}},
+		{ARM::PLDWi12, {1}},
+		{ARM::PLIrs, {1}},
+		{ARM::PLDrs, {1}},
+		{ARM::PLDWrs, {1}},
+
+}
+
+
+

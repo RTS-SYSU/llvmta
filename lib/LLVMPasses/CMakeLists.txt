@@ -1,0 +1,19 @@
+message(STATUS "Found LLVM Passes LIB")
+
+add_llvm_library(llvmtaLLVMPasses
+AsmDumpAndCheckPass.cpp
+DispatchFixedLatency.cpp
+DispatchInOrderPipelineCache.cpp
+DispatchInOrderPipelineTiming.cpp
+DispatchPretPipelineTiming.cpp
+DispatchMemory.cpp
+DispatchOutOfOrderPipelineCache.cpp
+DispatchOutOfOrderPipelineTiming.cpp
+DispatchPathAnalysis.cpp
+MachineFunctionCollector.cpp
+StaticAddressProvider.cpp
+TimingAnalysisMain.cpp
+TimingAnalysisPasses.cpp
+DEPENDS LLVMAnalysis LLVMCodeGen LLVMCore LLVMSupport LLVMTarget
+)
+
