@@ -1,3 +1,7 @@
+# NOTE
+
+This is a fork of LLVMTA built by University of Saarland, you can find their version at [here](https://gitlab.cs.uni-saarland.de/reineke/llvmta)
+
 # LLVMTA
 
 This Repository contains LLVMTA a static timing analysis tool based on the LLVM compiler ecosystem.
@@ -17,21 +21,24 @@ This Repository contains LLVMTA a static timing analysis tool based on the LLVM 
 ```
 docker build -t llvmtadocker:latest - < .devcontainer/Dockerfile
 ```
+
 3.) Run the Docker dev container with Repository as Volume. The third line defines an extra Volume for the build folder and is optional.
+
 ```
 docker run -i -d \
 	-v {$path_to_this_repository}:/workspaces/llvmta:rw \
 	-v {$path_to_build_bir}:/workspaces/llvmta/build:rw \
 	--name $name_of_instance llvmtadocker:latest
 ```
-4.) Now VS Code can be attached to the container.
 
+4.) Now VS Code can be attached to the container.
 
 ## Build the project
 
 If using VS code all config and build tasks can be triggered by shift+ctr+b.
 
 1.) Config the project with the ./config.sh script. Be aware that llvm and LLVMTA requires a lot or RAM, should your System have only 16GB of RAM choose the "lowRes" configuration.
+
 ```
 Script to configure llvm, clang and LLVMTA:
   dev | development          Configure for development.
@@ -40,16 +47,20 @@ Script to configure llvm, clang and LLVMTA:
   distributed | dis          Configure for icecc distributed compiler.
   clean                      Removes build folder.
 ```
+
 You will be asked to download llvm and clang at the first setup. The script will do so automatically.
 
 ![alt text](dependencies/img/config.gif)
 
 3.) Build llvm, clang and LLVMTA with ninja. This is necessary at least once, so that the llvm and LLVMTA toolchain are of the same version.
+
 ```
 cd build
 ninja -j [#CPUs]
 ```
+
 For later rebuilds it is enough to just build LLVMTA.
+
 ```
 cd build
 ninja -j [#CPUs] llvmta
@@ -58,16 +69,21 @@ ninja -j [#CPUs] llvmta
 ![alt text](dependencies/img/build.gif)
 
 ## Using LLVMTA
+
 This section showcases how to use LLVMTA on a simple test case of a nested loop example. Make sure LLVMTA is compiled and in your $PATH variable.
 
 1.) Change into the testcases folder.
+
 ```
 cd testcases
 ```
+
 2.) Run LLVMTA on the benchmark using the script
+
 ```
 ./runTestcase loopexamples/nested
 ```
+
 All test cases are in the Benchmarks folder and only their relative path has to be handed. The full path for the command above ist "testcases/Benchmarks/loopexamples/nested", keep this in mind while using the script.
 
 ## Using Gurobi
