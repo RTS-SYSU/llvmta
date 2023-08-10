@@ -30,7 +30,7 @@ gdb -tui --args llvmta -disable-tail-calls -float-abi=hard -mattr=-neon,+vfp2 -O
 --ta-analysis-entry-point=main --ta-muarch-type=inorder \
 --ta-memory-type=separatecaches --ta-strict=false \
 --ta-loop-bounds-file=\
-"/workspaces/llvmta/testcases/Benchmarks/loopexamples/nested/LoopAnnotations_Arm|NotOptimized|HardFloat.csv" \
+"/workspaces/llvmta/testcases/Benchmarks/$testcases/LoopAnnotations_Arm|NotOptimized|HardFloat.csv" \
 --ta-num-callsite-tokens=1 optimized.ll
 
 echo "to do post clean, just type:"
