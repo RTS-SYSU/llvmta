@@ -10,6 +10,7 @@ fi
 
 WORKDIR=$(mktemp -d -p /workspaces/llvmta/testcases)
 cd "$WORKDIR" || exit
+chmod 0744 "$WORKDIR" || exit
 
 clang -w -S -gline-tables-only -O0 -Xclang \
         -disable-O0-optnone -fno-builtin \
