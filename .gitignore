@@ -111,3 +111,4 @@ testcases/Benchmarks/**/tags_s
 testcases/regressions/
 testcases/evaluations*/
 testcases/out.log
+testcases/dirforgdb

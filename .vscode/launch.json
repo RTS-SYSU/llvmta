@@ -22,7 +22,7 @@
                 "--ta-num-callsite-tokens=1",
                 "optimized.ll"
             ],
-            "stopAtEntry": true,
+            "stopAtEntry": false,
             "cwd": "/workspaces/llvmta/testcases/dirforgdb",
             "environment": [],
             "externalConsole": false,
