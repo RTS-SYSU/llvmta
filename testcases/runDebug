@@ -33,6 +33,6 @@ gdb -tui --args llvmta -disable-tail-calls -float-abi=hard -mattr=-neon,+vfp2 -O
 "/workspaces/llvmta/testcases/Benchmarks/$testcases/LoopAnnotations_Arm|NotOptimized|HardFloat.csv" \
 --ta-num-callsite-tokens=1 optimized.ll
 
-echo "to do post clean, just type:"
-echo "rm -rf $WORKDIR"
+echo "Doing post cleaning: rm -rf $WORKDIR"
+rm -rf "$WORKDIR"
 exit 0
