@@ -7,6 +7,12 @@
 # else
 #     testcases=$1
 # fi
+
+pushd "/workspaces/llvmta/build" || echo "Unable to compile"
+    echo "compiling..."
+    ninja llvmta
+popd || exit
+
 testcases=loopexamples/nested
 
 WORKDIR=$(mktemp -d -p /workspaces/llvmta/testcases)
