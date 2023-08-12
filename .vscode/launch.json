@@ -18,11 +18,11 @@
                 "--ta-muarch-type=inorder",
                 "--ta-memory-type=separatecaches",
                 "--ta-strict=false",
-                "--ta-loop-bounds-file='/workspaces/llvmta/testcases/Benchmarks/$testcases/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
+                "--ta-loop-bounds-file='/workspaces/llvmta/testcases/Benchmarks/loopexamples/nested/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
                 "--ta-num-callsite-tokens=1",
                 "optimized.ll"
             ],
-            "stopAtEntry": false,
+            "stopAtEntry": true,
             "cwd": "/workspaces/llvmta/testcases/dirforgdb",
             "environment": [],
             "externalConsole": false,
