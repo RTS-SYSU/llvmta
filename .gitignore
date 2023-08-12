@@ -51,7 +51,7 @@ runtimes/*
 # Sphinx build tree, if building in-source dir.
 docs/_build
 # VS2017 and VSCode config files.
-.vscode
+# .vscode
 .vs
 
 #==============================================================================#
@@ -80,7 +80,7 @@ bindings/go/llvm/workdir
 .cproject
 .project
 .settings
-.vscode
+# .vscode
 doc/
 *.vim
 *.bak

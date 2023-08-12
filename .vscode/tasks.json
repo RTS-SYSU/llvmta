@@ -1,0 +1,55 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "config dev",
+      "type": "shell",
+      "command": "./config.sh dev",
+      "group": "build"
+    },
+    {
+      "label": "config release",
+      "type": "shell",
+      "command": "./config.sh rel",
+      "group": "build"
+    },
+    {
+      "label": "config lowRes",
+      "type": "shell",
+      "command": "./config.sh lowRes",
+      "group": "build"
+    },
+    {
+      "label": "config distributed",
+      "type": "shell",
+      "command": "./config.sh dis",
+      "group": "build"
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "./config.sh clean",
+      "group": "build"
+    },
+    {
+      "label": "build llvmta",
+      "type": "shell",
+      "command": " cd build ; ninja llvmta",
+      "group": "build"
+    },
+    {
+      "label": "build all",
+      "type": "shell",
+      "command": " cd build ; ninja",
+      "group": "build"
+    },
+    {
+      "label": "run gdb",
+      "type": "shell",
+      "command": "cd testcases ; ./runBeforeGDB",
+      "group": "none"
+    }
+  ]
+}

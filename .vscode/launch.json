@@ -1,0 +1,45 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "/workspaces/llvmta/build/bin/llvmta",
+            "args": [
+                "-disable-tail-calls",
+                "-float-abi=hard",
+                "-mattr=-neon,+vfp2",
+                "-O0",
+                "--ta-analysis-entry-point=main",
+                "--ta-muarch-type=inorder",
+                "--ta-memory-type=separatecaches",
+                "--ta-strict=false",
+                "--ta-loop-bounds-file='/workspaces/llvmta/testcases/Benchmarks/$testcases/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
+                "--ta-num-callsite-tokens=1",
+                "optimized.ll"
+            ],
+            "stopAtEntry": false,
+            "cwd": "/workspaces/llvmta/testcases/dirforgdb",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "run gdb"
+        }
+    ]
+}
