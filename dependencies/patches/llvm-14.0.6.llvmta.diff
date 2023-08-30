@@ -1,0 +1,68 @@
+diff -ur llvm-14.0.6.src/CMakeLists.txt llvm-14.0.6.src.patched/CMakeLists.txt
+--- llvm-14.0.6.src/CMakeLists.txt	2022-06-22 16:46:24.000000000 +0000
++++ llvm-14.0.6.src.patched/CMakeLists.txt	2022-07-27 12:52:52.010987220 +0000
+@@ -1241,22 +1241,6 @@
+   include(InstallRequiredSystemLibraries)
+ endif()
+ 
+-if (LLVM_INCLUDE_BENCHMARKS)
+-  # Override benchmark defaults so that when the library itself is updated these
+-  # modifications are not lost.
+-  set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "Disable benchmark testing" FORCE)
+-  set(BENCHMARK_ENABLE_EXCEPTIONS OFF CACHE BOOL "Disable benchmark exceptions" FORCE)
+-  set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "Don't install benchmark" FORCE)
+-  set(BENCHMARK_DOWNLOAD_DEPENDENCIES OFF CACHE BOOL "Don't download dependencies" FORCE)
+-  set(BENCHMARK_ENABLE_GTEST_TESTS OFF CACHE BOOL "Disable Google Test in benchmark" FORCE)
+-  set(BENCHMARK_ENABLE_WERROR ${LLVM_ENABLE_WERROR} CACHE BOOL 
+-    "Handle -Werror for Google Benchmark based on LLVM_ENABLE_WERROR" FORCE)
+-  # Since LLVM requires C++11 it is safe to assume that std::regex is available.
+-  set(HAVE_STD_REGEX ON CACHE BOOL "OK" FORCE)
+-  add_subdirectory(${LLVM_THIRD_PARTY_DIR}/benchmark 
+-    ${CMAKE_CURRENT_BINARY_DIR}/third-party/benchmark)
+-  add_subdirectory(benchmarks)
+-endif()
+ 
+ if (LLVM_INCLUDE_UTILS AND LLVM_INCLUDE_TOOLS)
+   add_subdirectory(utils/llvm-locstats)
+diff -ur llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h llvm-14.0.6.src.patched/include/llvm/Analysis/LoopInfo.h
+--- llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h	2022-06-22 16:46:24.000000000 +0000
++++ llvm-14.0.6.src.patched/include/llvm/Analysis/LoopInfo.h	2022-07-27 12:59:26.504860750 +0000
+@@ -925,11 +925,11 @@
+   void releaseMemory() {
+     BBMap.clear();
+ 
+-    for (auto *L : TopLevelLoops)
+-      L->~LoopT();
++    // for (auto *L : TopLevelLoops)
++    //   L->~LoopT();
+     TopLevelLoops.clear();
+-    LoopAllocator.Reset();
+-  }
++  //   LoopAllocator.Reset();
++   }
+ 
+   template <typename... ArgsTy> LoopT *AllocateLoop(ArgsTy &&... Args) {
+     LoopT *Storage = LoopAllocator.Allocate<LoopT>();
+diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patched/lib/Analysis/ScalarEvolution.cpp
+--- llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp	2022-06-22 16:46:24.000000000 +0000
++++ llvm-14.0.6.src.patched/lib/Analysis/ScalarEvolution.cpp	2022-07-27 13:03:35.370547892 +0000
+@@ -13506,6 +13506,7 @@
+ }
+ 
+ bool ScalarEvolutionWrapperPass::runOnFunction(Function &F) {
++  SE.release();
+   SE.reset(new ScalarEvolution(
+       F, getAnalysis<TargetLibraryInfoWrapperPass>().getTLI(F),
+       getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F),
+diff -ur llvm-14.0.6.src/lib/CodeGen/MachineModuleInfo.cpp llvm-14.0.6.src.patched/lib/CodeGen/MachineModuleInfo.cpp
+--- llvm-14.0.6.src/lib/CodeGen/MachineModuleInfo.cpp	2022-06-22 16:46:24.000000000 +0000
++++ llvm-14.0.6.src.patched/lib/CodeGen/MachineModuleInfo.cpp	2022-07-27 13:04:31.934903267 +0000
+@@ -313,7 +313,7 @@
+ }
+ 
+ void MachineModuleInfo::deleteMachineFunctionFor(Function &F) {
+-  MachineFunctions.erase(&F);
++  //MachineFunctions.erase(&F);
+   LastRequest = nullptr;
+   LastResult = nullptr;
+ }
