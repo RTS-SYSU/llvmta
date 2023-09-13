@@ -6,6 +6,10 @@ FROM mcr.microsoft.com/vscode/devcontainers/base:0-${VARIANT}
 
 SHELL ["/bin/bash", "-c"]
 
+# [Optional] Use this to change to a mirror that may speed up the process
+# RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list \
+#        && sed -i 's/security.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
+
 # [Optional] Uncomment this section to install additional OS packages.
 RUN apt-get update --fix-missing && export DEBIAN_FRONTEND=noninteractive \
         && apt-get -y install --no-install-recommends --fix-missing \
