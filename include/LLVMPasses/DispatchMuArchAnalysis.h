@@ -39,12 +39,12 @@ namespace TimingAnalysisPass {
 template <class MuArchDomain, class Deps>
 AnalysisInformation<PartitioningDomain<MuArchDomain, MachineInstr>,
                     MachineInstr> *
-doMuArchTimingAnalysis(Deps deps) {
+doMuArchTimingAnalysis(Deps deps, std::string entryPoint) {
   VERBOSE_PRINT(" -> Starting Microarchitectural Analysis:\n"
                 << typeid(MuArchDomain).name() << "\n");
 
   AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(
-      AnalysisEntryPoint, deps);
+      entryPoint, deps);
   auto microArchAnaInfo = microArchAna.runAnalysis();
 
   if (!QuietMode) {
@@ -60,13 +60,13 @@ doMuArchTimingAnalysis(Deps deps) {
 }
 
 template <class MuState, class Deps>
-boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps) {
+boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entryPoint) {
   if (MuJoinEnabled) {
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
     stats.startMeasurement("Timing MuArch Analysis");
-    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
+    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint);
     // Res deleted at the end of state graph construction
     stats.stopMeasurement("Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
@@ -85,7 +85,7 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps) {
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;
-  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
+  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint);
   auto bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
   // Res deleted at the end of state graph construction
   return bound;
@@ -98,7 +98,7 @@ boost::optional<BoundItv> dispatchCacheAnalysisJoin(Deps deps,
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
     Statistics &stats = Statistics::getInstance();
     stats.startMeasurement(prefix + "Cache MuArch Analysis");
-    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
+    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, "TODO");
     stats.stopMeasurement(prefix + "Cache MuArch Analysis");
     // TODO split the next measuremtn in two for stategraph and ILP
     stats.startMeasurement(prefix + "Cache Path Analysis");
@@ -108,7 +108,7 @@ boost::optional<BoundItv> dispatchCacheAnalysisJoin(Deps deps,
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;
-  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
+  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, "TODO");
   auto bound = dispatchCachePathAnalysis<MuArchDomain>(*res);
   // Res deleted at the end of state graph construction
   return bound;

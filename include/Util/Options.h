@@ -28,6 +28,7 @@
 #define UTIL_OPTIONS_H
 
 //#define CPLEXINSTALLED
+#include "llvm/ADT/StringRef.h"
 #define GUROBIINSTALLED
 
 #include "llvm/Support/CommandLine.h"
@@ -238,6 +239,16 @@ enum class FixedPointType { LEAST, GREATEST };
 enum class ArrivalCurveIlpObjectiveType { VARIANT1, VARIANT2, COMBINED };
 
 // Global options
+
+/**
+ * TODO
+*/
+extern llvm::cl::opt<unsigned> CoreNums;
+
+/**
+ * File that record the running info.
+*/
+extern llvm::cl::opt<std::string> coreInfo;
 
 /**
  * Quiet mode: No output on console and no file output, except for the

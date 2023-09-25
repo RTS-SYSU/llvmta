@@ -27,6 +27,7 @@
 #include "Util/Options.h"
 
 #include "PathAnalysis/GetEdges.h"
+#include "llvm/Support/CommandLine.h"
 
 using namespace llvm;
 
@@ -42,6 +43,11 @@ cl::OptionCategory WritebackCat("4. Writeback Analysis");
 cl::OptionCategory ArrayCat("5. Array-aware Cache Analysis");
 cl::OptionCategory
     CoRunnerSensitiveCat("6. Multi-Core Corunner-sensitive Analysis");
+cl::OptionCategory MultiCoreCat("7. TODO");
+
+cl::opt<std::string> coreInfo("core-info", cl::init("CoreInfo.txt"), cl::desc("Used to descripe which core runs which function"), cl::cat(MultiCoreCat));
+
+cl::opt<unsigned> CoreNums("Number of cores", cl::init(1), cl::desc("TODO"), cl::cat(MultiCoreCat));
 
 cl::opt<bool>
     QuietMode("ta-quiet", cl::init(false),

@@ -170,7 +170,7 @@ LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
       break;
 
   bool found = pos != size && size > 0;
-  PosType accessedAge = found ? explicitTags[pos].age : ageOfImplicitTags;
+  PosType accessedAge = found ? explicitTags[pos].age : ageOfImplicitTags;// 初始为0
 
   // 1. Update implicitly modelled elements
   if (ageOfImplicitTags <= accessedAge &&

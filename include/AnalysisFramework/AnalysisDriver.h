@@ -249,11 +249,11 @@ AnalysisDriverInstr<AnalysisDom>::runAnalysis() {
 
     // Compute new incoming information
     // For function entry blocks, we have information available in func2anainfo
-    if (currentBB->getNumber() == 0) {
+    if (currentBB->getNumber() == 0) {      //第一个基本块
       assert(currentBB->pred_empty() &&
              "Function entry block cannot have predecessors");
       const auto *currentFunc = currentBB->getParent();
-      auto toklist = currentCtx.getTokenList();
+      auto toklist = currentCtx.getTokenList();  
       // Assert that the topmost token in context at beginning of function is
       // funcallee of this function
       assert(!currentCtx.isEmpty() &&
@@ -355,7 +355,7 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
     newOut.enterBasicBlock(targetMBB);
     // Join incoming information, and check whether the join changed something
     auto &targetMBBAnaInfo = mbb2anainfo->at(targetMBB);
-    bool changed = targetMBBAnaInfo.addContext(targetCtx, newOut);
+    bool changed = targetMBBAnaInfo.addContext(targetCtx, newOut);   // ？
     // Add potential affected contexts to worklist
     if (changed) {
       worklist[targetMBB].insert(targetCtx);
@@ -376,6 +376,13 @@ void AnalysisDriverInstr<AnalysisDom>::analyseInstruction(
                       << "Before:" << getMachineInstrIdentifier(currentInstr)
                       << " in context " << ctx << "\n"
                       << newOut.print() << "\n");
+    
+  fprintf(stderr, "Current Instr is :");
+  currentInstr->dump();
+  fprintf(stderr, "\n, Current Context: ");
+  std::cerr << ctx;
+  fprintf(stderr, "\n, current newOut is: ");
+  std::cerr <<newOut.print();
 
   // Directives before the instruction
   if (DirectiveHeuristicsPassInstance->hasDirectiveBeforeInstr(currentInstr)) {
@@ -607,7 +614,6 @@ bool AnalysisDriverInstr<AnalysisDom>::analyseInstruction(
                   dbgs() << "Before:" << getMachineInstrIdentifier(currentInstr)
                          << "\n"
                          << newOut.print() << "\n");
-
   bool changed = false;
   // Directives before the instruction
   if (DirectiveHeuristicsPassInstance->hasDirectiveBeforeInstr(currentInstr)) {
@@ -891,11 +897,11 @@ public:
   // lifetime of the analysis-driver It is freed within the state graph
   // construction, once the microarchitectural information is no longer needed
   {
-    std::tuple<> noDep;
+    std::tuple<> noDep;   //&给analysisResults
     AnalysisDriverInstr<CollectingContextsDomain> collectCtxsAna(
         AnalysisEntryPoint, noDep);
     auto *ccAnaInfo = collectCtxsAna.runAnalysis();
-    // ccAnaInfo->dump(std::cout);
+    ccAnaInfo->dump(std::cout);
     //  Get handle for the instr-context-mapping stored inside the analysis
     //  dependencies
     InstrContextMapping &callsite2contexts = std::get<0>(this->analysisResults);

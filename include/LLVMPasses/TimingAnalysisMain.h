@@ -61,6 +61,7 @@ class AddressInformation;
 class TimingAnalysisMain : public MachineFunctionPass {
 
 public:
+  unsigned int coreNum;
   static char ID;
   TimingAnalysisMain(TargetMachine &TM);
 
@@ -137,6 +138,8 @@ private:
 
   // Private fiels
   static TargetMachine *TargetMachineInstance;
+
+  boost::optional<std::string> getNextFunction(unsigned int);
 };
 
 /**
