@@ -94,27 +94,31 @@ bool TimingAnalysisMain::runOnMachineFunction(MachineFunction &MF) {
 }
 
 void parseCoreInfo(const std::string& fileName) {
-  std::ifstream in(fileName);
+  std::ifstream in(fileName, std::ios::in);
   if (!in.is_open()) {
-    fprintf(stderr, "Unable to open file, exit...");
+    fprintf(stderr, "Unable to open file, exit...\n");
     exit(1);
   }
 
-  VERBOSE_PRINT("-> Parsing from file");
+  VERBOSE_PRINT("-> Parsing from file\n");
 
   unsigned num;
   std::string functionName;
 
   while(!in.eof()) {
     in >> num >> functionName;
-    if (num > CoreNums || !machineFunctionCollector->hasFunctionByName(functionName)) {
-      fprintf(stderr, "Core num to large or unable to find function...");
+    if (num >= CoreNums || !machineFunctionCollector->hasFunctionByName(functionName)) {
+      if (num >= CoreNums)
+        fprintf(stderr, "Core num(%u) to large, we only got: %u\n", num, CoreNums.getValue());
+      else
+       fprintf(stderr, "Unable to find function %s\n", functionName.c_str());
       exit(3);
     }
 
     mp[num].push(functionName);
   }
 
+  in.close();
 }
 
 boost::optional<std::string> TimingAnalysisMain::getNextFunction(unsigned int core) {
@@ -137,6 +141,7 @@ boost::optional<std::string> TimingAnalysisMain::getNextFunction(unsigned int co
 
 bool TimingAnalysisMain::doFinalization(Module &M) {
   // do File parsing
+  parseCoreInfo(coreInfo);
   
   
   for (unsigned i = 0; i < CoreNums; ++i) {

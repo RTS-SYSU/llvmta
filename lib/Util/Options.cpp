@@ -47,7 +47,7 @@ cl::OptionCategory MultiCoreCat("7. TODO");
 
 cl::opt<std::string> coreInfo("core-info", cl::init("CoreInfo.txt"), cl::desc("Used to descripe which core runs which function"), cl::cat(MultiCoreCat));
 
-cl::opt<unsigned> CoreNums("Number of cores", cl::init(1), cl::desc("TODO"), cl::cat(MultiCoreCat));
+cl::opt<unsigned> CoreNums("core-numbers", cl::init(1), cl::desc("TODO"), cl::cat(MultiCoreCat));
 
 cl::opt<bool>
     QuietMode("ta-quiet", cl::init(false),

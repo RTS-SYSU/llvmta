@@ -88,6 +88,8 @@ while [ $# -gt 0 ]; do
 			"--llvmta-entry-point") entry_point=$val;;
 			"--llvmta-limit-memory") limit_mem=true;;
 			"--llvmta-isa") isa_type=$val;;
+			"--core-numbers") core=$val;;
+			"--core-info") core_info=$val;;
 			"--") shift; break;;
 			*) echo "Unknown Option: $opt" >&2; exit 1;;
 		esac
@@ -201,6 +203,16 @@ fi
 llvmtacommand="llvmta"
 if [[ "$limit_mem" = true ]]; then
 	llvmtacommand="../../memlimitllvmta"
+fi
+
+# if core info is available, pass it to llvmta
+if [ -f "$core_info" ]; then
+	llvmtaopts+=( "--core-info=$core_info" )
+fi
+
+# if core number is available, pass it to llvmta
+if [ -n "$core" ]; then
+	llvmtaopts+=( "--core-numbers=$core" )
 fi
 
 trap cleanup EXIT

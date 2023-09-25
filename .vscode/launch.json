@@ -20,6 +20,8 @@
                 "--ta-strict=false",
                 "--ta-loop-bounds-file='/workspaces/llvmta/testcases/Benchmarks/loopexamples/nested/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
                 "--ta-num-callsite-tokens=1",
+                "--core-info='/workspaces/llvmta/testcases/Benchmarks/loopexamples/nested/CoreInfo.txt'",
+                "--core-numbers=2",
                 "optimized.ll"
             ],
             "stopAtEntry": false,

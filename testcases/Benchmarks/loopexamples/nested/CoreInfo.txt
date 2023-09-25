@@ -1,4 +1,2 @@
 0 main
 1 main
-1 my_loop
-0 my_loop
