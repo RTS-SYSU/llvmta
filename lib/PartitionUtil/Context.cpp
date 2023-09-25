@@ -63,7 +63,7 @@ void Context::update(const Directive *direc) {
         auto tokenPeel = dynamic_cast<PartitionTokenLoopPeel *>(token.get());
         // We want to peel the loop, then the updated context has peel iteration
         // 0 on top
-        if (tokenPeel->backedgeTakenCount() == 0) {
+        if (tokenPeel->backedgeTakenCount() == 0) {//   如果不是0就已经执行一次了，在环外的最多只能执行一次
           toklist.push_back(tokenPeel);
           this->context = contextStorage.insert(toklist);
           return;

@@ -42,12 +42,14 @@
 
 #include "Util/Options.h"
 #include "Util/Statistics.h"
+#include "Util/Util.h"
 
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/Support/Format.h"
 
 #include <cmath>
+#include <queue>
 #include <fstream>
 #include <limits>
 #include <list>
@@ -59,6 +61,10 @@ using namespace llvm;
 using namespace std;
 
 namespace TimingAnalysisPass {
+
+TimingAnalysisMain** MultiCorePasses = nullptr;
+
+std::map<unsigned, std::queue<std::string>> mp;
 
 unsigned getInitialStackPointer() { return InitialStackPointer; }
 
@@ -87,12 +93,61 @@ bool TimingAnalysisMain::runOnMachineFunction(MachineFunction &MF) {
   return Changed;
 }
 
-bool TimingAnalysisMain::doFinalization(Module &M) {
-  if (!machineFunctionCollector->hasFunctionByName(AnalysisEntryPoint)) {
-    outs() << "No Timing Analysis Run. There is no entry point: "
-           << AnalysisEntryPoint << "\n";
+void parseCoreInfo(const std::string& fileName) {
+  std::ifstream in(fileName);
+  if (!in.is_open()) {
+    fprintf(stderr, "Unable to open file, exit...");
     exit(1);
   }
+
+  VERBOSE_PRINT("-> Parsing from file");
+
+  unsigned num;
+  std::string functionName;
+
+  while(!in.eof()) {
+    in >> num >> functionName;
+    if (num > CoreNums || !machineFunctionCollector->hasFunctionByName(functionName)) {
+      fprintf(stderr, "Core num to large or unable to find function...");
+      exit(3);
+    }
+
+    mp[num].push(functionName);
+  }
+
+}
+
+boost::optional<std::string> TimingAnalysisMain::getNextFunction(unsigned int core) {
+
+  auto it = mp.find(core);
+
+  if (it == mp.end()) {
+    return boost::none;
+  }
+
+  if (it->second.empty())
+    return boost::none;
+
+  auto ret = it->second.front();
+  it->second.pop();
+
+  return ret; 
+
+}
+
+bool TimingAnalysisMain::doFinalization(Module &M) {
+  // do File parsing
+  
+  
+  for (unsigned i = 0; i < CoreNums; ++i) {
+    // 
+  }
+  
+  // if (!machineFunctionCollector->hasFunctionByName(AnalysisEntryPoint)) {
+  //   outs() << "No Timing Analysis Run. There is no entry point: "
+  //          << AnalysisEntryPoint << "\n";
+  //   exit(1);
+  // }
 
   ofstream Myfile;
 
@@ -119,7 +174,15 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     return false;
   }
 
-  outs() << "Timing Analysis for entry point: " << AnalysisEntryPoint << "\n";
+  outs() << "Timing Analysis for core: " << this->coreNum;
+
+  auto ret = this->getNextFunction(this->coreNum);
+  if (ret) {
+    outs() <<  " entry point: " << ret.get() << '\n';
+  }
+  else {
+    outs() << " No next analyse point for this core.\n";
+  }
 
   if (!QuietMode) {
     Myfile.open("AnnotatedHeuristics.txt", ios_base::trunc);
@@ -141,8 +204,8 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   auto Arch = getTargetMachine().getTargetTriple().getArch();
   if (Arch == Triple::ArchType::arm) {
     dispatchValueAnalysis<Triple::ArchType::arm>();
-  } else if (Arch == Triple::ArchType::riscv32) {
-    dispatchValueAnalysis<Triple::ArchType::riscv32>();
+  // } else if (Arch == Triple::ArchType::riscv32) {
+    // dispatchValueAnalysis<Triple::ArchType::riscv32>();
   } else {
     assert(0 && "Unsupported ISA for LLVMTA");
   }
@@ -161,19 +224,19 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   LoopBoundInfo->computeLoopBoundFromCVDomain(*CvAnaInfo);
 
-  if (OutputLoopAnnotationFile) {
-    ofstream Myfile2;
-    Myfile.open("CtxSensLoopAnnotations.csv", ios_base::trunc);
-    Myfile2.open("LoopAnnotations.csv", ios_base::trunc);
-    LoopBoundInfo->dumpNonUpperBoundLoops(Myfile, Myfile2);
-    Myfile2.close();
-    Myfile.close();
-    return;
-  }
+  // if (OutputLoopAnnotationFile) {
+  //   ofstream Myfile2;
+  //   Myfile.open("CtxSensLoopAnnotations.csv", ios_base::trunc);
+  //   Myfile2.open("LoopAnnotations.csv", ios_base::trunc);
+  //   LoopBoundInfo->dumpNonUpperBoundLoops(Myfile, Myfile2);
+  //   Myfile2.close();
+  //   Myfile.close();
+  //   return;
+  // }
 
-  for (auto BoundsFile : ManualLoopBounds) {
-    LoopBoundInfo->parseManualUpperLoopBounds(BoundsFile.c_str());
-  }
+  // for (auto BoundsFile : ManualLoopBounds) {
+  //   LoopBoundInfo->parseManualUpperLoopBounds(BoundsFile.c_str());
+  // }
 
   if (!QuietMode) {
     Myfile.open("LoopBounds.txt", ios_base::trunc);
@@ -277,18 +340,23 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
 
 boost::optional<BoundItv>
 TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
+  auto functionName = this->getNextFunction(this->coreNum);
+  if (!functionName) {
+    fprintf(stderr, "You should not come here");
+    exit(10);
+  }
   switch (MuArchType) {
   case MicroArchitecturalType::FIXEDLATENCY:
     assert(MemTopType == MemoryTopologyType::NONE &&
            "Fixed latency has no external memory");
-    return dispatchFixedLatencyTimingAnalysis();
+    return dispatchFixedLatencyTimingAnalysis(functionName.get());
   case MicroArchitecturalType::PRET:
-    return dispatchPretTimingAnalysis(AddressInfo);
+    return dispatchPretTimingAnalysis(AddressInfo, functionName.get());
   case MicroArchitecturalType::INORDER:
   case MicroArchitecturalType::STRICTINORDER:
-    return dispatchInOrderTimingAnalysis(AddressInfo);
+    return dispatchInOrderTimingAnalysis(AddressInfo, functionName.get());  //严格顺序执行
   case MicroArchitecturalType::OUTOFORDER:
-    return dispatchOutOfOrderTimingAnalysis(AddressInfo);
+    return dispatchOutOfOrderTimingAnalysis(AddressInfo, functionName.get());
   default:
     errs() << "No known microarchitecture chosen.\n";
     return boost::none;
@@ -311,5 +379,13 @@ TimingAnalysisMain::dispatchCacheAnalysis(AnalysisType Anatype,
 } // namespace TimingAnalysisPass
 
 FunctionPass *llvm::createTimingAnalysisMain(TargetMachine &TM) {
-  return new TimingAnalysisPass::TimingAnalysisMain(TM);
+  TimingAnalysisPass::MultiCorePasses = new TimingAnalysisPass::TimingAnalysisMain*[CoreNums];
+  for (unsigned i = 0; i < CoreNums; ++i) {
+    TimingAnalysisPass::MultiCorePasses[i] = new TimingAnalysisPass::TimingAnalysisMain(TM);
+    TimingAnalysisPass::MultiCorePasses[i]->coreNum = i;
+  }
+
+  return TimingAnalysisPass::MultiCorePasses[0];
+
+  // return new TimingAnalysisPass::TimingAnalysisMain(TM);
 }

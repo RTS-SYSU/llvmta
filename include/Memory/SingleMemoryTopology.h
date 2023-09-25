@@ -317,7 +317,7 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
   res.push_back(*this);
 
   // get next element from the queue
-  if (currentIdAccessed == 0) { // nothing is currently being accessed
+  if (currentIdAccessed == 0) { // nothing is currently being accessed 
     if (!dataQueue.empty()) {   // something is in the data queue, prioritize is
       res = accessMemory(dataQueue.front());
       for (auto &r : res) {
@@ -325,14 +325,14 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
         r.currentIdAccessesInstr = false;
       }
     } else {
-      if (!instructionQueue.empty()) {
+      if (!instructionQueue.empty()) {//miss的
         // If data misses by previous instructions are still pending, wait for
         // them first in strictly in-order case
         if (!enableStrictInorderDataInstrArbitration() ||
             !potentialDataMissesPending) {
           assert(!potentialDataMissesPending &&
                  "Here we should see a difference");
-          res = accessMemory(instructionQueue.front());
+          res = accessMemory(instructionQueue.front());  //算访问内存延迟
           for (auto &r : res) {
             r.instructionQueue.pop_front();
             r.currentIdAccessesInstr = true;
@@ -346,10 +346,11 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
   for (auto &r : res) {
     // reset the waiting for join flag
     r.waitingForJoin = false;
-
+    // std::cerr <<r.memory->;
     // cycle
-    auto cycledMems = r.memory->cycle();
+    auto cycledMems = r.memory->cycle();//--
     for (auto cM : cycledMems) {
+      std::cerr <<"timeBlocked: \n"<<*cM<<'\n';
       SingleMemoryTopology newInst(r);
       delete newInst.memory;
       newInst.memory = cM;

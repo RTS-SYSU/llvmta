@@ -7,7 +7,7 @@ FROM mcr.microsoft.com/vscode/devcontainers/base:0-${VARIANT}
 SHELL ["/bin/bash", "-c"]
 
 # [Optional] Uncomment this section to install additional OS packages.
-RUN apt-get update --fix-missing && export DEBIAN_FRONTEND=noninteractive \
+RUN sed -i 's/archive.ubuntu.com/mirrors.matrix.moe/g' /etc/apt/sources.list && sed -i 's/security.ubuntu.com/mirrors.matrix.moe/g' /etc/apt/sources.list && apt-get update --fix-missing && export DEBIAN_FRONTEND=noninteractive \
         && apt-get -y install --no-install-recommends --fix-missing \
         lldb gcc gdb cmake make ninja-build libboost-all-dev git clangd \
         htop wget fish zsh lld time parallel lp-solve liblpsolve55-dev \

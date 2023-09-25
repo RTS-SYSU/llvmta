@@ -601,6 +601,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
   // We delete scope entering
   succ.justEntered = boost::none;
 
+  std::cout<<succ;
+
   // If starting instruction accesses is feasible, do it
   for (auto &startinstrTopology : succ.startInstructionAccess()) {
     for (auto &startdataTopology : startinstrTopology.startDataAccess()) {
@@ -616,8 +618,11 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
           resultList.push_back(afterbgmemcycle);
         } else {
           // Cycle Memory Topology
-          for (auto &memAfterInstr : afterbgmemcycle.checkInstructionPart()) {
+          for (auto &memAfterInstr : afterbgmemcycle.checkInstructionPart()) {   //cache更新
             for (auto &memAfterData : memAfterInstr.checkDataPart()) {
+              fprintf(stderr, "MemAfterData: ");
+              std::cerr << memAfterData;
+              std::cerr << '\n';
               resultList.push_back(memAfterData);
             }
           }
@@ -982,7 +987,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
               acc.addr.getAsInterval().lower()));
     }
     boost::optional<unsigned> res =
-        memory.accessInstr(acc.addr.getAsInterval().lower(), Ilinesize / 4);
+        memory.accessInstr(acc.addr.getAsInterval().lower(), Ilinesize / 4);//指令取的字节数固定
     if (res) {
       ongoingAcc.bgMemAccessId = *res;
     } else {
@@ -990,6 +995,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
              "Background memory topology rejected instruction access.");
     }
   }
+
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),

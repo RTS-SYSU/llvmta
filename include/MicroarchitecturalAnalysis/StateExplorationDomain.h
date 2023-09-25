@@ -350,7 +350,7 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::
       StateExplorationDom<MicroArchState>::insertOnInstr(resultSet, copy);
     } else {
       // Else compute successor and add them to the workingset
-      for (auto &succ : copy.cycle(anaInfo)) {
+      for (auto &succ : copy.cycle(anaInfo)) {  
         if (succ.isWaitingForJoin()) {
           // if the state recommends to try
           // joining it with others in a set
@@ -358,7 +358,8 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::
           StateExplorationDom<MicroArchState>::insertOnInstr(
               intermediateResults, succ);
         } else {
-          StateExplorationDom<MicroArchState>::insertOnCycle(workingSet, succ);
+          StateExplorationDom<MicroArchState>::insertOnCycle(workingSet, succ);//将新的状态加入工作集
+          
         }
       }
     }
