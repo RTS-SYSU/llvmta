@@ -80,7 +80,7 @@ double getDataCacheMissPenaltyOutOfOrder(double maxdmisses) {
 }
 
 boost::optional<BoundItv>
-dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo, std::string entryPoint) {
+dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo, std::string entryPoint,int coreNum) {
   std::tuple<AddressInformation &> addrInfoTuple(addressInfo);
 
   configureCyclingMemories();
@@ -92,7 +92,7 @@ dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo, std::string en
            "Cannot use Persistence analyses here");
     typedef SingleMemoryTopology<makeOptionsBackgroundMem> MemTop;
     return dispatchTimingAnalysisJoin<OutOfOrderPipelineState<MemTop>>(
-        addrInfoTuple, entryPoint);
+        addrInfoTuple, entryPoint,coreNum);
   }
   case MemoryTopologyType::SEPARATECACHES: {
     typedef SingleMemoryTopology<makeOptionsBackgroundMem> BgMem;
@@ -102,7 +102,7 @@ dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo, std::string en
         MemTop;
     auto timebound =
         dispatchTimingAnalysisJoin<OutOfOrderPipelineState<MemTop>>(
-            addrInfoTuple, entryPoint);
+            addrInfoTuple, entryPoint,coreNum);
 
     boost::optional<BoundItv> result = timebound;
     AnalysisResults &ar = AnalysisResults::getInstance();
@@ -171,7 +171,7 @@ dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo, std::string en
                                      makeOptionsBackgroundMem>
         MemTop;
     return dispatchTimingAnalysisJoin<OutOfOrderPipelineState<MemTop>>(
-        addrInfoTuple, entryPoint);
+        addrInfoTuple, entryPoint,coreNum);
   }
   default:
     errs() << "No known memory topology chosen.\n";

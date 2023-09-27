@@ -30,11 +30,12 @@
 #include "Memory/SeparateCachesMemoryTopology.h"
 #include "Memory/SingleMemoryTopology.h"
 #include "MicroarchitecturalAnalysis/PretPipelineState.h"
+#include "Util/Options.h"
 
 namespace TimingAnalysisPass {
 
 boost::optional<BoundItv>
-dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string entryPoint) {
+dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string entryPoint,int coreNum) {
   std::tuple<AddressInformation &> addrInfoTuple(addressInfo);
 
   configureCyclingMemories();
@@ -45,7 +46,7 @@ dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string entryPoi
            DataCachePersType == PersistenceType::NONE &&
            "Cannot use Persistence analyses here");
     typedef SingleMemoryTopology<makeOptionsBackgroundMem> MemTop;
-    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, entryPoint);
+    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, entryPoint,coreNum);
   }
   case MemoryTopologyType::SEPARATECACHES: {
     typedef SingleMemoryTopology<makeOptionsBackgroundMem> BgMem;
@@ -53,7 +54,7 @@ dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string entryPoi
                                          CacheFactory::makeOptionsDataCache,
                                          BgMem>
         MemTop;
-    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, entryPoint);
+    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, entryPoint,coreNum);
   }
   default:
     errs() << "No known memory topology chosen.\n";

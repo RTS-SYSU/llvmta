@@ -41,6 +41,7 @@
 
 #include <iostream>
 #include <map>
+#include <string>
 
 using namespace llvm;
 
@@ -63,6 +64,8 @@ class TimingAnalysisMain : public MachineFunctionPass {
 public:
   unsigned int coreNum;
   static char ID;
+  std::string entrypoint;
+  
   TimingAnalysisMain(TargetMachine &TM);
 
   /**
@@ -139,7 +142,8 @@ private:
   // Private fiels
   static TargetMachine *TargetMachineInstance;
 
-  boost::optional<std::string> getNextFunction(unsigned int);
+  boost::optional<std::string> getNextFunction(unsigned int);//pop
+  boost::optional<std::string> getFunctionname(unsigned int );//
 };
 
 /**

@@ -54,6 +54,7 @@
 #include <limits>
 #include <list>
 #include <sstream>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -121,6 +122,23 @@ void parseCoreInfo(const std::string& fileName) {
   in.close();
 }
 
+
+boost::optional<std::string> TimingAnalysisMain::getFunctionname(unsigned int core){
+  auto it = mp.find(core);
+
+  if (it == mp.end()) {
+    return boost::none;
+  }
+
+  if (it->second.empty())
+    return boost::none;
+
+  auto ret = it->second.front();
+
+  return ret; 
+}
+
+
 boost::optional<std::string> TimingAnalysisMain::getNextFunction(unsigned int core) {
 
   auto it = mp.find(core);
@@ -144,9 +162,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   parseCoreInfo(coreInfo);
   
   
-  for (unsigned i = 0; i < CoreNums; ++i) {
-    // 
-  }
+
   
   // if (!machineFunctionCollector->hasFunctionByName(AnalysisEntryPoint)) {
   //   outs() << "No Timing Analysis Run. There is no entry point: "
@@ -179,40 +195,43 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     return false;
   }
 
-  outs() << "Timing Analysis for core: " << this->coreNum;
+  for (unsigned i = 0; i < CoreNums; ++i) {
 
-  auto ret = this->getNextFunction(this->coreNum);
-  if (ret) {
-    outs() <<  " entry point: " << ret.get() << '\n';
-  }
-  else {
+    outs() << "Timing Analysis for core: " << this->coreNum;
+    auto ret = this->getFunctionname(this->coreNum);
+
+    while(ret){
+      outs() <<  " entry point: " << ret.get() << '\n';
+      this->entrypoint=ret.get();
+      if (!QuietMode) {
+        Myfile.open("AnnotatedHeuristics.txt", ios_base::trunc);
+        DirectiveHeuristicsPassInstance->dump(Myfile);
+        Myfile.close();
+
+        Myfile.open("PersistenceScopes.txt", ios_base::trunc);
+        PersistenceScopeInfo::getInfo().dump(Myfile);
+        Myfile.close();
+
+        Myfile.open("CallGraph.txt", ios_base::trunc);
+        CallGraph::getGraph().dump(Myfile);
+        Myfile.close();
+      }
+
+      VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
+
+      // Dispatch the value analysis
+      auto Arch = getTargetMachine().getTargetTriple().getArch();
+      if (Arch == Triple::ArchType::arm) {
+        dispatchValueAnalysis<Triple::ArchType::arm>();
+      // } else if (Arch == Triple::ArchType::riscv32) {
+        // dispatchValueAnalysis<Triple::ArchType::riscv32>();
+      } else {
+        assert(0 && "Unsupported ISA for LLVMTA");
+      }
+      ret = this->getFunctionname(this->coreNum);       
+    }
     outs() << " No next analyse point for this core.\n";
-  }
-
-  if (!QuietMode) {
-    Myfile.open("AnnotatedHeuristics.txt", ios_base::trunc);
-    DirectiveHeuristicsPassInstance->dump(Myfile);
-    Myfile.close();
-
-    Myfile.open("PersistenceScopes.txt", ios_base::trunc);
-    PersistenceScopeInfo::getInfo().dump(Myfile);
-    Myfile.close();
-
-    Myfile.open("CallGraph.txt", ios_base::trunc);
-    CallGraph::getGraph().dump(Myfile);
-    Myfile.close();
-  }
-
-  VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
-
-  // Dispatch the value analysis
-  auto Arch = getTargetMachine().getTargetTriple().getArch();
-  if (Arch == Triple::ArchType::arm) {
-    dispatchValueAnalysis<Triple::ArchType::arm>();
-  // } else if (Arch == Triple::ArchType::riscv32) {
-    // dispatchValueAnalysis<Triple::ArchType::riscv32>();
-  } else {
-    assert(0 && "Unsupported ISA for LLVMTA");
+    this->coreNum++;
   }
 
   return false;
@@ -223,25 +242,25 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   ofstream Myfile;
 
   std::tuple<> NoDep;
-  AnalysisDriverInstr<ConstantValueDomain<ISA>> ConstValAna(AnalysisEntryPoint,
+  AnalysisDriverInstr<ConstantValueDomain<ISA>> ConstValAna(this->entrypoint,
                                                             NoDep);
   auto CvAnaInfo = ConstValAna.runAnalysis();
 
   LoopBoundInfo->computeLoopBoundFromCVDomain(*CvAnaInfo);
 
-  // if (OutputLoopAnnotationFile) {
-  //   ofstream Myfile2;
-  //   Myfile.open("CtxSensLoopAnnotations.csv", ios_base::trunc);
-  //   Myfile2.open("LoopAnnotations.csv", ios_base::trunc);
-  //   LoopBoundInfo->dumpNonUpperBoundLoops(Myfile, Myfile2);
-  //   Myfile2.close();
-  //   Myfile.close();
-  //   return;
-  // }
+  if (OutputLoopAnnotationFile) {
+    ofstream Myfile2;
+    Myfile.open("CtxSensLoopAnnotations.csv", ios_base::trunc);
+    Myfile2.open("LoopAnnotations.csv", ios_base::trunc);
+    LoopBoundInfo->dumpNonUpperBoundLoops(Myfile, Myfile2);
+    Myfile2.close();
+    Myfile.close();
+    return;
+  }
 
-  // for (auto BoundsFile : ManualLoopBounds) {
-  //   LoopBoundInfo->parseManualUpperLoopBounds(BoundsFile.c_str());
-  // }
+  for (auto BoundsFile : ManualLoopBounds) {
+    LoopBoundInfo->parseManualUpperLoopBounds(BoundsFile.c_str());
+  }
 
   if (!QuietMode) {
     Myfile.open("LoopBounds.txt", ios_base::trunc);
@@ -290,11 +309,11 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   Stats.stopMeasurement("Complete Analysis");
 
-  Myfile.open("Statistics.txt", ios_base::trunc);
+  Myfile.open(std::to_string(this->coreNum)+"_"+this->entrypoint+"_Statistics.txt", ios_base::trunc);
   Stats.dump(Myfile);
   Myfile.close();
 
-  Myfile.open("TotalBound.xml", ios_base::trunc);
+  Myfile.open(std::to_string(this->coreNum)+"_"+this->entrypoint+"_TotalBound.xml", ios_base::trunc);
   Ar.dump(Myfile);
   Myfile.close();
 }
@@ -307,10 +326,10 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
     auto Bound = dispatchTimingAnalysis(AddressInfo);
     Ar.registerResult("total", Bound);
     if (Bound) {
-      outs() << "Calculated Timing Bound: "
+      outs() << std::to_string(this->coreNum)<<"-Core:   "+this->entrypoint+"_Calculated Timing Bound: "
              << llvm::format("%-20.0f", Bound.get().ub) << "\n";
     } else {
-      outs() << "Calculated Timing Bound: infinite\n";
+      outs() << std::to_string(this->coreNum)<< "-Core:   "+this->entrypoint+"Calculated Timing Bound: infinite\n";
     }
   }
   if (AnaType.isSet(AnalysisType::L1ICACHE)) {
@@ -354,14 +373,14 @@ TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
   case MicroArchitecturalType::FIXEDLATENCY:
     assert(MemTopType == MemoryTopologyType::NONE &&
            "Fixed latency has no external memory");
-    return dispatchFixedLatencyTimingAnalysis(functionName.get());
+    return dispatchFixedLatencyTimingAnalysis(functionName.get(),this->coreNum);
   case MicroArchitecturalType::PRET:
-    return dispatchPretTimingAnalysis(AddressInfo, functionName.get());
+    return dispatchPretTimingAnalysis(AddressInfo, functionName.get(),this->coreNum);
   case MicroArchitecturalType::INORDER:
   case MicroArchitecturalType::STRICTINORDER:
-    return dispatchInOrderTimingAnalysis(AddressInfo, functionName.get());  //严格顺序执行
+    return dispatchInOrderTimingAnalysis(AddressInfo, functionName.get(),this->coreNum);  //严格顺序执行
   case MicroArchitecturalType::OUTOFORDER:
-    return dispatchOutOfOrderTimingAnalysis(AddressInfo, functionName.get());
+    return dispatchOutOfOrderTimingAnalysis(AddressInfo, functionName.get(),this->coreNum);
   default:
     errs() << "No known microarchitecture chosen.\n";
     return boost::none;
