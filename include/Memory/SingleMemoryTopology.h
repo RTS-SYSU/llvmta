@@ -350,7 +350,7 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
     // cycle
     auto cycledMems = r.memory->cycle();//--
     for (auto cM : cycledMems) {
-      std::cerr <<"timeBlocked: \n"<<*cM<<'\n';
+      // std::cerr <<"timeBlocked: \n"<<*cM<<'\n';
       SingleMemoryTopology newInst(r);
       delete newInst.memory;
       newInst.memory = cM;

@@ -67,10 +67,10 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entr
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
-    stats.startMeasurement("Timing MuArch Analysis");
+    // stats.startMeasurement("Timing MuArch Analysis");
     auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint,coreNum);
     // Res deleted at the end of state graph construction
-    stats.stopMeasurement("Timing MuArch Analysis");
+    // stats.stopMeasurement("Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
 
     assert(AnaType.isSet(AnalysisType::CRPD) ||
@@ -80,9 +80,9 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entr
       dispatchCRPDPathAnalysis<MuArchDomain>(*res, TplSpecial());
     }
     if (AnaType.isSet(AnalysisType::TIMING)) {
-      stats.startMeasurement("Timing Stategraph Generation");
+      // stats.startMeasurement("Timing Stategraph Generation");
       bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
-      stats.stopMeasurement("Timing Path Analysis");
+      // stats.stopMeasurement("Timing Path Analysis");
     }
     return bound;
   } // else

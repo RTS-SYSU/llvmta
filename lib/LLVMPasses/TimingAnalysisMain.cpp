@@ -195,6 +195,24 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     return false;
   }
 
+  if (!QuietMode) {
+    Myfile.open("AnnotatedHeuristics.txt", ios_base::trunc);
+    DirectiveHeuristicsPassInstance->dump(Myfile);
+    Myfile.close();
+
+    Myfile.open("PersistenceScopes.txt", ios_base::trunc);
+    PersistenceScopeInfo::getInfo().dump(Myfile);
+    Myfile.close();
+
+    Myfile.open("CallGraph.txt", ios_base::trunc);
+    CallGraph::getGraph().dump(Myfile);
+    Myfile.close();
+  }
+
+  VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
+
+
+
   for (unsigned i = 0; i < CoreNums; ++i) {
 
     outs() << "Timing Analysis for core: " << this->coreNum;
@@ -203,21 +221,6 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     while(ret){
       outs() <<  " entry point: " << ret.get() << '\n';
       this->entrypoint=ret.get();
-      if (!QuietMode) {
-        Myfile.open("AnnotatedHeuristics.txt", ios_base::trunc);
-        DirectiveHeuristicsPassInstance->dump(Myfile);
-        Myfile.close();
-
-        Myfile.open("PersistenceScopes.txt", ios_base::trunc);
-        PersistenceScopeInfo::getInfo().dump(Myfile);
-        Myfile.close();
-
-        Myfile.open("CallGraph.txt", ios_base::trunc);
-        CallGraph::getGraph().dump(Myfile);
-        Myfile.close();
-      }
-
-      VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
 
       // Dispatch the value analysis
       auto Arch = getTargetMachine().getTargetTriple().getArch();
@@ -301,13 +304,13 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   // No need for constant value information
   delete CvAnaInfo;
   // Release the call graph instance
-  CallGraph::getGraph().releaseInstance();
+  // CallGraph::getGraph().releaseInstance();
 
   // Write results and statistics
   Statistics &Stats = Statistics::getInstance();
   AnalysisResults &Ar = AnalysisResults::getInstance();
 
-  Stats.stopMeasurement("Complete Analysis");
+  // Stats.stopMeasurement("Complete Analysis");
 
   Myfile.open(std::to_string(this->coreNum)+"_"+this->entrypoint+"_Statistics.txt", ios_base::trunc);
   Stats.dump(Myfile);

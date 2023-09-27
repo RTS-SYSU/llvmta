@@ -377,12 +377,12 @@ void AnalysisDriverInstr<AnalysisDom>::analyseInstruction(
                       << " in context " << ctx << "\n"
                       << newOut.print() << "\n");
     
-  fprintf(stderr, "Current Instr is :");
-  currentInstr->dump();
-  fprintf(stderr, "\n, Current Context: ");
-  std::cerr << ctx;
-  fprintf(stderr, "\n, current newOut is: ");
-  std::cerr <<newOut.print();
+  // fprintf(stderr, "Current Instr is :");
+  // currentInstr->dump();
+  // fprintf(stderr, "\n, Current Context: ");
+  // std::cerr << ctx;
+  // fprintf(stderr, "\n, current newOut is: ");
+  // std::cerr <<newOut.print();
 
   // Directives before the instruction
   if (DirectiveHeuristicsPassInstance->hasDirectiveBeforeInstr(currentInstr)) {
@@ -901,7 +901,7 @@ public:
     AnalysisDriverInstr<CollectingContextsDomain> collectCtxsAna(
         AnalysisEntryPoint, noDep);
     auto *ccAnaInfo = collectCtxsAna.runAnalysis();
-    ccAnaInfo->dump(std::cout);
+    // ccAnaInfo->dump(std::cout);
     //  Get handle for the instr-context-mapping stored inside the analysis
     //  dependencies
     InstrContextMapping &callsite2contexts = std::get<0>(this->analysisResults);

@@ -10,3 +10,13 @@ int main() {
 		}
 	return sum;
 }
+
+int myloop(){
+	int i = 0;
+	int sum = 0;
+	_Pragma( "loopbound min 10 max 10" )
+	for (; i < 10; ++i){
+		sum+=i;
+	}
+	return sum;
+}
