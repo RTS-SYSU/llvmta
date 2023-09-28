@@ -246,6 +246,10 @@ AnalysisDriverInstr<AnalysisDom>::runAnalysis() {
                                   << " of function "
                                   << currentBB->getParent()->getName().str()
                                   << " in context " << currentCtx << "\n");
+    // std::cerr<< "Work on BB" << currentBB->getNumber()
+    //                               << " of function "
+    //                               << currentBB->getParent()->getName().str()
+    //                               << " in context " << currentCtx << "\n";
 
     // Compute new incoming information
     // For function entry blocks, we have information available in func2anainfo
@@ -268,7 +272,10 @@ AnalysisDriverInstr<AnalysisDom>::runAnalysis() {
       // context
       mbb2anainfo->at(currentBB).addContext(currentCtx, newIn);
     }
-
+    // std::cerr<< "Work on BB" << currentBB->getNumber()
+    //                               << " of function "
+    //                               << currentBB->getParent()->getName().str()
+    //                               << " in context " << currentCtx << "\n";
     // Analyse current basic block by calling transfer functions per instruction
     analyseMachineBasicBlock(currentBB, currentCtx);
   }
@@ -899,7 +906,7 @@ public:
   {
     std::tuple<> noDep;   //&给analysisResults
     AnalysisDriverInstr<CollectingContextsDomain> collectCtxsAna(
-        AnalysisEntryPoint, noDep);
+        entrypoint, noDep);
     auto *ccAnaInfo = collectCtxsAna.runAnalysis();
     // ccAnaInfo->dump(std::cout);
     //  Get handle for the instr-context-mapping stored inside the analysis
