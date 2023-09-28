@@ -529,12 +529,12 @@ void LoopBoundInfoPass::computeLoopBoundFromCVDomain(
       "loopbound",
       dbgs() << "+++ Computing Loop Bounds from CV Domain Now +++\n");
   AnalysisResults &Ar = AnalysisResults::getInstance();
-  Ar.registerResult("SCEV_constant", 0);
-  Ar.registerResult("SCEV_argument_high", 0);
-  Ar.registerResult("SCEV_arg_cv", 0);
-  Ar.registerResult("SCEV_overflow", 0);
-  Ar.registerResult("SCEV_unknown", 0);
-  Ar.registerResult("SCEV_NotImplemented", 0);
+  // Ar.registerResult("SCEV_constant", 0);
+  // Ar.registerResult("SCEV_argument_high", 0);
+  // Ar.registerResult("SCEV_arg_cv", 0);
+  // Ar.registerResult("SCEV_overflow", 0);
+  // Ar.registerResult("SCEV_unknown", 0);
+  // Ar.registerResult("SCEV_NotImplemented", 0);
   computeLoopBounds(UpperLoopBoundsSCEV, UpperLoopBoundsCtx, CvAnaInfo);
   computeLoopBounds(LowerLoopBoundsSCEV, LowerLoopBoundsCtx, CvAnaInfo);
 }

@@ -601,7 +601,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
   // We delete scope entering
   succ.justEntered = boost::none;
 
-  std::cout<<succ;
+  // std::cout<<succ;
 
   // If starting instruction accesses is feasible, do it
   for (auto &startinstrTopology : succ.startInstructionAccess()) {
@@ -620,9 +620,9 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
           // Cycle Memory Topology
           for (auto &memAfterInstr : afterbgmemcycle.checkInstructionPart()) {   //cache更新
             for (auto &memAfterData : memAfterInstr.checkDataPart()) {
-              fprintf(stderr, "MemAfterData: ");
-              std::cerr << memAfterData;
-              std::cerr << '\n';
+              // fprintf(stderr, "MemAfterData: ");
+              // std::cerr << memAfterData;
+              // std::cerr << '\n';
               resultList.push_back(memAfterData);
             }
           }

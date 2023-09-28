@@ -552,9 +552,9 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   sg->deleteMuArchInfo();
 
   // Trigger the next measurement phase
-  Statistics &stats = Statistics::getInstance();
-  stats.stopMeasurement("Timing Stategraph Generation");
-  stats.startMeasurement("Timing Path Analysis");
+  // Statistics &stats = Statistics::getInstance();
+  // stats.stopMeasurement("Timing Stategraph Generation");
+  // stats.startMeasurement("Timing Path Analysis");
 
   // Dump Interference response curves
   if (DumpInterferenceResponseCurve.getBits()) {

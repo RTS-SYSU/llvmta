@@ -33,13 +33,14 @@
 #include "MicroarchitecturalAnalysis/StateExplorationDomain.h"
 
 #include <fstream>
+#include <string>
 
 namespace TimingAnalysisPass {
 
 template <class MuArchDomain, class Deps>
 AnalysisInformation<PartitioningDomain<MuArchDomain, MachineInstr>,
                     MachineInstr> *
-doMuArchTimingAnalysis(Deps deps, std::string entryPoint) {
+doMuArchTimingAnalysis(Deps deps, std::string entryPoint,int coreNum=0) {
   VERBOSE_PRINT(" -> Starting Microarchitectural Analysis:\n"
                 << typeid(MuArchDomain).name() << "\n");
 
@@ -49,26 +50,27 @@ doMuArchTimingAnalysis(Deps deps, std::string entryPoint) {
 
   if (!QuietMode) {
     std::ofstream myfile;
-    myfile.open("MicroArchAnalysis.txt", std::ios_base::trunc);
+    std::string fileName=std::to_string(coreNum)+"_core_MicroArchAnalysis.txt";
+    myfile.open(fileName, std::ios_base::trunc);
     microArchAnaInfo->dump(myfile);
     myfile.close();
   }
 
-  VERBOSE_PRINT(" -> Finished Microarchitectural Analysis\n");
+  VERBOSE_PRINT(" -> Finished"+std::to_string(coreNum)+"_core_"+"----->entrypoint_" +entryPoint+"Microarchitectural Analysis\n");
 
   return microArchAnaInfo;
 }
 
 template <class MuState, class Deps>
-boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entryPoint) {
+boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entryPoint, int coreNum) {
   if (MuJoinEnabled) {
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
-    stats.startMeasurement("Timing MuArch Analysis");
-    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint);
+    // stats.startMeasurement("Timing MuArch Analysis");
+    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint,coreNum);
     // Res deleted at the end of state graph construction
-    stats.stopMeasurement("Timing MuArch Analysis");
+    // stats.stopMeasurement("Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
 
     assert(AnaType.isSet(AnalysisType::CRPD) ||
@@ -78,14 +80,14 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entr
       dispatchCRPDPathAnalysis<MuArchDomain>(*res, TplSpecial());
     }
     if (AnaType.isSet(AnalysisType::TIMING)) {
-      stats.startMeasurement("Timing Stategraph Generation");
+      // stats.startMeasurement("Timing Stategraph Generation");
       bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
-      stats.stopMeasurement("Timing Path Analysis");
+      // stats.stopMeasurement("Timing Path Analysis");
     }
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;
-  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint);
+  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint,coreNum);
   auto bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
   // Res deleted at the end of state graph construction
   return bound;
