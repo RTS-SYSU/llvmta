@@ -221,7 +221,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     while(ret){
       outs() <<  " entry point: " << ret.get() << '\n';
       this->entrypoint=ret.get();
-
+      AnalysisEntryPoint=ret.get();
       // Dispatch the value analysis
       auto Arch = getTargetMachine().getTargetTriple().getArch();
       if (Arch == Triple::ArchType::arm) {

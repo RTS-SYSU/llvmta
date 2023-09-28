@@ -1,2 +1,2 @@
-0 main
-1 myloop
+0 myloop
+1 main

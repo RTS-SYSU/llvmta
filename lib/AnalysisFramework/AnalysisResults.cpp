@@ -60,15 +60,15 @@ void AnalysisResults::registerResult(std::string identifier,
 
 void AnalysisResults::registerResult(std::string identifier,
                                      boost::optional<BoundItv> result) {
-  if (hasResult(identifier)) {
-    std::cerr << "[WARNING] Registering the result " << identifier
-              << " more than once\n";
-    if (itvresults.count(identifier) > 0 && result == itvresults[identifier]) {
-      return;
-    }
-    std::cerr << "Values disagreed, Aborting...\n";
-    abort();
-  }
+  // if (hasResult(identifier)) {
+  //   std::cerr << "[WARNING] Registering the result " << identifier
+  //             << " more than once\n";
+  //   if (itvresults.count(identifier) > 0 && result == itvresults[identifier]) {
+  //     return;
+  //   }
+  //   std::cerr << "Values disagreed, Aborting...\n";
+  //   abort();
+  // }
   itvresults[identifier] = result;
 }
 
