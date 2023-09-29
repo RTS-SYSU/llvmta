@@ -49,10 +49,10 @@
 #include "llvm/Support/Format.h"
 
 #include <cmath>
-#include <queue>
 #include <fstream>
 #include <limits>
 #include <list>
+#include <queue>
 #include <sstream>
 #include <string>
 #include <type_traits>
@@ -63,9 +63,11 @@ using namespace std;
 
 namespace TimingAnalysisPass {
 
-TimingAnalysisMain** MultiCorePasses = nullptr;
+TimingAnalysisMain **MultiCorePasses = nullptr;
 
-std::map<unsigned, std::queue<std::string>> mp;
+typedef std::map<unsigned, std::queue<std::string>> CoreInfoMapping;
+
+CoreInfoMapping mp;
 
 unsigned getInitialStackPointer() { return InitialStackPointer; }
 
@@ -94,25 +96,27 @@ bool TimingAnalysisMain::runOnMachineFunction(MachineFunction &MF) {
   return Changed;
 }
 
-void parseCoreInfo(const std::string& fileName) {
+void parseCoreInfo(const std::string &fileName) {
   std::ifstream in(fileName, std::ios::in);
   if (!in.is_open()) {
     fprintf(stderr, "Unable to open file, exit...\n");
     exit(1);
   }
 
-  VERBOSE_PRINT("-> Parsing from file\n");
+  VERBOSE_PRINT(" -> Parsing from file: " << fileName << "\n");
 
   unsigned num;
   std::string functionName;
 
-  while(!in.eof()) {
+  while (!in.eof()) {
     in >> num >> functionName;
-    if (num >= CoreNums || !machineFunctionCollector->hasFunctionByName(functionName)) {
+    if (num >= CoreNums ||
+        !machineFunctionCollector->hasFunctionByName(functionName)) {
       if (num >= CoreNums)
-        fprintf(stderr, "Core num(%u) to large, we only got: %u\n", num, CoreNums.getValue());
+        fprintf(stderr, "Core num(%u) is out of range, we only got: %u\n", num,
+                CoreNums.getValue());
       else
-       fprintf(stderr, "Unable to find function %s\n", functionName.c_str());
+        fprintf(stderr, "Unable to find function %s\n", functionName.c_str());
       exit(3);
     }
 
@@ -122,8 +126,24 @@ void parseCoreInfo(const std::string& fileName) {
   in.close();
 }
 
+// boost::optional<std::string>
+// TimingAnalysisMain::getFunctionname(unsigned int core) {
+//   auto it = mp.find(core);
 
-boost::optional<std::string> TimingAnalysisMain::getFunctionname(unsigned int core){
+//   if (it == mp.end()) {
+//     return boost::none;
+//   }
+
+//   if (it->second.empty())
+//     return boost::none;
+
+//   auto ret = it->second.front();
+
+//   return ret;
+// }
+
+boost::optional<std::string>
+TimingAnalysisMain::getNextFunction(unsigned int core) {
   auto it = mp.find(core);
 
   if (it == mp.end()) {
@@ -133,37 +153,16 @@ boost::optional<std::string> TimingAnalysisMain::getFunctionname(unsigned int co
   if (it->second.empty())
     return boost::none;
 
-  auto ret = it->second.front();
-
-  return ret; 
-}
-
-
-boost::optional<std::string> TimingAnalysisMain::getNextFunction(unsigned int core) {
-
-  auto it = mp.find(core);
-
-  if (it == mp.end()) {
-    return boost::none;
-  }
-
-  if (it->second.empty())
-    return boost::none;
-
-  auto ret = it->second.front();
+  auto functionName = it->second.front();
   it->second.pop();
 
-  return ret; 
-
+  return functionName;
 }
 
 bool TimingAnalysisMain::doFinalization(Module &M) {
   // do File parsing
   parseCoreInfo(coreInfo);
-  
-  
 
-  
   // if (!machineFunctionCollector->hasFunctionByName(AnalysisEntryPoint)) {
   //   outs() << "No Timing Analysis Run. There is no entry point: "
   //          << AnalysisEntryPoint << "\n";
@@ -211,27 +210,24 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
 
   VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
 
-
-
   for (unsigned i = 0; i < CoreNums; ++i) {
-
     outs() << "Timing Analysis for core: " << this->coreNum;
-    auto ret = this->getFunctionname(this->coreNum);
+    auto functionName = this->getNextFunction(this->coreNum);
 
-    while(ret){
-      outs() <<  " entry point: " << ret.get() << '\n';
-      this->entrypoint=ret.get();
-      AnalysisEntryPoint=ret.get();
+    while (functionName) {
+      outs() << " entry point: " << functionName.get() << '\n';
+      this->entrypoint = functionName.get();
+      AnalysisEntryPoint = functionName.get();
       // Dispatch the value analysis
       auto Arch = getTargetMachine().getTargetTriple().getArch();
       if (Arch == Triple::ArchType::arm) {
         dispatchValueAnalysis<Triple::ArchType::arm>();
-      // } else if (Arch == Triple::ArchType::riscv32) {
+      } else if (Arch == Triple::ArchType::riscv32) {
         // dispatchValueAnalysis<Triple::ArchType::riscv32>();
       } else {
         assert(0 && "Unsupported ISA for LLVMTA");
       }
-      ret = this->getFunctionname(this->coreNum);       
+      functionName = this->getNextFunction(this->coreNum);
     }
     outs() << " No next analyse point for this core.\n";
     this->coreNum++;
@@ -299,7 +295,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.checkParams();
 
   // Select the analysis to execute
-  dispatchAnalysisType(AddrInfo);
+  dispatchAnalysisType(AddrInfo, this->entrypoint);
 
   // No need for constant value information
   delete CvAnaInfo;
@@ -312,27 +308,35 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   // Stats.stopMeasurement("Complete Analysis");
 
-  Myfile.open(std::to_string(this->coreNum)+"_"+this->entrypoint+"_Statistics.txt", ios_base::trunc);
+  Myfile.open(std::to_string(this->coreNum) + "_" + this->entrypoint +
+                  "_Statistics.txt",
+              ios_base::trunc);
   Stats.dump(Myfile);
   Myfile.close();
 
-  Myfile.open(std::to_string(this->coreNum)+"_"+this->entrypoint+"_TotalBound.xml", ios_base::trunc);
+  Myfile.open(std::to_string(this->coreNum) + "_" + this->entrypoint +
+                  "_TotalBound.xml",
+              ios_base::trunc);
   Ar.dump(Myfile);
   Myfile.close();
 }
 
-void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
+void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo,
+                                              std::string functionName) {
   AnalysisResults &Ar = AnalysisResults::getInstance();
   // Timing & CRPD calculation need normal muarch analysis first
   if (AnaType.isSet(AnalysisType::TIMING) ||
       AnaType.isSet(AnalysisType::CRPD)) {
-    auto Bound = dispatchTimingAnalysis(AddressInfo);
+    auto Bound = dispatchTimingAnalysis(AddressInfo, functionName);
     Ar.registerResult("total", Bound);
     if (Bound) {
-      outs() << std::to_string(this->coreNum)<<"-Core:   "+this->entrypoint+"_Calculated Timing Bound: "
+      outs() << std::to_string(this->coreNum)
+             << "-Core:   " + this->entrypoint + "_Calculated Timing Bound: "
              << llvm::format("%-20.0f", Bound.get().ub) << "\n";
     } else {
-      outs() << std::to_string(this->coreNum)<< "-Core:   "+this->entrypoint+"Calculated Timing Bound: infinite\n";
+      outs() << std::to_string(this->coreNum)
+             << "-Core:   " + this->entrypoint +
+                    "Calculated Timing Bound: infinite\n";
     }
   }
   if (AnaType.isSet(AnalysisType::L1ICACHE)) {
@@ -366,24 +370,27 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
 ///////////////////////////////////////////////////////////////////////////////
 
 boost::optional<BoundItv>
-TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
-  auto functionName = this->getNextFunction(this->coreNum);
-  if (!functionName) {
-    fprintf(stderr, "You should not come here");
-    exit(10);
-  }
+TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo,
+                                           std::string functionName) {
+  // Note, we no longer need this, this functionName will get check before enter
+  // if (!functionName) {
+  //   fprintf(stderr, "You should not come here");
+  //   exit(10);
+  // }
   switch (MuArchType) {
   case MicroArchitecturalType::FIXEDLATENCY:
     assert(MemTopType == MemoryTopologyType::NONE &&
            "Fixed latency has no external memory");
-    return dispatchFixedLatencyTimingAnalysis(functionName.get(),this->coreNum);
+    return dispatchFixedLatencyTimingAnalysis(functionName, this->coreNum);
   case MicroArchitecturalType::PRET:
-    return dispatchPretTimingAnalysis(AddressInfo, functionName.get(),this->coreNum);
+    return dispatchPretTimingAnalysis(AddressInfo, functionName, this->coreNum);
   case MicroArchitecturalType::INORDER:
   case MicroArchitecturalType::STRICTINORDER:
-    return dispatchInOrderTimingAnalysis(AddressInfo, functionName.get(),this->coreNum);  //严格顺序执行
+    return dispatchInOrderTimingAnalysis(AddressInfo, functionName,
+                                         this->coreNum); //严格顺序执行
   case MicroArchitecturalType::OUTOFORDER:
-    return dispatchOutOfOrderTimingAnalysis(AddressInfo, functionName.get(),this->coreNum);
+    return dispatchOutOfOrderTimingAnalysis(AddressInfo, functionName,
+                                            this->coreNum);
   default:
     errs() << "No known microarchitecture chosen.\n";
     return boost::none;
@@ -406,13 +413,15 @@ TimingAnalysisMain::dispatchCacheAnalysis(AnalysisType Anatype,
 } // namespace TimingAnalysisPass
 
 FunctionPass *llvm::createTimingAnalysisMain(TargetMachine &TM) {
-  TimingAnalysisPass::MultiCorePasses = new TimingAnalysisPass::TimingAnalysisMain*[CoreNums];
-  for (unsigned i = 0; i < CoreNums; ++i) {
-    TimingAnalysisPass::MultiCorePasses[i] = new TimingAnalysisPass::TimingAnalysisMain(TM);
-    TimingAnalysisPass::MultiCorePasses[i]->coreNum = i;
-  }
+  // TimingAnalysisPass::MultiCorePasses = new
+  // TimingAnalysisPass::TimingAnalysisMain*[CoreNums]; for (unsigned i = 0; i <
+  // CoreNums; ++i) {
+  //   TimingAnalysisPass::MultiCorePasses[i] = new
+  //   TimingAnalysisPass::TimingAnalysisMain(TM);
+  //   TimingAnalysisPass::MultiCorePasses[i]->coreNum = i;
+  // }
 
-  return TimingAnalysisPass::MultiCorePasses[0];
+  // return TimingAnalysisPass::MultiCorePasses[0];
 
-  // return new TimingAnalysisPass::TimingAnalysisMain(TM);
+  return new TimingAnalysisPass::TimingAnalysisMain(TM);
 }

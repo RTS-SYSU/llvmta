@@ -62,16 +62,16 @@ class AddressInformation;
 class TimingAnalysisMain : public MachineFunctionPass {
 
 public:
-  unsigned int coreNum;
+  unsigned int coreNum = 0;
   static char ID;
   std::string entrypoint;
-  
+
   TimingAnalysisMain(TargetMachine &TM);
 
   /**
    * This is a dummy function.
    */
-  bool runOnMachineFunction(MachineFunction &F);
+  bool runOnMachineFunction(MachineFunction &F) override;
 
   /**
    * @brief
@@ -83,9 +83,9 @@ public:
    * @return true
    * @return false
    */
-  virtual bool doFinalization(Module &M);
+  virtual bool doFinalization(Module &M) override;
 
-  virtual llvm::StringRef getPassName() const {
+  virtual llvm::StringRef getPassName() const override {
     return "TA: Main phase of Timing Analysis, e.g. Value and "
            "Microarchitectural Analyses";
   }
@@ -113,7 +113,7 @@ private:
    *
    * @param AddressInfo
    */
-  void dispatchAnalysisType(AddressInformation &AddressInfo);
+  void dispatchAnalysisType(AddressInformation &AddressInfo, std::string);
 
   ///////////////////////////
   // Timing/Cache Analysis //
@@ -127,7 +127,7 @@ private:
    * @return boost::optional<BoundItv>
    */
   boost::optional<BoundItv>
-  dispatchTimingAnalysis(AddressInformation &AddressInfo);
+  dispatchTimingAnalysis(AddressInformation &AddressInfo, std::string);
 
   /**
    * @brief Dispatch the individual Cache Analysis with different memory
@@ -142,8 +142,10 @@ private:
   // Private fiels
   static TargetMachine *TargetMachineInstance;
 
-  boost::optional<std::string> getNextFunction(unsigned int);//pop
-  boost::optional<std::string> getFunctionname(unsigned int );//
+  boost::optional<std::string> getNextFunction(unsigned int); // pop
+
+  // We no longer need this function
+  // boost::optional<std::string> getFunctionname(unsigned int); //
 };
 
 /**

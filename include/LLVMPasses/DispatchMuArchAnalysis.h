@@ -40,9 +40,9 @@ namespace TimingAnalysisPass {
 template <class MuArchDomain, class Deps>
 AnalysisInformation<PartitioningDomain<MuArchDomain, MachineInstr>,
                     MachineInstr> *
-doMuArchTimingAnalysis(Deps deps, std::string entryPoint,int coreNum=0) {
+doMuArchTimingAnalysis(Deps deps, std::string entryPoint, unsigned coreNum = 0) {
   VERBOSE_PRINT(" -> Starting Microarchitectural Analysis:\n"
-                << typeid(MuArchDomain).name() << "\n");
+                << typeid(MuArchDomain).name() << " on function " << entryPoint << "\n");
 
   AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(
       entryPoint, deps);
@@ -56,19 +56,19 @@ doMuArchTimingAnalysis(Deps deps, std::string entryPoint,int coreNum=0) {
     myfile.close();
   }
 
-  VERBOSE_PRINT(" -> Finished"+std::to_string(coreNum)+"_core_"+"----->entrypoint_" +entryPoint+"Microarchitectural Analysis\n");
+  VERBOSE_PRINT(" -> Finished _core_" + std::to_string(coreNum) + " entrypoint_" + entryPoint + "Microarchitectural Analysis\n");
 
   return microArchAnaInfo;
 }
 
 template <class MuState, class Deps>
-boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entryPoint, int coreNum) {
+boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entryPoint, unsigned coreNum) {
   if (MuJoinEnabled) {
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
     // stats.startMeasurement("Timing MuArch Analysis");
-    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint,coreNum);
+    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint, coreNum);
     // Res deleted at the end of state graph construction
     // stats.stopMeasurement("Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
