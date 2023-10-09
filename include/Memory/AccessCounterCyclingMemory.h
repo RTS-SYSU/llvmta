@@ -125,7 +125,8 @@ public:
    * Implement how to announce a new access to the memory.
    */
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords) const;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
+                 bool isL2 = false) const;
 
 protected:
   /**
@@ -213,14 +214,15 @@ std::list<AbstractCyclingMemory *>
 AccessCounterCyclingMemory<Memory, LowerBoundNeeded, UpperBoundNeeded,
                            AllowJoin>::announceAccess(AbstractAddress addr,
                                                       AccessType t,
-                                                      unsigned numWords) const {
+                                                      unsigned numWords,
+                                                      bool isL2) const {
   assert(!this->isBusy() && "Don't announce an access to a busy memory!");
 
   // increase the access counter
   auto copy = this->clone();
   ++copy->accessCounter;
 
-  auto res = copy->Base::announceAccess(addr, t, numWords);
+  auto res = copy->Base::announceAccess(addr, t, numWords, isL2);
   delete copy;
   return res;
 }

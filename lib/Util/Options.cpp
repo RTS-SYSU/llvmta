@@ -45,9 +45,13 @@ cl::OptionCategory
     CoRunnerSensitiveCat("6. Multi-Core Corunner-sensitive Analysis");
 cl::OptionCategory MultiCoreCat("7. TODO");
 
-cl::opt<std::string> coreInfo("core-info", cl::init("CoreInfo.txt"), cl::desc("Used to descripe which core runs which function"), cl::cat(MultiCoreCat));
+cl::opt<std::string>
+    coreInfo("core-info", cl::init("CoreInfo.txt"),
+             cl::desc("Used to descripe which core runs which function"),
+             cl::cat(MultiCoreCat));
 
-cl::opt<unsigned> CoreNums("core-numbers", cl::init(1), cl::desc("TODO"), cl::cat(MultiCoreCat));
+cl::opt<unsigned> CoreNums("core-numbers", cl::init(1), cl::desc("TODO"),
+                           cl::cat(MultiCoreCat));
 
 cl::opt<bool>
     QuietMode("ta-quiet", cl::init(false),
@@ -158,7 +162,7 @@ cl::bits<LocalWorstCaseType> StallOnLocalWorstType(
     cl::values(
         //			clEnumValN(LocalWorstCaseType::ICMISS, "icmiss",
         //"Instruction cache miss"),
-        //clEnumValN(LocalWorstCaseType::DCMISS, "dcmiss", "Data cache miss"),
+        // clEnumValN(LocalWorstCaseType::DCMISS, "dcmiss", "Data cache miss"),
         //			clEnumValN(LocalWorstCaseType::WRITEBACK,
         //"writeback", "Writeback upon eviction of dirty line"),
         clEnumValN(LocalWorstCaseType::DRAMREFRESH, "dramrefresh",
@@ -220,6 +224,11 @@ cl::opt<unsigned> Insets(
     cl::desc(
         "The number of cache sets of the instruction cache. The default is 32"),
     cl::cat(CacheConfigCat));
+
+cl::opt<unsigned>
+    NN_SET("ta-l2cache-nsets", cl::init(128),
+           cl::desc("The number of cache sets of L2 cache. The default is 128"),
+           cl::cat(MultiCoreCat));
 
 cl::opt<CacheReplPolicyType> DataCacheReplPolType(
     "ta-dcache-replpol",
@@ -300,8 +309,15 @@ cl::opt<BgMemType> BackgroundMemoryType(
 cl::opt<unsigned>
     Latency("ta-mem-latency", cl::init(9),
             cl::desc("The latency of the background memory. (default '9', i.e. "
-                     "transferring a single word takes 10 cycles)"),
+                     "transferring a single word takes 14 cycles)"),
             cl::cat(HardwareDescrCat));
+
+cl::opt<unsigned>
+    L2Latency("ta-L2-latency", cl::init(4),
+              cl::desc("The latency of the L2 cache. (default '4', i.e. "
+                       "transferring a single word takes 5 cycles)"),
+              cl::cat(HardwareDescrCat));
+
 cl::opt<unsigned>
     PerWordLatency("ta-mem-per-word-latency", cl::init(1),
                    cl::desc("The additional latency of the background memory "

@@ -76,6 +76,9 @@ public:
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
                        const Classification assumption = CL_UNKNOWN);
+  UpdateReport *l2update(const AbstractAddress addr, AccessType load_store,
+                       AnaDeps *, bool wantReport = false,
+                       const Classification assumption = CL_UNKNOWN);
   UpdateReport *potentialUpdate(AbstractAddress addr, AccessType load_store,
                                 bool wantReport);
   void join(const Self &y);

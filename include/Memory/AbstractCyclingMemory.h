@@ -98,8 +98,8 @@ public:
   virtual void print(std::ostream &stream) const = 0;
 
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t,
-                 unsigned numWords) const = 0;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
+                 bool isL2 = false) const = 0;
 
   virtual std::list<AbstractCyclingMemory *> fastForward() const = 0;
 };

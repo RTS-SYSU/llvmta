@@ -35,8 +35,8 @@ namespace cache {
 
 class Classification;
 
-extern const char *ClassificationNames[4];
-extern const Classification CL_BOT, CL_HIT, CL_MISS, CL_UNKNOWN;
+extern const char *ClassificationNames[7];
+extern const Classification CL_BOT, CL_HIT, CL_MISS, CL_UNKNOWN, CL2_HIT, CL2_MISS, CL2_UNKNOWN;
 
 /**
  * \brief Implements the lattice {\c hit, \c miss, \c unknown, \c bottom }.

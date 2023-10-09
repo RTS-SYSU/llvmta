@@ -73,7 +73,10 @@ public:
   update(const AbstractAddress &addr, AccessType load_store,
          bool wantReport = false,
          const Classification assumption = dom::cache::CL_UNKNOWN) = 0;
-
+  virtual UpdateReport *
+  l2update(const AbstractAddress &addr, AccessType load_store,
+           bool wantReport = false,
+           const Classification assumption = dom::cache::CL_UNKNOWN){return nullptr;};
   virtual void join(const AbstractCache &y) = 0;
   virtual bool lessequal(const AbstractCache &y) const = 0;
   virtual void enterScope(const PersistenceScope &scope) = 0;
@@ -86,6 +89,10 @@ public:
   virtual Address alignToCacheline(const Address addr) const = 0;
   virtual unsigned getHitLatency() const = 0;
   virtual WritePolicy getWritePolicy() const = 0;
+
+  virtual Classification classifyL2(const AbstractAddress &addr) const {
+    return CL2_UNKNOWN;
+  }
 };
 
 /**
@@ -131,9 +138,11 @@ public:
 private:
   SharedStorage cacheSetStorage;
   std::vector<SharedPtr> cacheSets;
+  std::vector<SharedPtr> L2cacheSets;
 
 protected:
   std::pair<unsigned, unsigned> getTagAndIndex(AddressType addr) const;
+  std::pair<unsigned, unsigned> l2getTagAndIndex(AddressType addr) const;
 
 public:
   virtual ~AbstractCacheImpl() {}
@@ -141,16 +150,24 @@ public:
   AbstractCacheImpl(bool assumeAnEmptyCache = false);
   virtual AbstractCacheImpl *clone() const;
   virtual Classification classify(const AbstractAddress &itv) const;
+  virtual Classification classifyL2(const AbstractAddress &itv) const;
 
   virtual UpdateReport *
   update(const AbstractAddress &addr, AccessType load_store,
          bool wantReport = false,
          const Classification assumption = dom::cache::CL_UNKNOWN);
   virtual UpdateReport *
+  l2update(const AbstractAddress &addr, AccessType load_store,
+           bool wantReport = false,
+           const Classification assumption = dom::cache::CL_UNKNOWN);
+  virtual UpdateReport *
   update(const AbstractAddress &addr, AccessType load_store, SetWiseAnaDeps *AD,
          bool wantReport = false,
          const Classification assumption = dom::cache::CL_UNKNOWN);
-
+  virtual UpdateReport *
+  l2update(const AbstractAddress &addr, AccessType load_store,
+           SetWiseAnaDeps *AD, bool wantReport = false,
+           const Classification assumption = dom::cache::CL_UNKNOWN);
   virtual void join(const AbstractCache &y);
   virtual bool lessequal(const AbstractCache &y) const;
   virtual void enterScope(const PersistenceScope &scope);
@@ -212,6 +229,12 @@ AbstractCacheImpl<T, C>::getTagAndIndex(AddressType addr) const {
   return std::make_pair(blockNumber / T->N_SETS, blockNumber % T->N_SETS);
 }
 
+template <CacheTraits *T, class C>
+inline std::pair<unsigned, unsigned>
+AbstractCacheImpl<T, C>::l2getTagAndIndex(AddressType addr) const {
+  unsigned blockNumber = addr / T->LINE_SIZE;
+  return std::make_pair(blockNumber / T->L2N_SETS, blockNumber % T->L2N_SETS);
+}
 /**
  * \brief Initializes the abstract cache state.
  * \param assumeAnEmptyCache
@@ -222,10 +245,11 @@ AbstractCacheImpl<T, C>::getTagAndIndex(AddressType addr) const {
  */
 template <CacheTraits *T, class C>
 AbstractCacheImpl<T, C>::AbstractCacheImpl(bool assumeAnEmptyCache)
-    : cacheSets(T->N_SETS) {
+    : cacheSets(T->N_SETS), L2cacheSets(T->L2N_SETS) {
   SetType initialCacheSetState(assumeAnEmptyCache);
   SharedPtr inserted = cacheSetStorage.insert(initialCacheSetState);
   cacheSets.assign(T->N_SETS, inserted);
+  L2cacheSets.assign(T->L2N_SETS, inserted);
 }
 
 template <CacheTraits *T, class C>
@@ -250,16 +274,42 @@ AbstractCacheImpl<T, C>::classify(const AbstractAddress &addr) const {
 
   Address lowAligned = alignToCacheline(addr.getAsInterval().lower());
   Address upAligned = alignToCacheline(addr.getAsInterval().upper());
-
   /* Join all classifications from the underlying per-set analyses. Abort
    * early if we have reached the top of the lattice */
   Classification result = CL_BOT;
+  unsigned tag, index;
   while (lowAligned <= upAligned && result != CL_UNKNOWN) {
-    unsigned tag, index;
     boost::tie(tag, index) = getTagAndIndex(lowAligned);
     result.join(cacheSets[index]->classify(AbstractAddress(lowAligned)));
     lowAligned += T->LINE_SIZE;
   }
+  return result;
+}
+template <CacheTraits *T, class C>
+Classification
+AbstractCacheImpl<T, C>::classifyL2(const AbstractAddress &addr) const {
+  /* fastpath for unknownAddressInterval */
+  if (addr.isSameInterval(AbstractAddress::getUnknownAddress())) {
+    return CL_UNKNOWN;
+  }
+
+  Address lowAligned = alignToCacheline(addr.getAsInterval().lower());
+  Address upAligned = alignToCacheline(addr.getAsInterval().upper());
+  /* Join all classifications from the underlying per-set analyses. Abort
+   * early if we have reached the top of the lattice */
+  Classification result = CL_BOT;
+  unsigned tag, index;
+  while (lowAligned <= upAligned) {
+    boost::tie(tag, index) = l2getTagAndIndex(lowAligned);
+    result.join(L2cacheSets[index]->classify(AbstractAddress(lowAligned)));
+    lowAligned += T->LINE_SIZE;
+  }
+  if (result == CL_HIT)
+    result = CL2_HIT;
+  else if (result == CL_MISS)
+    result = CL2_MISS;
+  else
+    result = CL2_UNKNOWN;
   return result;
 }
 
@@ -278,6 +328,14 @@ UpdateReport *AbstractCacheImpl<T, C>::update(const AbstractAddress &addr,
                                               bool wantReport,
                                               const Classification assumption) {
   return update(addr, load_store, nullptr, wantReport, assumption);
+}
+
+template <CacheTraits *T, class C>
+UpdateReport *
+AbstractCacheImpl<T, C>::l2update(const AbstractAddress &addr,
+                                  AccessType load_store, bool wantReport,
+                                  const Classification assumption) {
+  return l2update(addr, load_store, nullptr, wantReport, assumption);
 }
 
 /**
@@ -318,6 +376,72 @@ UpdateReport *AbstractCacheImpl<T, C>::update(const AbstractAddress &addr,
     return report;
   }
 
+  unsigned lower, upper;
+  JoinableUpdateReport *report, *report2;
+  // Make update for imprecise address information
+  boost::tie(lower, upper) = getCacheSetInterval(itv);
+  assert((T->N_SETS == 1 || lower != upper) &&
+         "Could have performed precise update");
+  if (lower <= upper) {
+    report = updateUnknownSets(lower, upper, addr, load_store, wantReport,
+                               assumption);
+    if (wantReport && !report) {
+      /* underlying reports are unjoinable - return no
+       * information */
+      return new UpdateReport;
+    }
+    return report;
+  }
+
+  // wraparound:
+  report = updateUnknownSets(lower, T->N_SETS - 1, addr, load_store, wantReport,
+                             assumption);
+  report2 =
+      updateUnknownSets(0, upper, addr, load_store, wantReport, assumption);
+
+  if (!wantReport) {
+    assert(!report && !report2);
+    return nullptr;
+  }
+
+  if (!report || !report2) {
+    /* The underlying reports were not joinable - return no
+     * information */
+    delete report;
+    delete report2;
+    return new UpdateReport;
+  }
+
+  report->join(report2);
+  delete report2;
+  return report;
+}
+template <CacheTraits *T, class C>
+UpdateReport *AbstractCacheImpl<T, C>::l2update(
+    const AbstractAddress &addr, AccessType load_store, SetWiseAnaDeps *AD,
+    bool wantReport, const Classification assumption) {
+  AddressInterval itv = addr.getAsInterval();
+  // Precise update possible
+  if (alignToCacheline(itv.lower()) == alignToCacheline(itv.upper())) {
+    unsigned tag, index;
+    boost::tie(tag, index) = l2getTagAndIndex(itv.lower());
+
+    SetType l2newCacheAnalysisSet(*L2cacheSets[index]);
+
+    AnalysisDependencies *Deps = nullptr;
+    if (AD) {
+      Deps = AD->at(index);
+    }
+
+    AbstractAddress clAddr(alignToCacheline(itv.lower()));
+    UpdateReport *report = l2newCacheAnalysisSet.l2update(
+        clAddr, load_store, Deps, wantReport, assumption);
+    L2cacheSets[index] = cacheSetStorage.insert(l2newCacheAnalysisSet);
+    assert(report || !wantReport);
+    return report;
+  }
+
+  // TODO!!!
   unsigned lower, upper;
   JoinableUpdateReport *report, *report2;
   // Make update for imprecise address information

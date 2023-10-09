@@ -149,7 +149,7 @@ void SimpleSDRAMCyclingMemory::print(std::ostream &stream) const {
 
 std::list<AbstractCyclingMemory *>
 SimpleSDRAMCyclingMemory::announceAccess(AbstractAddress addr, AccessType t,
-                                         unsigned numWords) const {
+                                         unsigned numWords, bool) const {
   assert(!isBusy() && "Cannot announce access if busy");
   assert(!hasSeenRefresh && "Internal: Forgot to reset flag");
   assert(numWords <= SDRAMConfig.maxBurstLength);

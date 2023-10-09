@@ -242,12 +242,12 @@ enum class ArrivalCurveIlpObjectiveType { VARIANT1, VARIANT2, COMBINED };
 
 /**
  * TODO
-*/
+ */
 extern llvm::cl::opt<unsigned> CoreNums;
 
 /**
  * File that record the running info.
-*/
+ */
 extern llvm::cl::opt<std::string> coreInfo;
 
 /**
@@ -265,6 +265,11 @@ extern llvm::cl::opt<bool> DumpVcgGraph;
  * Define the entry point of the analysis.
  */
 extern llvm::cl::opt<std::string> AnalysisEntryPoint;
+
+/**
+ * L2 Cache Set Size
+ */
+extern llvm::cl::opt<unsigned> NN_SET;
 
 /**
  * Which microarchitectural analysis should be run
@@ -634,6 +639,11 @@ extern llvm::cl::opt<GetEdges_method> ArrivalCurveLoopGetInnerEdgesMethod;
  * in the calculation of values on an arrival curve.
  */
 extern llvm::cl::opt<GetEdges_method> ArrivalCurveCallSiteGetInnerEdgesMethod;
+
+/**
+ * TODO: Add docs for this
+ */
+extern llvm::cl::opt<unsigned> L2Latency;
 
 /**
  * Do not perform a WCET bound calculation in co-runner-sensitive analysis.

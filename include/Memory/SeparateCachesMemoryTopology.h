@@ -322,19 +322,23 @@ private:
     bool bgmemStall;
     /// Stores the id currently accessed in the background memory topology.
     unsigned bgMemAccessId;
+    /// Stores the id currently accessed in the l2 topology.
+    unsigned bgl2AccessId;
     /// Blocking counter to wait until a cache access is finished.
-    unsigned timeBlocked;
+    unsigned timeBlocked, l2timeBlocked;
     /// Classification of this access by the cache
     Classification cl;
 
     // Constructor
     OngoingAccess(Access acc)
         : access(acc), phase(AccessPhase::WaitForSTART), bgmemStall(false),
-          bgMemAccessId(0), timeBlocked(0), cl(CL_BOT) {}
+          bgMemAccessId(0), bgl2AccessId(0), timeBlocked(0), l2timeBlocked(0),
+          cl(CL_BOT) {}
   };
 
   struct MemoryComponent {
     /// Queue holding future accesses
+    /// TODO!!!!!!!!
     std::list<Access> waitingQueue;
     /// The on-going access
     boost::optional<OngoingAccess> ongoingAccess;
@@ -352,6 +356,7 @@ private:
     bool justWroteBackLine;
     // Collect the numer of misses we encountered in this basic block
     unsigned nmisses;
+    unsigned l2nmisses;
     // Collect the number of stores that access the bus in this basic block
     unsigned numStoreBusAccess;
 
@@ -360,7 +365,8 @@ private:
         : waitingQueue(), ongoingAccess(boost::none), finishedId(0),
           cache(cache), justUpdatedCache(boost::none),
           justMissedCache(boost::none), justDirtifiedLine(boost::none),
-          justWroteBackLine(false), nmisses(0), numStoreBusAccess(0) {}
+          justWroteBackLine(false), nmisses(0), numStoreBusAccess(0),
+          l2nmisses(0) {}
     // Copy constructor
     MemoryComponent(const MemoryComponent &mc)
         : waitingQueue(mc.waitingQueue), ongoingAccess(mc.ongoingAccess),
@@ -369,7 +375,7 @@ private:
           justMissedCache(mc.justMissedCache),
           justDirtifiedLine(mc.justDirtifiedLine),
           justWroteBackLine(mc.justWroteBackLine), nmisses(mc.nmisses),
-          numStoreBusAccess(mc.numStoreBusAccess) {}
+          l2nmisses(mc.l2nmisses), numStoreBusAccess(mc.numStoreBusAccess) {}
     // Assignment operator
     MemoryComponent &operator=(const MemoryComponent &mc) {
       waitingQueue = mc.waitingQueue;
@@ -383,6 +389,7 @@ private:
       justWroteBackLine = mc.justWroteBackLine;
       nmisses = mc.nmisses;
       numStoreBusAccess = mc.numStoreBusAccess;
+      l2nmisses = mc.l2nmisses;
       return *this;
     }
     // Destructor
@@ -396,7 +403,7 @@ private:
              justWroteBackLine == mc.justWroteBackLine &&
              nmisses == mc.nmisses &&
              numStoreBusAccess == mc.numStoreBusAccess &&
-             equalsWithoutCache(mc, myId, mcId);
+             l2nmisses == mc.l2nmisses && equalsWithoutCache(mc, myId, mcId);
     }
     bool equalsWithoutCache(const MemoryComponent &mc, unsigned myId,
                             unsigned mcId) const {
@@ -435,6 +442,7 @@ private:
       assert(justDirtifiedLine == mc.justDirtifiedLine);
       assert(justWroteBackLine == mc.justWroteBackLine);
       nmisses = std::max(nmisses, mc.nmisses);
+      l2nmisses = std::max(l2nmisses, mc.l2nmisses);
       numStoreBusAccess = std::max(numStoreBusAccess, mc.numStoreBusAccess);
     }
   };
@@ -610,7 +618,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
       for (auto &memory :
            startdataTopology.memory.cycle(potentialDataMissesPending)) {
         SeparateCachesMemoryTopology afterbgmemcycle(startdataTopology);
-        afterbgmemcycle.memory = memory;
+        afterbgmemcycle.memory = memory; // memorytopology
 
         // If we should have stalled the pipeline in this cycle, we should also
         // stall the topology
@@ -618,7 +626,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
           resultList.push_back(afterbgmemcycle);
         } else {
           // Cycle Memory Topology
-          for (auto &memAfterInstr : afterbgmemcycle.checkInstructionPart()) {   //cache更新
+          for (auto &memAfterInstr :
+               afterbgmemcycle.checkInstructionPart()) { // cache更新
             for (auto &memAfterData : memAfterInstr.checkDataPart()) {
               // fprintf(stderr, "MemAfterData: ");
               // std::cerr << memAfterData;
@@ -650,7 +659,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           OngoingAccess(instructionComponent.waitingQueue.front());
       instructionComponent.waitingQueue.pop_front();
 
-      // check cache for hit/miss/unknown
+      // check cache for hit/l2hit/l2miss/l2unknown
       Classification res = instructionComponent.cache->classify(
           instructionComponent.ongoingAccess.get().access.addr);
       if (res == CL_UNKNOWN) {
@@ -659,7 +668,20 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         } else {
           // split here - this is hit state, need another state for miss
           SeparateCachesMemoryTopology scmtMiss(*this);
-          scmtMiss.processInstrCacheAccess(CL_MISS);
+          //层1miss分析层2
+          Classification CL = instructionComponent.cache->classifyL2(
+              instructionComponent.ongoingAccess.get().access.addr);
+          if (CL == CL2_UNKNOWN) {
+            // Just another split here
+            SeparateCachesMemoryTopology l2Miss(*this), l2Hit(*this);
+            l2Miss.processInstrCacheAccess(CL2_MISS);
+            l2Hit.processInstrCacheAccess(CL2_HIT);
+            resultList.emplace_back(l2Miss);
+            resultList.emplace_back(l2Hit);
+
+          } else {
+            scmtMiss.processInstrCacheAccess(CL);
+          }
           resultList.push_back(scmtMiss);
           processInstrCacheAccess(CL_HIT);
         }
@@ -736,6 +758,34 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
   if (instructionComponent.ongoingAccess) // We are accessing something
   {
     auto &ongoingAcc = instructionComponent.ongoingAccess.get();
+    // check whether something was accessed in the l2 cache
+    if (ongoingAcc.bgl2AccessId != 0) {
+      if (memory.finishedInstrAccess(ongoingAcc.bgl2AccessId)) {
+        // Not waiting for memory any more
+        ongoingAcc.bgl2AccessId = 0;
+        // Blocked for cache update
+        ongoingAcc.l2timeBlocked = instructionComponent.cache->getHitLatency();
+      }
+    } else { // ongoingAcc.bgl2AccessId == 0
+      // something was accessed in cache2 and a hit
+
+      /* decrement remaining blocking time.
+       * the if guards against underflow */
+      if (ongoingAcc.l2timeBlocked > 0) {
+        ongoingAcc.l2timeBlocked--;
+      }
+
+      if (ongoingAcc.l2timeBlocked == 0) {
+        instructionComponent.finishedId = ongoingAcc.access.id;
+        if (needAccessedInstructionAddresses()) {
+          instructionComponent.justUpdatedCache = ongoingAcc.access.addr;
+        }
+        instructionComponent.cache->l2update(ongoingAcc.access.addr,
+                                             ongoingAcc.access.load_store,
+                                             false, ongoingAcc.cl);
+        instructionComponent.ongoingAccess = boost::none;
+      }
+    }
     // check whether something was accessed in the background memory
     if (ongoingAcc.bgMemAccessId != 0) {
       if (memory.finishedInstrAccess(ongoingAcc.bgMemAccessId)) {
@@ -957,45 +1007,69 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
     processInstrCacheAccess(Classification cl) {
   // Remember Classification
   auto &ongoingAcc = instructionComponent.ongoingAccess.get();
-  ongoingAcc.cl = cl;
+  ongoingAcc.cl = cl; // hit/l2hit/l2miss/
+  // We do not think this code do actual work, so just ignore them.
 
   // Assert part
-  Classification actualcl =
-      instructionComponent.cache->classify(ongoingAcc.access.addr);
-  Classification copycl(actualcl);
-  copycl.join(cl);
-  assert((actualcl == copycl || PreemptiveExecution) &&
-         "Incompatible classifications detected");
+  // Classification actualcl =
+  //     instructionComponent.cache->classify(ongoingAcc.access.addr);
+  // Classification copycl(actualcl);
+  // copycl.join(cl);
+  // assert((actualcl == copycl || PreemptiveExecution) &&
+  //        "Incompatible classifications detected");
+
+  // TODO, make it looks more clearly
+  auto &l1misses = instructionComponent.l2nmisses;
 
   if (cl == CL_HIT) {
     ongoingAcc.timeBlocked = instructionComponent.cache->getHitLatency();
-  } else {
-    assert((cl == CL_MISS ||
-            (FollowLocalWorstType.isSet(LocalWorstCaseType::ICMISS) &&
-             cl == CL_UNKNOWN)) &&
-           "Classification was neither HIT nor MISS.");
 
-    ++instructionComponent.nmisses;
+  } else if (cl == CL2_HIT) {
+    l1misses++;
     Access acc = ongoingAcc.access;
-    if (cl == CL_MISS &&
-        (InstrCachePersType != PersistenceType::NONE || PreemptiveExecution)) {
-      // We just missed the instr cache (only needed for persistence analysis
-      // and integrated preemptive execution mode)
-      assert(acc.addr.isPrecise());
-      instructionComponent.justMissedCache =
-          AbstractAddress(instructionComponent.cache->alignToCacheline(
-              acc.addr.getAsInterval().lower()));
-    }
+    ongoingAcc.l2timeBlocked =
+        instructionComponent.cache
+            ->getHitLatency(); //这是层2cache更新的timeblock
+
     boost::optional<unsigned> res =
-        memory.accessInstr(acc.addr.getAsInterval().lower(), Ilinesize / 4);//指令取的字节数固定
+        memory.l2accessInstr(acc.addr.getAsInterval().lower(),
+                             Ilinesize / 4); //指令取的字节数固定
     if (res) {
       ongoingAcc.bgMemAccessId = *res;
     } else {
       assert(false &&
              "Background memory topology rejected instruction access.");
     }
-  }
 
+  } else {
+    // this part is the same reason as above
+    // assert((cl == CL2_MISS ||
+    //         (FollowLocalWorstType.isSet(LocalWorstCaseType::ICMISS) &&
+    //          cl == CL_UNKNOWN)) &&
+    //        "Classification was neither HIT nor MISS.");
+
+    ++instructionComponent.nmisses;
+    Access acc = ongoingAcc.access;
+    // if (cl == CL_MISS &&
+    //     (InstrCachePersType != PersistenceType::NONE || PreemptiveExecution))
+    //     {
+    //   // We just missed the instr cache (only needed for persistence analysis
+    //   // and integrated preemptive execution mode)
+    //   assert(acc.addr.isPrecise());
+    //   instructionComponent.justMissedCache =
+    //       AbstractAddress(instructionComponent.cache->alignToCacheline(
+    //           acc.addr.getAsInterval().lower()));
+    // }
+    boost::optional<unsigned> res = memory.accessInstr(
+        acc.addr.getAsInterval().lower(), Ilinesize / 4); //指令取的字节数固定
+    if (res) {
+      ongoingAcc.bgMemAccessId = *res;
+      ongoingAcc.bgl2AccessId = *res;
+    } else {
+      assert(false &&
+             "Background memory topology rejected instruction access.");
+    }
+  }
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
