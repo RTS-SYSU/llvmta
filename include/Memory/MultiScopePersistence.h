@@ -76,7 +76,7 @@ protected:
 
 public:
   using AnaDeps = std::tuple<>;
-  explicit MultiScopePersistence(bool assumeAnEmptyCache = false);
+  explicit MultiScopePersistence(bool assumeAnEmptyCache = false, bool = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
@@ -96,10 +96,11 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<P>::CacheSetAnalysis(bool
-///assumeAnEmptyCache)
+/// assumeAnEmptyCache)
 template <class P>
 inline MultiScopePersistence<P>::MultiScopePersistence(bool assumeAnEmptyCache
-                                                       __attribute__((unused)))
+                                                       __attribute__((unused)),
+                                                       bool)
     : scopes2info()
 #ifndef STRICT_SCOPE_CONSISTENCY
       ,
@@ -131,7 +132,7 @@ UpdateReport *MultiScopePersistence<P>::potentialUpdate(AbstractAddress addr,
 }
 
 ///\see dom::cache::CacheSetAnalysis<P>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <class P>
 UpdateReport *MultiScopePersistence<P>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,

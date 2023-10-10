@@ -64,8 +64,10 @@ protected:
 
 public:
   using AnaDeps = std::tuple<>;
+  bool isl2;
 
-  explicit LruMaxAgeArrayAwareCache(bool assumeAnEmptyCache = false);
+  explicit LruMaxAgeArrayAwareCache(bool assumeAnEmptyCache = false,
+                                    bool is2 = false);
   LruMaxAgeArrayAwareCache(const Self &other) {
     for (const auto &entry : other.ages) {
       this->ages.emplace(entry.first, entry.second->clone());
@@ -107,10 +109,11 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-///assumeAnEmptyCache)
+/// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMaxAgeArrayAwareCache<T>::LruMaxAgeArrayAwareCache(
-    bool assumeAnEmptyCache __attribute__((unused))) {}
+    bool assumeAnEmptyCache __attribute__((unused)), bool is2)
+    : isl2(is2) {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
@@ -165,7 +168,7 @@ LruMaxAgeArrayAwareCache<T>::potentialUpdate(AbstractAddress addr,
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T>
 LruMaxAgeUpdateReport<typename CacheTraits::TagType> *
 LruMaxAgeArrayAwareCache<T>::update(const AbstractAddress addr,

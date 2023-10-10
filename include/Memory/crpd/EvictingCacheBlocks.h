@@ -70,7 +70,8 @@ protected:
 
 public:
   /* Implement the interface */
-  explicit EvictingCacheBlocks(bool assumeAnEmptyCache = false);
+  explicit EvictingCacheBlocks(bool assumeAnEmptyCache = false,
+                               bool isL2 = false);
 
   using AnaDeps = std::tuple<>;
 
@@ -112,7 +113,7 @@ public:
  * assumeAnEmptyCache)
  */
 template <CacheTraits *T>
-inline EvictingCacheBlocks<T>::EvictingCacheBlocks(bool)
+inline EvictingCacheBlocks<T>::EvictingCacheBlocks(bool, bool)
     : top(false), accessedTags() {}
 /**
  * \see  dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const

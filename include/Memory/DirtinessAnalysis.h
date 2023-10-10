@@ -67,18 +67,17 @@ protected:
    * dirty */
   bool implicitDirty;
   std::map<TagType, DirtinessClassification> dirtiness;
+  bool isl2;
 
 public:
   typedef std::tuple<> AnaDeps;
 
-  explicit DirtinessAnalysis(bool assumeAnEmptyCache = false);
+  explicit DirtinessAnalysis(bool assumeAnEmptyCache = false, bool is2 = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
                        const Classification assumption = CL_UNKNOWN);
-  UpdateReport *l2update(const AbstractAddress addr, AccessType load_store,
-                       AnaDeps *, bool wantReport = false,
-                       const Classification assumption = CL_UNKNOWN);
+
   UpdateReport *potentialUpdate(AbstractAddress addr, AccessType load_store,
                                 bool wantReport);
   void join(const Self &y);
@@ -138,9 +137,9 @@ private:
  * paper */
 template <CacheTraits *T, class MustAna, class MayAna>
 inline DirtinessAnalysis<T, MustAna, MayAna>::DirtinessAnalysis(
-    bool assumeAnEmptyCache)
-    : must(assumeAnEmptyCache), may(assumeAnEmptyCache),
-      implicitDirty(!AssumeCleanCache) {}
+    bool assumeAnEmptyCache, bool is2)
+    : must(assumeAnEmptyCache, is2), may(assumeAnEmptyCache, is2),
+      implicitDirty(!AssumeCleanCache), isl2(is2) {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T, class MustAna, class MayAna>
@@ -224,7 +223,7 @@ void DirtinessAnalysis<T, MustAna, MayAna>::incorporateMustMayUpdates(
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T, class MustAna, class MayAna>
 UpdateReport *DirtinessAnalysis<T, MustAna, MayAna>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *deps,

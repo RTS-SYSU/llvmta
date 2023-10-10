@@ -80,7 +80,7 @@ public:
   using AnaDeps = std::tuple<const UCBsSet &, const UnconstrainedInfo &>;
 
   /* Implement the interface */
-  explicit ConstrainedAges(bool assumeAnEmptyCache = false);
+  explicit ConstrainedAges(bool assumeAnEmptyCache = false, bool = false);
   auto classify(const AbstractAddress addr) const -> Classification;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *deps = nullptr, bool wantReport = false,
@@ -126,7 +126,7 @@ private:
 };
 
 template <CacheTraits *T>
-inline ConstrainedAges<T>::ConstrainedAges(bool) : top(false) {}
+inline ConstrainedAges<T>::ConstrainedAges(bool, bool) : top(false) {}
 
 /**
  * \see  dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
