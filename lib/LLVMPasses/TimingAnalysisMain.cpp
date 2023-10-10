@@ -285,6 +285,8 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   icacheConf.LINE_SIZE = Ilinesize;
   icacheConf.ASSOCIATIVITY = Iassoc;
   icacheConf.N_SETS = Insets;
+  // TODO
+  icacheConf.L2N_SETS = NN_SET;
   icacheConf.checkParams();
 
   dcacheConf.LINE_SIZE = Dlinesize;
@@ -292,6 +294,8 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.N_SETS = Dnsets;
   dcacheConf.WRITEBACK = DataCacheWriteBack;
   dcacheConf.WRITEALLOCATE = DataCacheWriteAllocate;
+  // TODO
+  dcacheConf.L2N_SETS = 128;
   dcacheConf.checkParams();
 
   // Select the analysis to execute

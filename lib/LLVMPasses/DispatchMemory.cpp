@@ -50,9 +50,9 @@ namespace TimingAnalysisPass {
 
 using namespace dom::cache;
 
-CacheTraits icacheConf(16, 2, 32, false, false);
+CacheTraits icacheConf(16, 2, 32,64, false, false);
 
-CacheTraits dcacheConf(16, 2, 32, false, false);
+CacheTraits dcacheConf(16, 2, 32,64, false, false);
 
 template <CacheTraits *CacheConfig, typename CacheAna>
 inline AbstractCache *makePersistenceCache(PersistenceType persType,

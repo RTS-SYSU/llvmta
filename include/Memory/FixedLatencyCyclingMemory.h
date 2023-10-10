@@ -30,6 +30,7 @@
 #include "Memory/AbstractCyclingMemory.h"
 #include "Memory/FixedLatencyCyclingMemoryConfig.h"
 #include "Util/IntervalCounter.h"
+#include "Util/Options.h"
 
 namespace TimingAnalysisPass {
 
@@ -129,7 +130,8 @@ public:
    * Implement how to announce a new access to the memory.
    */
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords) const;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
+                 bool isL2 = false) const;
 
   virtual std::list<AbstractCyclingMemory *> fastForward() const;
 
@@ -230,11 +232,16 @@ template <const FixedLatencyCyclingMemoryConfigType *Config>
 std::list<AbstractCyclingMemory *>
 FixedLatencyCyclingMemory<Config>::announceAccess(AbstractAddress addr,
                                                   AccessType t,
-                                                  unsigned numWords) const {
+                                                  unsigned numWords,
+                                                  bool isL2) const {
   assert(!isBusy() && "Don't announce an access to a busy memory!");
   std::list<AbstractCyclingMemory *> res;
   FixedLatencyCyclingMemory *r = this->clone();
-  r->timeBlocked = Latency + numWords * PerWordLatency;
+  if (isL2) {
+    r->timeBlocked = L2Latency + 1;
+  } else {
+    r->timeBlocked = L2Latency + Latency + numWords * PerWordLatency + 1;
+  }
   res.push_back(r);
   return res;
 }

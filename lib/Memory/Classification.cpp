@@ -30,12 +30,15 @@ namespace TimingAnalysisPass {
 namespace dom {
 namespace cache {
 
-const char *ClassificationNames[4] = {"Bot", "Hit", "Miss", "Top"};
+const char *ClassificationNames[7] = {"Bot", "Hit", "Miss", "Top","L2Hit","L2Miss","L2unknown"};
 
 const Classification CL_BOT((unsigned char)0);
 const Classification CL_HIT((unsigned char)1);
-const Classification CL_MISS((unsigned char)2);
+const Classification CL_MISS((unsigned char)2);//访问L2
 const Classification CL_UNKNOWN((unsigned char)3);
+const Classification CL2_HIT((unsigned char)4);
+const Classification CL2_MISS((unsigned char)8);
+const Classification CL2_UNKNOWN((unsigned char)12);
 
 } // namespace cache
 } // namespace dom

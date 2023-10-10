@@ -159,7 +159,8 @@ public:
    * Implement how to announce a new access to the memory.
    */
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords) const;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
+                 bool isL2 = false) const;
 
   virtual std::list<AbstractCyclingMemory *> fastForward() const;
 

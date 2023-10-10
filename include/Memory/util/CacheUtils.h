@@ -46,12 +46,26 @@ getTag(typename dom::cache::CacheTraits::AddressType addr) {
 }
 
 template <dom::cache::CacheTraits *CacheConfig>
+typename dom::cache::CacheTraits::TagType
+l2getTag(typename dom::cache::CacheTraits::AddressType addr) {
+  return (addr / CacheConfig->LINE_SIZE) / CacheConfig->L2N_SETS;
+}
+
+template <dom::cache::CacheTraits *CacheConfig>
 typename dom::cache::CacheTraits::TagType getTag(AbstractAddress addr) {
   AddressInterval itv = addr.getAsInterval();
   assert(getCachelineAddress<CacheConfig>(itv.lower()) ==
          getCachelineAddress<CacheConfig>(itv.upper()));
 
   return getTag<CacheConfig>(itv.lower());
+}
+template <dom::cache::CacheTraits *CacheConfig>
+typename dom::cache::CacheTraits::TagType l2getTag(AbstractAddress addr) {
+  AddressInterval itv = addr.getAsInterval();
+  assert(getCachelineAddress<CacheConfig>(itv.lower()) ==
+         getCachelineAddress<CacheConfig>(itv.upper()));
+
+  return l2getTag<CacheConfig>(itv.lower());
 }
 
 /* returns (in cycles) how long the transfer of a cache line between cache and

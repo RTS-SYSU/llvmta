@@ -132,7 +132,8 @@ public:
    * Implement how to announce a new access to the memory.
    */
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords) const;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
+                 bool isL2 = false) const;
 
   virtual std::list<AbstractCyclingMemory *> fastForward() const;
 
@@ -226,13 +227,13 @@ void WrappingCyclingMemory<Memory>::print(std::ostream &stream) const {
 template <class Memory>
 std::list<AbstractCyclingMemory *>
 WrappingCyclingMemory<Memory>::announceAccess(AbstractAddress addr,
-                                              AccessType t,
-                                              unsigned numWords) const {
+                                              AccessType t, unsigned numWords,
+                                              bool isL2) const {
   assert(!isBusy() && "Don't announce an access to a busy memory!");
 
   // announce at the wrapped memory first
   std::list<AbstractCyclingMemory *> res;
-  auto announcedWraps = memory->announceAccess(addr, t, numWords);
+  auto announcedWraps = this->memory->announceAccess(addr, t, numWords, isL2);
 
   // create a wrapper for each result
   for (auto aW : announcedWraps) {

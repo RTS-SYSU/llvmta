@@ -155,7 +155,8 @@ public:
    * Implement how to announce a new access to the memory.
    */
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords) const;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
+                 bool isL2 = false) const;
 
   virtual std::list<AbstractCyclingMemory *> fastForward() const;
 
@@ -339,7 +340,8 @@ template <class Memory, const BlockingCyclingMemoryConfigType *Config>
 std::list<AbstractCyclingMemory *>
 BlockingCyclingMemory<Memory, Config>::announceAccess(AbstractAddress addr,
                                                       AccessType t,
-                                                      unsigned numWords) const {
+                                                      unsigned numWords,
+                                                      bool) const {
   assert(!isBusy() && "Don't announce an access to a busy memory!");
 
   std::list<AbstractCyclingMemory *> results;
