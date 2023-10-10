@@ -132,6 +132,8 @@ private:
   typedef util::SharedStorage<SetType> SharedStorage;
   typedef util::_SharedStorage<SetType> _SharedStorage;
   typedef typename SharedStorage::SharedPtr SharedPtr;
+  // Though we know _SharedPtr and SharedPtr are the same, we need to use
+  typedef typename _SharedStorage::SharedPtr _SharedPtr;
   typedef typename std::vector<SharedPtr>::iterator IterType;
   typedef typename std::vector<SharedPtr>::const_iterator ConstIterType;
   typedef typename C::AnaDeps AnalysisDependencies;
@@ -144,7 +146,7 @@ private:
   std::vector<SharedPtr> cacheSets;
 
   _SharedStorage l2cacheSetStorage;
-  static std::vector<SharedPtr> L2cacheSets;
+  static std::vector<_SharedPtr> L2cacheSets;
 
 protected:
   std::pair<unsigned, unsigned> getTagAndIndex(AddressType addr) const;
@@ -255,12 +257,13 @@ AbstractCacheImpl<T, C>::AbstractCacheImpl(bool assumeAnEmptyCache)
   SetType initialCacheSetState(assumeAnEmptyCache);
   SharedPtr inserted = cacheSetStorage.insert(initialCacheSetState);
   cacheSets.assign(T->N_SETS, inserted);
-  if (L2cacheSets.empty()) {
+  if (AbstractCacheImpl<T, C>::L2cacheSets.empty()) {
+    AbstractCacheImpl<T, C>::L2cacheSets.resize(T->L2N_SETS);
     SetType l2initialCacheSetState(assumeAnEmptyCache, true);
     SharedPtr l2inserted = l2cacheSetStorage.insert(l2initialCacheSetState);
     assert(inserted != l2inserted &&
            "L(2-1) Cache should not be the same as the L(1+1)");
-    L2cacheSets.assign(T->L2N_SETS, l2inserted);
+    AbstractCacheImpl<T, C>::L2cacheSets.assign(T->L2N_SETS, l2inserted);
   }
 }
 
@@ -313,7 +316,8 @@ AbstractCacheImpl<T, C>::classifyL2(const AbstractAddress &addr) const {
   unsigned tag, index;
   while (lowAligned <= upAligned) {
     boost::tie(tag, index) = l2getTagAndIndex(lowAligned);
-    result.join(L2cacheSets[index]->classify(AbstractAddress(lowAligned)));
+    result.join(AbstractCacheImpl<T, C>::L2cacheSets[index]->classify(
+        AbstractAddress(lowAligned)));
     lowAligned += T->LINE_SIZE;
   }
   if (result == CL_HIT)
@@ -438,7 +442,7 @@ UpdateReport *AbstractCacheImpl<T, C>::l2update(
     unsigned tag, index;
     boost::tie(tag, index) = l2getTagAndIndex(itv.lower());
 
-    SetType l2newCacheAnalysisSet(*L2cacheSets[index]);
+    SetType l2newCacheAnalysisSet(*AbstractCacheImpl<T, C>::L2cacheSets[index]);
 
     AnalysisDependencies *Deps = nullptr;
     if (AD) {
@@ -448,7 +452,8 @@ UpdateReport *AbstractCacheImpl<T, C>::l2update(
     AbstractAddress clAddr(alignToCacheline(itv.lower()));
     UpdateReport *report = l2newCacheAnalysisSet.update(
         clAddr, load_store, Deps, wantReport, assumption);
-    L2cacheSets[index] = l2cacheSetStorage.insert(l2newCacheAnalysisSet);
+    AbstractCacheImpl<T, C>::L2cacheSets[index] =
+        l2cacheSetStorage.insert(l2newCacheAnalysisSet);
     assert(report || !wantReport);
     return report;
   }
