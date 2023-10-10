@@ -88,6 +88,56 @@ typename SharedStorage<T>::Storage *SharedStorage<T>::storage;
 
 template <class T> long SharedStorage<T>::refcount = 0;
 
+template <class T> class _SharedStorage {
+public:
+  typedef const T *SharedPtr;
+  typedef DereferenceLess less;
+
+private:
+  typedef std::set<SharedPtr, DereferenceLess> Storage;
+
+  static Storage *storage;
+  static long refcount;
+
+public:
+  _SharedStorage() {
+    if (refcount == 0) {
+      storage = new Storage();
+    }
+    ++refcount;
+  }
+  _SharedStorage(const _SharedStorage &ss) { ++refcount; }
+  ~_SharedStorage() {
+    --refcount;
+    if (refcount == 0) {
+      for (auto ptr : *storage) {
+        delete ptr;
+      }
+      storage->clear();
+      delete storage;
+    }
+  }
+
+  SharedPtr insert(const T &x) const {
+    // Copy object on heap
+    SharedPtr ptr = new T(x);
+
+    // Try to insert pointer \c ptr into the storage
+    std::pair<typename Storage::iterator, bool> pair = storage->insert(ptr);
+
+    // If object was already contained delete the newly constructed one
+    if (!pair.second)
+      delete ptr;
+
+    return *pair.first;
+  }
+};
+
+template <class T>
+typename _SharedStorage<T>::Storage *_SharedStorage<T>::storage;
+
+template <class T> long _SharedStorage<T>::refcount = 0;
+
 } // namespace util
 
 } // namespace TimingAnalysisPass

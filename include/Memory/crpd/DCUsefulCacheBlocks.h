@@ -64,7 +64,7 @@ protected:
 
 public:
   /* Implement the interface */
-  explicit DCUsefulCacheBlocks(bool assumeAnEmptyCache = false);
+  explicit DCUsefulCacheBlocks(bool assumeAnEmptyCache = false, bool = false);
 
   using LruMust = LruMaxAgeAbstractCache<T>;
   using AnaDeps = std::tuple<const LruMust &>;
@@ -94,7 +94,8 @@ public:
  * assumeAnEmptyCache)
  */
 template <CacheTraits *T>
-inline DCUsefulCacheBlocks<T>::DCUsefulCacheBlocks(bool) : accessedTags() {}
+inline DCUsefulCacheBlocks<T>::DCUsefulCacheBlocks(bool, bool)
+    : accessedTags() {}
 /**
  * \see  dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
  */

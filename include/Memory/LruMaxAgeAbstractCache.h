@@ -32,6 +32,7 @@
 #include "Memory/CacheTraits.h"
 #include "Memory/Classification.h"
 #include "Memory/progana/Lattice.h"
+#include "Memory/util/CacheUtils.h"
 #include "Memory/util/ImplicitSet.h"
 
 #include "Util/PersistenceScope.h"
@@ -63,19 +64,17 @@ protected:
   std::vector<TagType> tags;
   std::vector<WayType> ages;
   PosType size;
+  bool isl2;
 
 public:
   using AnaDeps = std::tuple<>;
 
-  explicit LruMaxAgeAbstractCache(bool assumeAnEmptyCache = false);
+  LruMaxAgeAbstractCache(bool assumeAnEmptyCache = false, bool is2 = false);
   Classification classify(const AbstractAddress addr) const;
   LruMaxAgeUpdateReport<TagType> *
   update(AbstractAddress addr, AccessType load_store, AnaDeps *,
          bool wantReport = false, const Classification assumption = CL_UNKNOWN);
-  LruMaxAgeUpdateReport<TagType> *
-  l2update(AbstractAddress addr, AccessType load_store, AnaDeps *,
-           bool wantReport = false,
-           const Classification assumption = CL_UNKNOWN);
+
   LruMaxAgeUpdateReport<TagType> *potentialUpdate(AbstractAddress addr,
                                                   AccessType load_store,
                                                   bool wantReport = false);
@@ -104,8 +103,13 @@ public:
 /// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMaxAgeAbstractCache<T>::LruMaxAgeAbstractCache(
-    bool assumeAnEmptyCache __attribute__((unused)))
-    : tags(T->ASSOCIATIVITY), ages(T->ASSOCIATIVITY), size(0) {}
+    bool assumeAnEmptyCache, bool is2)
+    : tags(T->ASSOCIATIVITY), ages(T->ASSOCIATIVITY), size(0), isl2(is2) {
+  if (is2) {
+    tags.resize((T->L2ASSOCIATIVITY));
+    ages.resize((T->L2ASSOCIATIVITY));
+  }
+}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
@@ -158,8 +162,16 @@ LruMaxAgeUpdateReport<typename CacheTraits::TagType> *
 LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
                                   AnaDeps *, bool wantReport,
                                   const Classification assumption) {
-  WayType accessedAge = T->ASSOCIATIVITY;
-  TagType tag = getTag<T>(addr);
+  WayType accessedAge;
+  TagType tag;
+  unsigned ASSO;
+  if (this->isl2) {
+    ASSO = accessedAge = T->L2ASSOCIATIVITY;
+    TagType tag = l2getTag<T>(addr);
+  } else {
+    ASSO = accessedAge = T->ASSOCIATIVITY;
+    TagType tag = getTag<T>(addr);
+  }
 
   LruMaxAgeUpdateReport<TagType> *report = nullptr;
   if (wantReport) {
@@ -175,19 +187,19 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
     }
 
   // In case of a cache miss
-  if (accessedAge == T->ASSOCIATIVITY) {
+  if (accessedAge == ASSO) {
     // an element will be added
     ++size;
     // But we actually assumed a hit
     if (assumption == CL_HIT) {
       // No evictions, age at most k-1
-      assert(size <= T->ASSOCIATIVITY &&
+      assert(size <= ASSO &&
              "Full cache and addr not in there, cannot assume a hit (illegal "
              "classification)");
-      accessedAge = T->ASSOCIATIVITY - 1;
+      accessedAge = ASSO - 1;
     } else {
       // elements with age A-1 get evicted
-      while (pos > 0 && ages[pos - 1] == T->ASSOCIATIVITY - 1) {
+      while (pos > 0 && ages[pos - 1] == ASSO - 1) {
         if (wantReport) {
           report->evictedElements.insert(tags[pos - 1]);
         }
@@ -198,7 +210,7 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
   }
 
   // Only if not direct-mapped
-  if (T->ASSOCIATIVITY > 1) {
+  if (ASSO > 1) {
     // Go backwards and shift all entries to the right and update ages
     for (; pos > 0; --pos) {
       tags[pos] = tags[pos - 1];
@@ -225,85 +237,7 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
   tags[0] = tag;
   ages[0] = 0;
 
-  assert(size >= 0 && size <= T->ASSOCIATIVITY &&
-         "Illegal must cache set size");
-  return report;
-}
-
-template <CacheTraits *T>
-LruMaxAgeUpdateReport<typename CacheTraits::TagType> *
-LruMaxAgeAbstractCache<T>::l2update(AbstractAddress addr, AccessType load_store,
-                                    AnaDeps *, bool wantReport,
-                                    const Classification assumption) {
-  WayType accessedAge = T->ASSOCIATIVITY;
-  TagType tag = l2getTag<T>(addr);
-
-  LruMaxAgeUpdateReport<TagType> *report = nullptr;
-  if (wantReport) {
-    report = new LruMaxAgeUpdateReport<TagType>;
-  }
-
-  // Search for tag
-  unsigned pos;
-  for (pos = 0; pos < size; ++pos)
-    if (tags[pos] == tag) {
-      accessedAge = ages[pos];
-      break;
-    }
-
-  // In case of a cache miss
-  if (accessedAge == T->ASSOCIATIVITY) {
-    // an element will be added
-    ++size;
-    // But we actually assumed a hit
-    if (assumption == CL_HIT) {
-      // No evictions, age at most k-1
-      assert(size <= T->ASSOCIATIVITY &&
-             "Full cache and addr not in there, cannot assume a hit (illegal "
-             "classification)");
-      accessedAge = T->ASSOCIATIVITY - 1;
-    } else {
-      // elements with age A-1 get evicted
-      while (pos > 0 && ages[pos - 1] == T->ASSOCIATIVITY - 1) {
-        if (wantReport) {
-          report->evictedElements.insert(tags[pos - 1]);
-        }
-        --size;
-        --pos;
-      }
-    }
-  }
-
-  // Only if not direct-mapped
-  if (T->ASSOCIATIVITY > 1) {
-    // Go backwards and shift all entries to the right and update ages
-    for (; pos > 0; --pos) {
-      tags[pos] = tags[pos - 1];
-      ages[pos] = ages[pos - 1] + (ages[pos - 1] < accessedAge ? 1 : 0);
-
-      // Elements that were exacly one access younger than accessedAge
-      // merge into set of elements with age accessedAge.
-      // Hence, the merged set of tags could be unsorted.
-      // Keep sorted.
-      if (ages[pos] == accessedAge) {
-        TagType currentTag = tags[pos];
-        int i = pos;
-        while (i < size - 1 && ages[i + 1] == accessedAge &&
-               tags[i + 1] < currentTag) {
-          tags[i] = tags[i + 1];
-          ++i;
-        }
-        tags[i] = currentTag;
-      }
-    }
-  }
-
-  // Finally, insert the accessed tag at the front
-  tags[0] = tag;
-  ages[0] = 0;
-
-  assert(size >= 0 && size <= T->ASSOCIATIVITY &&
-         "Illegal must cache set size");
+  assert(size >= 0 && size <= ASSO && "Illegal must cache set size");
   return report;
 }
 

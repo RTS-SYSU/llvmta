@@ -76,7 +76,9 @@ public:
   virtual UpdateReport *
   l2update(const AbstractAddress &addr, AccessType load_store,
            bool wantReport = false,
-           const Classification assumption = dom::cache::CL_UNKNOWN){return nullptr;};
+           const Classification assumption = dom::cache::CL_UNKNOWN) {
+    return nullptr;
+  };
   virtual void join(const AbstractCache &y) = 0;
   virtual bool lessequal(const AbstractCache &y) const = 0;
   virtual void enterScope(const PersistenceScope &scope) = 0;
@@ -110,6 +112,7 @@ std::ostream &operator<<(std::ostream &os, const AbstractCache &x);
  * \brief   Implements a cache analysis for a cache with the given dimensions.
  * \details Assumes standard modulo mapping of addresses to sets.
  */
+
 template <CacheTraits *T, class C>
 class AbstractCacheImpl : public progana::JoinSemiLattice,
                           public AbstractCache {
@@ -127,6 +130,7 @@ private:
   typedef typename CacheTraits::IndexType IndexType;
   typedef typename CacheTraits::TagType TagType;
   typedef util::SharedStorage<SetType> SharedStorage;
+  typedef util::_SharedStorage<SetType> _SharedStorage;
   typedef typename SharedStorage::SharedPtr SharedPtr;
   typedef typename std::vector<SharedPtr>::iterator IterType;
   typedef typename std::vector<SharedPtr>::const_iterator ConstIterType;
@@ -138,7 +142,9 @@ public:
 private:
   SharedStorage cacheSetStorage;
   std::vector<SharedPtr> cacheSets;
-  std::vector<SharedPtr> L2cacheSets;
+
+  _SharedStorage l2cacheSetStorage;
+  static std::vector<SharedPtr> L2cacheSets;
 
 protected:
   std::pair<unsigned, unsigned> getTagAndIndex(AddressType addr) const;
@@ -245,11 +251,17 @@ AbstractCacheImpl<T, C>::l2getTagAndIndex(AddressType addr) const {
  */
 template <CacheTraits *T, class C>
 AbstractCacheImpl<T, C>::AbstractCacheImpl(bool assumeAnEmptyCache)
-    : cacheSets(T->N_SETS), L2cacheSets(T->L2N_SETS) {
+    : cacheSets(T->N_SETS) { //, L2cacheSets(T->L2N_SETS)
   SetType initialCacheSetState(assumeAnEmptyCache);
   SharedPtr inserted = cacheSetStorage.insert(initialCacheSetState);
   cacheSets.assign(T->N_SETS, inserted);
-  L2cacheSets.assign(T->L2N_SETS, inserted);
+  if (L2cacheSets.empty()) {
+    SetType l2initialCacheSetState(assumeAnEmptyCache, true);
+    SharedPtr l2inserted = l2cacheSetStorage.insert(l2initialCacheSetState);
+    assert(inserted != l2inserted &&
+           "L(2-1) Cache should not be the same as the L(1+1)");
+    L2cacheSets.assign(T->L2N_SETS, l2inserted);
+  }
 }
 
 template <CacheTraits *T, class C>
@@ -434,9 +446,9 @@ UpdateReport *AbstractCacheImpl<T, C>::l2update(
     }
 
     AbstractAddress clAddr(alignToCacheline(itv.lower()));
-    UpdateReport *report = l2newCacheAnalysisSet.l2update(
+    UpdateReport *report = l2newCacheAnalysisSet.update(
         clAddr, load_store, Deps, wantReport, assumption);
-    L2cacheSets[index] = cacheSetStorage.insert(l2newCacheAnalysisSet);
+    L2cacheSets[index] = l2cacheSetStorage.insert(l2newCacheAnalysisSet);
     assert(report || !wantReport);
     return report;
   }

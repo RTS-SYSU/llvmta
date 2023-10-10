@@ -629,9 +629,9 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
           for (auto &memAfterInstr :
                afterbgmemcycle.checkInstructionPart()) { // cache更新
             for (auto &memAfterData : memAfterInstr.checkDataPart()) {
-              // fprintf(stderr, "MemAfterData: ");
-              // std::cerr << memAfterData;
-              // std::cerr << '\n';
+              fprintf(stderr, "MemAfterData: ");
+              std::cerr << memAfterData;
+              std::cerr << '\n';
               resultList.push_back(memAfterData);
             }
           }
@@ -1049,6 +1049,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
     //        "Classification was neither HIT nor MISS.");
 
     ++instructionComponent.nmisses;
+    ++l1misses;
     Access acc = ongoingAcc.access;
     // if (cl == CL_MISS &&
     //     (InstrCachePersType != PersistenceType::NONE || PreemptiveExecution))
@@ -1318,7 +1319,9 @@ operator<<(std::ostream &stream,
   }
 
   stream << "Instruction Cache:\n " << *scmt.instructionComponent.cache << "\n";
-  stream << "Misses up to now: " << scmt.instructionComponent.nmisses << "\n";
+  stream << "L2Misses up to now: " << scmt.instructionComponent.nmisses << "\n";
+  stream << "L1Misses up to now: " << scmt.instructionComponent.l2nmisses
+         << "\n";
   if (scmt.instructionComponent.justUpdatedCache) {
     stream << "Just updated: "
            << scmt.instructionComponent.justUpdatedCache.get() << "\n";
@@ -1362,7 +1365,8 @@ operator<<(std::ostream &stream,
   }
 
   stream << "Data Cache:\n " << *scmt.dataComponent.cache;
-  stream << "Misses up to now: " << scmt.dataComponent.nmisses << "\n";
+  stream << "L2Misses up to now: " << scmt.dataComponent.nmisses << "\n";
+  stream << "L1Misses up to now: " << scmt.dataComponent.l2nmisses << "\n";
   stream << "Stores to bus up to now: " << scmt.dataComponent.numStoreBusAccess
          << "\n";
   if (scmt.dataComponent.justUpdatedCache) {

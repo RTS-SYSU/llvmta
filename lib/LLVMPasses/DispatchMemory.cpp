@@ -50,9 +50,9 @@ namespace TimingAnalysisPass {
 
 using namespace dom::cache;
 
-CacheTraits icacheConf(16, 2, 32,64, false, false);
+CacheTraits icacheConf(16, 2, 8, 32, 128, false, false);
 
-CacheTraits dcacheConf(16, 2, 32,64, false, false);
+CacheTraits dcacheConf(16, 2, 8, 32, 128, false, false);
 
 template <CacheTraits *CacheConfig, typename CacheAna>
 inline AbstractCache *makePersistenceCache(PersistenceType persType,
@@ -69,7 +69,6 @@ inline AbstractCache *makePersistenceCache(PersistenceType persType,
     assert(ArrayPersistenceAnalysis == ArrayPersistenceAnaType::NONE ||
            ArrayAnalysis);
   }
-
   switch (persType) {
   case PersistenceType::NONE:
     return new AbstractCacheImpl<CacheConfig, CacheAna>(assumeEmptyCache);
@@ -379,7 +378,7 @@ getUbAccesses(const AbstractCyclingMemory::LocalMetrics *pBaseMetrics) {
     }
   }
   //	return static_cast<const
-  //MemoriesForIterative::AccessCounterMemory::LocalMetrics*>(pBaseMetrics)
+  // MemoriesForIterative::AccessCounterMemory::LocalMetrics*>(pBaseMetrics)
   //		->accessCounter.getUb();
 }
 
@@ -412,7 +411,7 @@ getLbBlockingCycles(const AbstractCyclingMemory::LocalMetrics *pBaseMetrics) {
     return 0;
   }
   //	return static_cast<const
-  //MemoriesForIterative::BlockingMemory::LocalMetrics*>(pBaseMetrics)
+  // MemoriesForIterative::BlockingMemory::LocalMetrics*>(pBaseMetrics)
   //		->blockingCounter.getLb();
 }
 
@@ -447,7 +446,7 @@ getUbAccessCycles(const AbstractCyclingMemory::LocalMetrics *pBaseMetrics) {
     return 0;
   }
   //	return static_cast<const
-  //MemoriesForIterative::AccessCycleCounterMemory::LocalMetrics*>(pBaseMetrics)
+  // MemoriesForIterative::AccessCycleCounterMemory::LocalMetrics*>(pBaseMetrics)
   //		->busyCycleCounter.getUb();
 }
 
@@ -577,7 +576,7 @@ getLbConcAccesses(const AbstractCyclingMemory::LocalMetrics *pBaseMetrics) {
     return 0;
   }
   //	return static_cast<const
-  //MemoriesForIterative::BlockingMemory::LocalMetrics*>(pBaseMetrics)
+  // MemoriesForIterative::BlockingMemory::LocalMetrics*>(pBaseMetrics)
   //		->blockingCounter.getLb();
 }
 

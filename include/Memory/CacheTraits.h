@@ -49,9 +49,10 @@ namespace cache {
  */
 struct CacheTraits {
 
-  CacheTraits(unsigned L, unsigned A, unsigned S, unsigned S2, bool WB, bool WA)
-      : LINE_SIZE(16), ASSOCIATIVITY(2), N_SETS(32), L2N_SETS(64),
-        WRITEBACK(false), WRITEALLOCATE(false) {}
+  CacheTraits(unsigned L, unsigned A, unsigned A2, unsigned S, unsigned S2,
+              bool WB, bool WA)
+      : LINE_SIZE(16), ASSOCIATIVITY(2), L2ASSOCIATIVITY(8), N_SETS(32),
+        L2N_SETS(128), WRITEBACK(false), WRITEALLOCATE(false) {}
 
   void checkParams() {
     // If larger values are desired, you just need to adjust the bit width
@@ -59,6 +60,8 @@ struct CacheTraits {
     assert(IsPwr2(LINE_SIZE) && LINE_SIZE <= 256 &&
            "Line size must be a power of 2 and smaller than 256");
     assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
+           "Associativity must be a power of 2 and smaller than 128");
+    assert(IsPwr2(L2ASSOCIATIVITY) && L2ASSOCIATIVITY <= 128 &&
            "Associativity must be a power of 2 and smaller than 128");
     assert(IsPwr2(N_SETS) && N_SETS <= 256 &&
            "Number of sets must be a power of 2 and smaller than 256");
@@ -69,7 +72,7 @@ struct CacheTraits {
   }
 
   unsigned LINE_SIZE;
-  unsigned ASSOCIATIVITY;
+  unsigned ASSOCIATIVITY, L2ASSOCIATIVITY;
   unsigned N_SETS;
   unsigned L2N_SETS;
   bool WRITEBACK;
