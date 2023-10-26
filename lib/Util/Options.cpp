@@ -307,13 +307,13 @@ cl::opt<BgMemType> BackgroundMemoryType(
     cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
-    Latency("ta-mem-latency", cl::init(9),
+    Latency("ta-mem-latency", cl::init(6),
             cl::desc("The latency of the background memory. (default '9', i.e. "
                      "transferring a single word takes 14 cycles)"),
             cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
-    L2Latency("ta-L2-latency", cl::init(4),
+    L2Latency("ta-L2-latency", cl::init(3),
               cl::desc("The latency of the L2 cache. (default '4', i.e. "
                        "transferring a single word takes 5 cycles)"),
               cl::cat(HardwareDescrCat));

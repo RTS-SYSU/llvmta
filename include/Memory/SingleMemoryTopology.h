@@ -125,12 +125,14 @@ public:
    * If so, reset instruction access finished.
    */
   virtual bool finishedInstrAccess(unsigned accessId);
+  virtual bool l2finishedInstrAccess(unsigned accessId);
 
   /**
    * Returns whether a given ID (data access) has been finished.
    * If so, reset data access finished.
    */
   virtual bool finishedDataAccess(unsigned accessId);
+  virtual bool l2finishedDataAccess(unsigned accessId);
 
   virtual bool hasUnfinishedAccesses() const;
 
@@ -247,6 +249,7 @@ SingleMemoryTopology<makeBgMem>::SingleMemoryTopology(
     const SingleMemoryTopology &ncmt)
     : memory(ncmt.memory->clone()), l2Cache(ncmt.l2Cache->clone()),
       instructionQueue(ncmt.instructionQueue), dataQueue(ncmt.dataQueue),
+      l2instrQueue(ncmt.l2instrQueue), l2dataQueue(ncmt.l2dataQueue),
       currentId(ncmt.currentId), currentIdAccessed(ncmt.currentIdAccessed),
       finishedAccess(ncmt.finishedAccess),
       currentIdAccessesInstr(ncmt.currentIdAccessesInstr),
@@ -258,9 +261,12 @@ template <AbstractCyclingMemory *(*makeBgMem)()>
 SingleMemoryTopology<makeBgMem> &
 SingleMemoryTopology<makeBgMem>::operator=(const SingleMemoryTopology &ncmt) {
   delete memory;
+  delete l2Cache;
   memory = ncmt.memory->clone();
   l2Cache = ncmt.l2Cache->clone();
   instructionQueue = ncmt.instructionQueue;
+  l2instrQueue = ncmt.l2instrQueue;
+  l2dataQueue = ncmt.l2dataQueue;
   dataQueue = ncmt.dataQueue;
   currentId = ncmt.currentId;
   currentIdAccessed = ncmt.currentIdAccessed;
@@ -331,7 +337,6 @@ boost::optional<unsigned> SingleMemoryTopology<makeBgMem>::accessData(
     return boost::none;
   }
 }
-
 template <AbstractCyclingMemory *(*makeBgMem)()>
 boost::optional<unsigned> SingleMemoryTopology<makeBgMem>::l2accessData(
     AbstractAddress addr, AccessType load_store, unsigned numWords) {
@@ -399,6 +404,7 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
       res = accessL2(l2dataQueue.front());
       for (auto &r : res) {
         r.l2dataQueue.pop_front();
+        r.currentIdAccessesInstr = false;
       }
     } else {
       if (!l2instrQueue.empty()) { // miss的
@@ -411,6 +417,7 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
           res = accessL2(l2instrQueue.front());
           for (auto &r : res) {
             r.l2instrQueue.pop_front();
+            r.currentIdAccessesInstr = true;
           }
         }
       }
@@ -450,7 +457,8 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
         newInst.l2finishAccess();
       }
 
-      assert(!(newInst.waitingForJoin && newInst.currentIdAccessedl2 != 0) &&
+      assert(!(newInst.waitingForJoin && newInst.currentIdAccessedl2 != 0 &&
+               newInst.currentIdAccessed != 0) &&
              "Should not be waiting for join when something is accessed!");
     }
     res2.push_back(newInst);
@@ -473,6 +481,15 @@ bool SingleMemoryTopology<makeBgMem>::finishedInstrAccess(unsigned id) {
 }
 
 template <AbstractCyclingMemory *(*makeBgMem)()>
+bool SingleMemoryTopology<makeBgMem>::l2finishedInstrAccess(unsigned id) {
+  bool res = l2finishedAccess == id;
+  if (res) {
+    l2finishedAccess = 0;
+  }
+  return res;
+}
+
+template <AbstractCyclingMemory *(*makeBgMem)()>
 bool SingleMemoryTopology<makeBgMem>::finishedDataAccess(unsigned id) {
   bool res = finishedAccess == id;
   if (res) {
@@ -482,9 +499,18 @@ bool SingleMemoryTopology<makeBgMem>::finishedDataAccess(unsigned id) {
 }
 
 template <AbstractCyclingMemory *(*makeBgMem)()>
+bool SingleMemoryTopology<makeBgMem>::l2finishedDataAccess(unsigned id) {
+  bool res = l2finishedAccess == id;
+  if (res) {
+    l2finishedAccess = 0;
+  }
+  return res;
+}
+template <AbstractCyclingMemory *(*makeBgMem)()>
 bool SingleMemoryTopology<makeBgMem>::hasUnfinishedAccesses() const {
-  bool result =
-      currentIdAccessed != 0 || !dataQueue.empty() || !instructionQueue.empty();
+  bool result = currentIdAccessed != 0 || !dataQueue.empty() ||
+                !instructionQueue.empty() || !l2dataQueue.empty() ||
+                !l2instrQueue.empty();
   return result;
 }
 
@@ -541,11 +567,19 @@ void SingleMemoryTopology<makeBgMem>::l2finishAccess() {
 template <AbstractCyclingMemory *(*makeBgMem)()>
 bool SingleMemoryTopology<makeBgMem>::operator==(
     const SingleMemoryTopology &ncmt) const {
-  return memory->equals(*ncmt.memory) &&
+  return memory->equals(*ncmt.memory) && l2Cache->equals(*ncmt.memory) &&
+         Super::areQueuesEqual(l2instrQueue, ncmt.l2instrQueue, currentId,
+                               ncmt.currentId) &&
+         Super::areQueuesEqual(l2dataQueue, ncmt.l2dataQueue, currentId,
+                               ncmt.currentId) &&
          Super::areQueuesEqual(instructionQueue, ncmt.instructionQueue,
                                currentId, ncmt.currentId) &&
          Super::areQueuesEqual(dataQueue, ncmt.dataQueue, currentId,
                                ncmt.currentId) &&
+         Super::areAccessIdsEqual(currentIdAccessedl2, ncmt.currentIdAccessedl2,
+                                  currentId, ncmt.currentId) &&
+         Super::areAccessIdsEqual(l2finishedAccess, ncmt.l2finishedAccess,
+                                  currentId, ncmt.currentId) &&
          Super::areAccessIdsEqual(currentIdAccessed, ncmt.currentIdAccessed,
                                   currentId, ncmt.currentId) &&
          Super::areAccessIdsEqual(finishedAccess, ncmt.finishedAccess,
@@ -557,12 +591,19 @@ template <AbstractCyclingMemory *(*makeBgMem)()>
 size_t SingleMemoryTopology<makeBgMem>::hashcode() const {
   size_t res = 0;
   hash_combine_hashcode(res, *this->memory);
+  hash_combine_hashcode(res, *this->l2Cache);
   // TODO hash queue content
   if (currentIdAccessed != 0) {
     hash_combine(res, (this->currentIdAccessed - this->currentId));
   }
   if (finishedAccess != 0) {
     hash_combine(res, this->finishedAccess - this->currentId);
+  }
+  if (currentIdAccessedl2 != 0) {
+    hash_combine(res, (this->currentIdAccessedl2 - this->currentId));
+  }
+  if (l2finishedAccess != 0) {
+    hash_combine(res, this->l2finishedAccess - this->currentId);
   }
   hash_combine(res, waitingForJoin);
   return res;
@@ -578,10 +619,19 @@ template <AbstractCyclingMemory *(*makeBgMem)()>
 bool SingleMemoryTopology<makeBgMem>::isJoinable(
     const SingleMemoryTopology &ncmt) const {
   return memory->isJoinable(*ncmt.memory) &&
+         l2Cache->isJoinable(*ncmt.l2Cache) &&
+         Super::areQueuesEqual(l2instrQueue, ncmt.l2instrQueue, currentId,
+                               ncmt.currentId) &&
+         Super::areQueuesEqual(l2dataQueue, ncmt.l2dataQueue, currentId,
+                               ncmt.currentId) &&
          Super::areQueuesEqual(instructionQueue, ncmt.instructionQueue,
                                currentId, ncmt.currentId) &&
          Super::areQueuesEqual(dataQueue, ncmt.dataQueue, currentId,
                                ncmt.currentId) &&
+         Super::areAccessIdsEqual(currentIdAccessedl2, ncmt.currentIdAccessedl2,
+                                  currentId, ncmt.currentId) &&
+         Super::areAccessIdsEqual(l2finishedAccess, ncmt.l2finishedAccess,
+                                  currentId, ncmt.currentId) &&
          Super::areAccessIdsEqual(currentIdAccessed, ncmt.currentIdAccessed,
                                   currentId, ncmt.currentId) &&
          Super::areAccessIdsEqual(finishedAccess, ncmt.finishedAccess,
@@ -600,17 +650,18 @@ void SingleMemoryTopology<makeBgMem>::join(const SingleMemoryTopology &ncmt) {
 
   // Join the subcomponent
   memory->join(*ncmt.memory);
+  l2Cache->join(*ncmt.l2Cache);
 }
 
 template <AbstractCyclingMemory *(*makeBgMem)()>
 bool SingleMemoryTopology<makeBgMem>::isBusyAccessingInstr() const {
-  return !instructionQueue.empty() ||
+  return !instructionQueue.empty() || !l2instrQueue.empty() ||
          (currentIdAccessed > 0 && currentIdAccessesInstr);
 }
 
 template <AbstractCyclingMemory *(*makeBgMem)()>
 bool SingleMemoryTopology<makeBgMem>::isBusyAccessingData() const {
-  return !dataQueue.empty() ||
+  return !dataQueue.empty() || !l2dataQueue.empty() ||
          (currentIdAccessed > 0 && !currentIdAccessesInstr);
 }
 
@@ -626,6 +677,16 @@ SingleMemoryTopology<makeBgMem>::fastForward() const {
       auto copy = res.emplace(res.end(), *this);
       delete copy->memory;
       copy->memory = forwardedInnerMem;
+    }
+    return res;
+  }
+  if (l2Cache->isBusy()) {
+    assert(currentIdAccessedl2 > 0);
+    // fast-forward the inner memory, then return
+    for (auto forwardedInnerMem : l2Cache->fastForward()) {
+      auto copy = res.emplace(res.end(), *this);
+      delete copy->l2Cache;
+      copy->l2Cache = forwardedInnerMem;
     }
     return res;
   }
@@ -672,6 +733,7 @@ std::ostream &operator<<(std::ostream &stream,
            << (int)(ncmt.finishedAccess - ncmt.currentId) << " \n";
   }
   stream << " waitingForJoin: " << ncmt.waitingForJoin << "\n";
+  stream << "BackgroundL2cache:\n" << *ncmt.l2Cache << "\n";
   stream << "BackgroundMemory:\n" << *ncmt.memory << "\n";
   stream << "]\n";
   stream << "]\n";

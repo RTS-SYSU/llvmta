@@ -87,6 +87,7 @@ public:
   getPersistentScopes(const AbstractAddress addr) const = 0;
   virtual bool equals(const AbstractCache &y) const = 0;
   virtual std::ostream &dump(std::ostream &os) const = 0;
+  virtual std::ostream &l2dump(std::ostream &os) const {};
 
   virtual Address alignToCacheline(const Address addr) const = 0;
   virtual unsigned getHitLatency() const = 0;
@@ -146,7 +147,7 @@ private:
   std::vector<SharedPtr> cacheSets;
 
   _SharedStorage l2cacheSetStorage;
-  static std::vector<_SharedPtr> L2cacheSets;
+  std::vector<_SharedPtr> L2cacheSets;
 
 protected:
   std::pair<unsigned, unsigned> getTagAndIndex(AddressType addr) const;
@@ -184,7 +185,7 @@ public:
   getPersistentScopes(const AbstractAddress addr) const;
   virtual bool equals(const AbstractCache &y) const;
   virtual std::ostream &dump(std::ostream &os) const;
-
+  virtual std::ostream &l2dump(std::ostream &os) const;
   /**
    * Returns the address aligned to cache linesize
    */
@@ -211,11 +212,13 @@ private:
    * Returns the cache set a given address maps to.
    */
   unsigned getCacheSet(const Address addr) const;
+  unsigned l2getCacheSet(const Address addr) const;
   /**
    * Compute the interval of possible cache sets to which an address of addritv
    * can map to
    */
   CacheSetItv getCacheSetInterval(const AddressInterval &addritv) const;
+  CacheSetItv l2getCacheSetInterval(const AddressInterval &addritv) const;
   /**
    * Updates the cache state after an access to any address in itv.
    * If a report is requested it returns the joined report of all accesses or
@@ -225,6 +228,10 @@ private:
   updateUnknownSets(const unsigned lower, const unsigned upper,
                     AbstractAddress addr, AccessType load_store,
                     bool wantReport, const Classification assumption);
+  JoinableUpdateReport *
+  l2updateUnknownSets(const unsigned lower, const unsigned upper,
+                      AbstractAddress addr, AccessType load_store,
+                      bool wantReport, const Classification assumption);
 };
 
 /**
@@ -462,12 +469,12 @@ UpdateReport *AbstractCacheImpl<T, C>::l2update(
   unsigned lower, upper;
   JoinableUpdateReport *report, *report2;
   // Make update for imprecise address information
-  boost::tie(lower, upper) = getCacheSetInterval(itv);
-  assert((T->N_SETS == 1 || lower != upper) &&
+  boost::tie(lower, upper) = l2getCacheSetInterval(itv);
+  assert((T->L2N_SETS == 1 || lower != upper) &&
          "Could have performed precise update");
   if (lower <= upper) {
-    report = updateUnknownSets(lower, upper, addr, load_store, wantReport,
-                               assumption);
+    report = l2updateUnknownSets(lower, upper, addr, load_store, wantReport,
+                                 assumption);
     if (wantReport && !report) {
       /* underlying reports are unjoinable - return no
        * information */
@@ -477,10 +484,10 @@ UpdateReport *AbstractCacheImpl<T, C>::l2update(
   }
 
   // wraparound:
-  report = updateUnknownSets(lower, T->N_SETS - 1, addr, load_store, wantReport,
-                             assumption);
+  report = l2updateUnknownSets(lower, T->L2N_SETS - 1, addr, load_store,
+                               wantReport, assumption);
   report2 =
-      updateUnknownSets(0, upper, addr, load_store, wantReport, assumption);
+      l2updateUnknownSets(0, upper, addr, load_store, wantReport, assumption);
 
   if (!wantReport) {
     assert(!report && !report2);
@@ -525,6 +532,31 @@ JoinableUpdateReport *AbstractCacheImpl<T, C>::updateUnknownSets(
 
   return report;
 }
+template <CacheTraits *T, class C>
+JoinableUpdateReport *AbstractCacheImpl<T, C>::l2updateUnknownSets(
+    const unsigned lower, const unsigned upper, AbstractAddress addr,
+    AccessType load_store, bool wantReport, const Classification assumption) {
+  JoinableUpdateReport *report = nullptr;
+  for (unsigned index = lower; index <= upper; ++index) {
+    SetType l2newCacheAnalysisSet(*L2cacheSets[index]);
+    UpdateReport *rep =
+        l2newCacheAnalysisSet.potentialUpdate(addr, load_store, wantReport);
+    L2cacheSets[index] = l2cacheSetStorage.insert(l2newCacheAnalysisSet);
+
+    if (!wantReport)
+      continue;
+
+    JoinableUpdateReport *jrep = dynamic_cast<JoinableUpdateReport *>(rep);
+    if (!report)
+      report = jrep;
+    else {
+      report->join(jrep);
+      delete jrep;
+    }
+  }
+
+  return report;
+}
 
 /**
  * \brief Updates the abstract state to be the join of itself and another one.
@@ -544,6 +576,15 @@ void AbstractCacheImpl<T, C>::join(const AbstractCache &ay) {
     newCacheAnalysisSet |= *y.cacheSets[i];
     cacheSets[i] = cacheSetStorage.insert(newCacheAnalysisSet);
   }
+  for (unsigned i = 0; i < T->L2N_SETS; ++i) {
+    if (L2cacheSets[i] ==
+        y.L2cacheSets[i]) { // no active joining needed for equal sets
+      continue;
+    }
+    SetType L2newCacheAnalysisSet(*L2cacheSets[i]);
+    L2newCacheAnalysisSet |= *y.L2cacheSets[i];
+    L2cacheSets[i] = l2cacheSetStorage.insert(L2newCacheAnalysisSet);
+  }
 }
 
 /**
@@ -560,6 +601,14 @@ bool AbstractCacheImpl<T, C>::lessequal(const AbstractCache &ay) const {
       return false;
     }
   }
+  for (unsigned i = 0; i < T->L2N_SETS; ++i) {
+    if (L2cacheSets[i] == y.L2cacheSets[i]) { // Sets are equal
+      continue;
+    }
+    if (!L2cacheSets[i]->lessequal(*y.L2cacheSets[i])) {
+      return false;
+    }
+  }
   return true;
 }
 
@@ -570,6 +619,11 @@ void AbstractCacheImpl<T, C>::enterScope(const PersistenceScope &scope) {
     newCacheAnalysisSet.enterScope(scope);
     cacheSets[i] = cacheSetStorage.insert(newCacheAnalysisSet);
   }
+  for (unsigned i = 0; i < T->L2N_SETS; ++i) {
+    SetType L2newCacheAnalysisSet(*L2cacheSets[i]);
+    L2newCacheAnalysisSet.enterScope(scope);
+    L2cacheSets[i] = l2cacheSetStorage.insert(L2newCacheAnalysisSet);
+  }
 }
 
 template <CacheTraits *T, class C>
@@ -579,8 +633,14 @@ void AbstractCacheImpl<T, C>::leaveScope(const PersistenceScope &scope) {
     newCacheAnalysisSet.leaveScope(scope);
     cacheSets[i] = cacheSetStorage.insert(newCacheAnalysisSet);
   }
+  for (unsigned i = 0; i < T->L2N_SETS; ++i) {
+    SetType L2newCacheAnalysisSet(*L2cacheSets[i]);
+    L2newCacheAnalysisSet.leaveScope(scope);
+    L2cacheSets[i] = l2cacheSetStorage.insert(L2newCacheAnalysisSet);
+  }
 }
 
+////TODO!!!!
 template <CacheTraits *T, class C>
 std::set<PersistenceScope>
 AbstractCacheImpl<T, C>::getPersistentScopes(const AbstractAddress addr) const {
@@ -621,7 +681,9 @@ bool AbstractCacheImpl<T, C>::equals(const AbstractCache &ay) const {
   const Self &y = dynamic_cast<const Self &>(ay);
   // Since SharedStorage returns unique pointers, we can compare pointers to
   // cache sets here.
-  return std::equal(cacheSets.begin(), cacheSets.end(), y.cacheSets.begin());
+  return std::equal(cacheSets.begin(), cacheSets.end(), y.cacheSets.begin()) &&
+         std::equal(L2cacheSets.begin(), L2cacheSets.end(),
+                    y.L2cacheSets.begin());
 }
 
 /**
@@ -639,6 +701,16 @@ std::ostream &AbstractCacheImpl<T, C>::dump(std::ostream &os) const {
   return os;
 }
 
+template <CacheTraits *T, class C>
+std::ostream &AbstractCacheImpl<T, C>::l2dump(std::ostream &os) const {
+  os << "CacheAnalysis sets:\n";
+  for (unsigned idx = 0; idx < T->L2N_SETS; ++idx) {
+    printHex(os, idx);
+    os << ": " << *(L2cacheSets[idx]) << "\n";
+  }
+  return os;
+}
+
 /* TODO there is no good reason for this to be in "AbstractCache". This
  * probably belongs together with getTag, such that cache set analyses can also
  * access it. Maybe one even wants to do these operations on AbstractAddresses
@@ -646,6 +718,11 @@ std::ostream &AbstractCacheImpl<T, C>::dump(std::ostream &os) const {
 template <CacheTraits *T, class C>
 unsigned AbstractCacheImpl<T, C>::getCacheSet(const Address addr) const {
   return (addr / T->LINE_SIZE) % T->N_SETS;
+}
+
+template <CacheTraits *T, class C>
+unsigned AbstractCacheImpl<T, C>::l2getCacheSet(const Address addr) const {
+  return (addr / T->LINE_SIZE) % T->L2N_SETS;
 }
 
 template <CacheTraits *T, class C>
@@ -682,6 +759,20 @@ AbstractCacheImpl<T, C>::getCacheSetInterval(
   return std::make_pair(lower, upper);
 }
 
+template <CacheTraits *T, class C>
+typename AbstractCacheImpl<T, C>::CacheSetItv
+AbstractCacheImpl<T, C>::l2getCacheSetInterval(
+    const AddressInterval &addritv) const {
+  unsigned lower = 0;
+  unsigned upper = T->L2N_SETS - 1;
+  if ((addritv.upper() + 4 - addritv.lower()) >= T->L2N_SETS * T->LINE_SIZE) {
+    return std::make_pair(lower, upper);
+  }
+  lower = l2getCacheSet(addritv.lower());
+  upper = l2getCacheSet(addritv.upper());
+  return std::make_pair(lower, upper);
+}
+
 //////// CRPD related stuff
 template <CacheTraits *T>
 class TrackLastAccess : public progana::JoinSemiLattice, public AbstractCache {
@@ -701,6 +792,7 @@ private:
 
 public:
   std::pair<unsigned, unsigned> getTagAndIndex(AddressType addr) const;
+  std::pair<unsigned, unsigned> l2getTagAndIndex(AddressType addr) const;
 
 public:
   virtual ~TrackLastAccess() {}
@@ -755,11 +847,13 @@ private:
    * Returns the cache set a given address maps to.
    */
   unsigned getCacheSet(const Address addr) const;
+  unsigned l2getCacheSet(const Address addr) const;
   /**
-   * Compute the interval of possible cache sets to which an address of addritv
-   * can map to
+   * Compute the interval of possible cache sets to which an address of
+   * addritv can map to
    */
   CacheSetItv getCacheSetInterval(const AddressInterval &addritv) const;
+  CacheSetItv l2getCacheSetInterval(const AddressInterval &addritv) const;
   /**
    * Updates the cache state after an access to any address in itv.
    * If a report is requested it returns the joined report of all accesses or
@@ -780,7 +874,12 @@ TrackLastAccess<T>::getTagAndIndex(AddressType addr) const {
   unsigned blockNumber = addr / T->LINE_SIZE;
   return std::make_pair(blockNumber / T->N_SETS, blockNumber % T->N_SETS);
 }
-
+template <CacheTraits *T>
+inline std::pair<unsigned, unsigned>
+TrackLastAccess<T>::l2getTagAndIndex(AddressType addr) const {
+  unsigned blockNumber = addr / T->LINE_SIZE;
+  return std::make_pair(blockNumber / T->L2N_SETS, blockNumber % T->L2N_SETS);
+}
 /**
  * \brief Initializes the abstract cache state.
  * \param assumeAnEmptyCache
@@ -884,7 +983,11 @@ template <CacheTraits *T>
 unsigned TrackLastAccess<T>::getCacheSet(const Address addr) const {
   return (addr / T->LINE_SIZE) % T->N_SETS;
 }
+template <CacheTraits *T>
 
+unsigned TrackLastAccess<T>::l2getCacheSet(const Address addr) const {
+  return (addr / T->LINE_SIZE) % T->L2N_SETS;
+}
 template <CacheTraits *T>
 Address TrackLastAccess<T>::alignToCacheline(const Address addr) const {
   return getCachelineAddress<T>(addr);
@@ -911,7 +1014,19 @@ TrackLastAccess<T>::getCacheSetInterval(const AddressInterval &addritv) const {
   upper = getCacheSet(addritv.upper());
   return std::make_pair(lower, upper);
 }
-
+template <CacheTraits *T>
+typename TrackLastAccess<T>::CacheSetItv
+TrackLastAccess<T>::l2getCacheSetInterval(
+    const AddressInterval &addritv) const {
+  unsigned lower = 0;
+  unsigned upper = T->L2N_SETS - 1;
+  if ((addritv.upper() + 4 - addritv.lower()) >= T->N_SETS * T->LINE_SIZE) {
+    return std::make_pair(lower, upper);
+  }
+  lower = l2getCacheSet(addritv.lower());
+  upper = l2getCacheSet(addritv.upper());
+  return std::make_pair(lower, upper);
+}
 } // namespace cache
 } // namespace dom
 

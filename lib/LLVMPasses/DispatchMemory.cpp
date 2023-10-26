@@ -54,6 +54,10 @@ CacheTraits icacheConf(16, 2, 8, 32, 128, false, false);
 
 CacheTraits dcacheConf(16, 2, 8, 32, 128, false, false);
 
+// NOTE: in l2cacheConf, A is actually A2, S is actually S2, if you have any
+// problem with this, then DO NOT EDIT IT!!
+CacheTraits l2cacheConf(16, 8, 8, 128, 128, false, false);
+
 template <CacheTraits *CacheConfig, typename CacheAna>
 inline AbstractCache *makePersistenceCache(PersistenceType persType,
                                            bool assumeEmptyCache) {
@@ -150,7 +154,7 @@ AbstractCache *CacheFactory::makeOptionsInstrCache(bool assumeEmptyCache) {
 }
 
 AbstractCache *CacheFactory::makeOptionsDataCache(bool assumeEmptyCache) {
-  return makeOptionsCache<&dcacheConf>(
+  return makeOptionsCache<&icacheConf>(
       DataCacheReplPolType, DataCachePersType, assumeEmptyCache,
       CompAnaType.isSet(CompositionalAnalysisType::DCACHE),
       ArrayMustAnalysis != ArrayMustAnaType::NONE);
@@ -165,7 +169,7 @@ CacheFactory::makeOptionsInstrCacheIgnComp(bool assumeEmptyCache) {
 
 AbstractCache *
 CacheFactory::makeOptionsDataCacheIgnComp(bool assumeEmptyCache) {
-  return makeOptionsCache<&dcacheConf>(
+  return makeOptionsCache<&icacheConf>(
       DataCacheReplPolType, DataCachePersType, assumeEmptyCache, false,
       ArrayMustAnalysis != ArrayMustAnaType::NONE);
 }

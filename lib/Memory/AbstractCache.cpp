@@ -48,12 +48,411 @@ namespace TimingAnalysisPass {
 namespace dom {
 namespace cache {
 
-// add static member variables
-template <CacheTraits *T, class C>
-std::vector<typename util::_SharedStorage<C>::SharedPtr>
-    AbstractCacheImpl<T, C>::L2cacheSets = {};
+// // add static member variables
+// template <CacheTraits *T, class C>
+// std::vector<typename util::_SharedStorage<C>::SharedPtr>
+//     AbstractCacheImpl<T, C>::L2cacheSets = {};
 
-#include "Memory/l2CacheSets.inc"
+// template <>
+// std::vector<typename util::_SharedStorage<
+//     LruMaxAgeAbstractCache<&icacheConf>>::SharedPtr>
+//     AbstractCacheImpl<&icacheConf,
+//                       LruMaxAgeAbstractCache<&icacheConf>>::L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<
+//     LruMinAgeAbstractCache<&icacheConf>>::SharedPtr>
+//     AbstractCacheImpl<&icacheConf,
+//                       LruMinAgeAbstractCache<&icacheConf>>::L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeArrayAwareCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         DirtinessAnalysis<&icacheConf, LruMaxAgeArrayAwareCache<&icacheConf>,
+//                           LruMinAgeAbstractCache<&icacheConf>>>::L2cacheSets
+//                           =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeArrayAwareCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//                               LruMaxAgeArrayAwareCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeArrayAwareCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//                               LruMaxAgeArrayAwareCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<ElementWiseCountingPersistence<
+//                     &icacheConf>>>>>::L2cacheSets = {};
+
+// template <>
+// std::vector<util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeArrayAwareCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf, CompositionalAbstractCache<
+//                          DirtinessAnalysis<
+//                              &icacheConf,
+//                              LruMaxAgeArrayAwareCache<&icacheConf>,
+//                              LruMinAgeAbstractCache<&icacheConf>>,
+//                          MultiScopePersistence<ElementWiseCountingPersistence<
+//                              &icacheConf>>>>::L2cacheSets = {};
+
+// template <>
+// std::vector<util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeArrayAwareCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//                               LruMaxAgeArrayAwareCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<
+//                     ConditionalMustPersistence<&icacheConf>>>>>::L2cacheSets
+//                     =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeArrayAwareCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//                               LruMaxAgeArrayAwareCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<
+//     CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>>::SharedPtr>
+//     AbstractCacheImpl<&icacheConf,
+//                       CompositionalAbstractCache<
+//                           LruMaxAgeArrayAwareCache<&icacheConf>,
+//                           LruMinAgeAbstractCache<&icacheConf>>>::L2cacheSets
+//                           =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
+
+// template <>
+// std::vector<
+//     typename util::_SharedStorage<ConstrainedAges<&icacheConf>>::SharedPtr>
+//     AbstractCacheImpl<&icacheConf, ConstrainedAges<&icacheConf>>::L2cacheSets
+//     =
+//         {};
+
+// template <>
+// std::vector<
+//     typename
+//     util::_SharedStorage<DCUsefulCacheBlocks<&icacheConf>>::SharedPtr>
+//     AbstractCacheImpl<&icacheConf,
+//                       DCUsefulCacheBlocks<&icacheConf>>::L2cacheSets = {};
+// template <>
+// std::vector<
+//     typename
+//     util::_SharedStorage<EvictingCacheBlocks<&icacheConf>>::SharedPtr>
+//     AbstractCacheImpl<&icacheConf,
+//                       EvictingCacheBlocks<&icacheConf>>::L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<ElementWiseCountingPersistence<
+//                     &icacheConf>>>>>::L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<
+//                 ElementWiseCountingPersistence<&icacheConf>>>>::L2cacheSets =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<
+//                     ConditionalMustPersistence<&icacheConf>>>>>::L2cacheSets
+//                     =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeArrayAwareCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeAbstractCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         DirtinessAnalysis<&icacheConf, LruMaxAgeAbstractCache<&icacheConf>,
+//                           LruMinAgeAbstractCache<&icacheConf>>>::L2cacheSets
+//                           =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeAbstractCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//             LruMaxAgeAbstractCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeAbstractCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//             LruMaxAgeAbstractCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<ElementWiseCountingPersistence<
+//                     &icacheConf>>>>>::L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeAbstractCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//             LruMaxAgeAbstractCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<
+//                 ElementWiseCountingPersistence<&icacheConf>>>>::L2cacheSets =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeAbstractCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//             LruMaxAgeAbstractCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<
+//                     ConditionalMustPersistence<&icacheConf>>>>>::L2cacheSets
+//                     =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     DirtinessAnalysis<&icacheConf, LruMaxAgeAbstractCache<&icacheConf>,
+//                       LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             DirtinessAnalysis<&icacheConf,
+//             LruMaxAgeAbstractCache<&icacheConf>,
+//                               LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<
+//     CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>>::SharedPtr>
+//     AbstractCacheImpl<&icacheConf,
+//                       CompositionalAbstractCache<
+//                           LruMaxAgeAbstractCache<&icacheConf>,
+//                           LruMinAgeAbstractCache<&icacheConf>>>::L2cacheSets
+//                           =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<ElementWiseCountingPersistence<
+//                     &icacheConf>>>>>::L2cacheSets = {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ElementWiseCountingPersistence<&icacheConf>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<
+//                 ElementWiseCountingPersistence<&icacheConf>>>>::L2cacheSets =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     CompositionalAbstractCache<
+//         MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//         MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>>::
+//                 SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             CompositionalAbstractCache<
+//                 MultiScopePersistence<SetWiseCountingPersistence<&icacheConf>>,
+//                 MultiScopePersistence<
+//                     ConditionalMustPersistence<&icacheConf>>>>>::L2cacheSets
+//                     =
+//         {};
+
+// template <>
+// std::vector<typename util::_SharedStorage<CompositionalAbstractCache<
+//     CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                LruMinAgeAbstractCache<&icacheConf>>,
+//     MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::SharedPtr>
+//     AbstractCacheImpl<
+//         &icacheConf,
+//         CompositionalAbstractCache<
+//             CompositionalAbstractCache<LruMaxAgeAbstractCache<&icacheConf>,
+//                                        LruMinAgeAbstractCache<&icacheConf>>,
+//             MultiScopePersistence<ConditionalMustPersistence<&icacheConf>>>>::
+//         L2cacheSets = {};
 
 std::ostream &operator<<(std::ostream &os, const AbstractCache &x) {
   return x.dump(os);
