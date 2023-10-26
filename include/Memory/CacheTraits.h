@@ -49,10 +49,10 @@ namespace cache {
  */
 struct CacheTraits {
 
-  CacheTraits(unsigned L, unsigned A, unsigned A2, unsigned S, unsigned S2,
-              bool WB, bool WA)
-      : LINE_SIZE(16), ASSOCIATIVITY(2), L2ASSOCIATIVITY(8), N_SETS(32),
-        L2N_SETS(128), WRITEBACK(false), WRITEALLOCATE(false) {}
+  CacheTraits(unsigned L = 16, unsigned A = 2, unsigned A2 = 8, unsigned S = 32,
+              unsigned S2 = 128, bool WB = false, bool WA = false)
+      : LINE_SIZE(L), ASSOCIATIVITY(A), L2ASSOCIATIVITY(A2), N_SETS(S),
+        L2N_SETS(S2), WRITEBACK(WB), WRITEALLOCATE(WA) {}
 
   void checkParams() {
     // If larger values are desired, you just need to adjust the bit width

@@ -442,8 +442,6 @@ InOrderPipelineState<MemoryTopology>::cycle(
   }
   // std::cout << succ;
 
-
-
   DEBUG_WITH_TYPE(
       "driverSED", for (auto &succ
                         : res) { std::cerr << succ; });

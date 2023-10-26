@@ -80,9 +80,6 @@ public:
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
                        const Classification assumption = CL_UNKNOWN);
-  UpdateReport *l2update(const AbstractAddress addr, AccessType load_store,
-                         AnaDeps *, bool wantReport = false,
-                         const Classification assumption = CL_UNKNOWN);
   UpdateReport *potentialUpdate(AbstractAddress addr, AccessType load_store,
                                 bool wantReport = false);
   void join(const Self &y);
@@ -129,48 +126,6 @@ CompositionalAbstractCache<A1, A2>::classify(const AbstractAddress addr) const {
 /// Classification assumption)
 template <class A1, class A2>
 UpdateReport *CompositionalAbstractCache<A1, A2>::update(
-    const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,
-    bool wantReport, const Classification assumption) {
-
-#ifdef NO_REDUCTIONS
-  Classification cl = assumption;
-#else
-  Classification cl = (assumption == CL_UNKNOWN) ? classify(addr) : assumption;
-  assert(cl != CL_BOT);
-#endif
-
-  typename A1::AnaDeps *Deps1 = nullptr;
-  typename A2::AnaDeps *Deps2 = nullptr;
-  if (Deps) {
-    Deps1 = Deps->first;
-    Deps2 = Deps->second;
-  }
-  UpdateReport *report =
-      analysis1.update(addr, load_store, Deps1, wantReport, cl);
-  UpdateReport *report2 =
-      analysis2.update(addr, load_store, Deps2, wantReport, cl);
-
-  if (!wantReport) {
-    assert(!report && !report2);
-    return nullptr;
-  }
-
-  JoinableUpdateReport *jreport = dynamic_cast<JoinableUpdateReport *>(report);
-  /* The underlying reports are not joinable. Discard their reports and
-   * return the generic report. */
-  if (!jreport) {
-    delete report;
-    delete report2;
-    return new UpdateReport;
-  }
-
-  jreport->join(dynamic_cast<JoinableUpdateReport *>(report2));
-  delete report2;
-  return jreport;
-}
-
-template <class A1, class A2>
-UpdateReport *CompositionalAbstractCache<A1, A2>::l2update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,
     bool wantReport, const Classification assumption) {
 

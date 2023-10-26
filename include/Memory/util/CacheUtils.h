@@ -59,6 +59,7 @@ typename dom::cache::CacheTraits::TagType getTag(AbstractAddress addr) {
 
   return getTag<CacheConfig>(itv.lower());
 }
+
 template <dom::cache::CacheTraits *CacheConfig>
 typename dom::cache::CacheTraits::TagType l2getTag(AbstractAddress addr) {
   AddressInterval itv = addr.getAsInterval();
@@ -82,6 +83,26 @@ unsigned getPerSetSize(const GlobalVariable *ds) {
   size += base - getCachelineAddress<CacheConfig>(base);
 
   unsigned cacheSizePerAssoc = CacheConfig->N_SETS * CacheConfig->LINE_SIZE;
+
+  unsigned perSetSize = size / cacheSizePerAssoc;
+
+  if (size % cacheSizePerAssoc != 0) {
+    ++perSetSize;
+  }
+
+  return perSetSize;
+}
+
+template <dom::cache::CacheTraits *CacheConfig>
+unsigned l2getPerSetSize(const GlobalVariable *ds) {
+  unsigned size = StaticAddrProvider->getArraySize(ds);
+  unsigned base = StaticAddrProvider->getGlobalVarAddress(ds);
+
+  /* If the array is not aligned at cacheline boundaries we have to
+   * account for the initial part of the cacheline */
+  size += base - getCachelineAddress<CacheConfig>(base);
+
+  unsigned cacheSizePerAssoc = CacheConfig->L2N_SETS * CacheConfig->LINE_SIZE;
 
   unsigned perSetSize = size / cacheSizePerAssoc;
 

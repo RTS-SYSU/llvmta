@@ -29,6 +29,7 @@
 #include "Memory/AbstractCache.h"
 #include "Memory/AbstractCyclingMemory.h"
 
+#include "Memory/CacheTraits.h"
 #include "Util/IntervalCounter.h"
 
 namespace TimingAnalysisPass {
@@ -36,6 +37,8 @@ namespace TimingAnalysisPass {
 extern dom::cache::CacheTraits icacheConf;
 
 extern dom::cache::CacheTraits dcacheConf;
+
+extern dom::cache::CacheTraits l2cacheConf;
 
 class CacheFactory {
 public:

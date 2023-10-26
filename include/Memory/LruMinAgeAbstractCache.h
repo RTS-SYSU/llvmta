@@ -132,8 +132,16 @@ inline LruMinAgeAbstractCache<T>::LruMinAgeAbstractCache(
 template <CacheTraits *T>
 Classification
 LruMinAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
-  TagType tag = getTag<T>(addr);
-  if (ageOfImplicitTags < T->ASSOCIATIVITY)
+  unsigned ASSO;
+  TagType tag;
+  if (this->isl2) {
+    ASSO = T->L2ASSOCIATIVITY;
+    tag = l2getTag<T>(addr);
+  } else {
+    ASSO = T->ASSOCIATIVITY;
+    tag = getTag<T>(addr);
+  }
+  if (ageOfImplicitTags < ASSO)
     return CL_UNKNOWN;
 
   for (unsigned i = 0; i < explicitTags.size(); ++i)
@@ -284,8 +292,16 @@ LruMinAgeAbstractCache<T>::potentialUpdate(AbstractAddress addr,
   const unsigned maxWorthwhileTags = 4;
 
   auto itv = addr.getAsInterval();
-  TagType lowTag = getTag<T>(itv.lower());
-  TagType highTag = getTag<T>(itv.upper());
+  TagType lowTag;
+  TagType highTag;
+  if (this->isl2) {
+    lowTag = l2getTag<T>(itv.lower());
+    highTag = l2getTag<T>(itv.upper());
+  } else {
+    lowTag = getTag<T>(itv.lower());
+    highTag = getTag<T>(itv.upper());
+  }
+
   unsigned numTags = highTag - lowTag + 1;
 
   if (numTags > maxWorthwhileTags) {
@@ -444,10 +460,16 @@ inline bool LruMinAgeAbstractCache<T>::operator<(const Self &y) const {
 ///\see dom::cache::CacheSetAnalysis<T>::dump(std::ostream& os) const
 template <CacheTraits *T>
 std::ostream &LruMinAgeAbstractCache<T>::dump(std::ostream &os) const {
+  unsigned ASSO = 0;
+  if (isl2) {
+    ASSO = T->L2ASSOCIATIVITY;
+  } else {
+    ASSO = T->ASSOCIATIVITY;
+  }
   unsigned pos = 0;
 
   os << "[";
-  for (unsigned age = 0; age < T->ASSOCIATIVITY; ++age) {
+  for (unsigned age = 0; age < ASSO; ++age) {
     if (age != 0)
       os << ", ";
 

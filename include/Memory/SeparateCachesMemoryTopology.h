@@ -304,9 +304,11 @@ private:
     WaitForSTART, // We are waiting for the access to start
     WaitForLOAD, // We are waiting for a load from background memory topology to
                  // finish
-    WaitForCACHE, // We are waiting for the cache to finish its update
-    WaitForSTORE  // We are waiting for a store from background memory topology
-                  // to finish
+    WaitForl1CACHE, // We are waiting for the cache to finish its update
+    WaitForL2CACHE,
+    WaitForl1l2CACHE,
+    WaitForSTORE // We are waiting for a store from background
+                 // memory topology to finish
   };
 
   /**
@@ -325,14 +327,14 @@ private:
     /// Stores the id currently accessed in the l2 topology.
     unsigned bgl2AccessId;
     /// Blocking counter to wait until a cache access is finished.
-    unsigned timeBlocked, l2timeBlocked;
+    unsigned l1timeBlocked, l2timeBlocked;
     /// Classification of this access by the cache
     Classification cl;
 
     // Constructor
     OngoingAccess(Access acc)
         : access(acc), phase(AccessPhase::WaitForSTART), bgmemStall(false),
-          bgMemAccessId(0), bgl2AccessId(0), timeBlocked(0), l2timeBlocked(0),
+          bgMemAccessId(0), bgl2AccessId(0), l1timeBlocked(0), l2timeBlocked(0),
           cl(CL_BOT) {}
   };
 
@@ -356,7 +358,7 @@ private:
     bool justWroteBackLine;
     // Collect the numer of misses we encountered in this basic block
     unsigned nmisses;
-    unsigned l2nmisses;
+    unsigned l1nmisses;
     // Collect the number of stores that access the bus in this basic block
     unsigned numStoreBusAccess;
 
@@ -366,7 +368,7 @@ private:
           cache(cache), justUpdatedCache(boost::none),
           justMissedCache(boost::none), justDirtifiedLine(boost::none),
           justWroteBackLine(false), nmisses(0), numStoreBusAccess(0),
-          l2nmisses(0) {}
+          l1nmisses(0) {}
     // Copy constructor
     MemoryComponent(const MemoryComponent &mc)
         : waitingQueue(mc.waitingQueue), ongoingAccess(mc.ongoingAccess),
@@ -375,7 +377,7 @@ private:
           justMissedCache(mc.justMissedCache),
           justDirtifiedLine(mc.justDirtifiedLine),
           justWroteBackLine(mc.justWroteBackLine), nmisses(mc.nmisses),
-          l2nmisses(mc.l2nmisses), numStoreBusAccess(mc.numStoreBusAccess) {}
+          l1nmisses(mc.l1nmisses), numStoreBusAccess(mc.numStoreBusAccess) {}
     // Assignment operator
     MemoryComponent &operator=(const MemoryComponent &mc) {
       waitingQueue = mc.waitingQueue;
@@ -389,7 +391,7 @@ private:
       justWroteBackLine = mc.justWroteBackLine;
       nmisses = mc.nmisses;
       numStoreBusAccess = mc.numStoreBusAccess;
-      l2nmisses = mc.l2nmisses;
+      l1nmisses = mc.l1nmisses;
       return *this;
     }
     // Destructor
@@ -403,7 +405,7 @@ private:
              justWroteBackLine == mc.justWroteBackLine &&
              nmisses == mc.nmisses &&
              numStoreBusAccess == mc.numStoreBusAccess &&
-             l2nmisses == mc.l2nmisses && equalsWithoutCache(mc, myId, mcId);
+             l1nmisses == mc.l1nmisses && equalsWithoutCache(mc, myId, mcId);
     }
     bool equalsWithoutCache(const MemoryComponent &mc, unsigned myId,
                             unsigned mcId) const {
@@ -419,8 +421,14 @@ private:
                  mc.ongoingAccess.get().bgMemAccessId != 0) ||
                 (ongoingAccess.get().bgMemAccessId == 0 &&
                  mc.ongoingAccess.get().bgMemAccessId == 0)) &&
-               ongoingAccess.get().timeBlocked ==
-                   mc.ongoingAccess.get().timeBlocked &&
+               ((ongoingAccess.get().bgl2AccessId != 0 &&
+                 mc.ongoingAccess.get().bgl2AccessId != 0) ||
+                (ongoingAccess.get().bgl2AccessId == 0 &&
+                 mc.ongoingAccess.get().bgl2AccessId == 0)) &&
+               ongoingAccess.get().l1timeBlocked ==
+                   mc.ongoingAccess.get().l1timeBlocked &&
+               ongoingAccess.get().l2timeBlocked ==
+                   mc.ongoingAccess.get().l2timeBlocked &&
                ongoingAccess.get().phase == mc.ongoingAccess.get().phase &&
                ongoingAccess.get().bgmemStall ==
                    mc.ongoingAccess.get().bgmemStall &&
@@ -442,7 +450,7 @@ private:
       assert(justDirtifiedLine == mc.justDirtifiedLine);
       assert(justWroteBackLine == mc.justWroteBackLine);
       nmisses = std::max(nmisses, mc.nmisses);
-      l2nmisses = std::max(l2nmisses, mc.l2nmisses);
+      l1nmisses = std::max(l1nmisses, mc.l1nmisses);
       numStoreBusAccess = std::max(numStoreBusAccess, mc.numStoreBusAccess);
     }
   };
@@ -629,9 +637,9 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
           for (auto &memAfterInstr :
                afterbgmemcycle.checkInstructionPart()) { // cache更新
             for (auto &memAfterData : memAfterInstr.checkDataPart()) {
-              fprintf(stderr, "MemAfterData: ");
-              std::cerr << memAfterData;
-              std::cerr << '\n';
+              // fprintf(stderr, "MemAfterData: ");
+              // std::cerr << memAfterData;
+              // std::cerr << '\n';
               resultList.push_back(memAfterData);
             }
           }
@@ -667,22 +675,23 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           processInstrCacheAccess(CL_UNKNOWN);
         } else {
           // split here - this is hit state, need another state for miss
-          SeparateCachesMemoryTopology scmtMiss(*this);
           //层1miss分析层2
           Classification CL = instructionComponent.cache->classifyL2(
               instructionComponent.ongoingAccess.get().access.addr);
           if (CL == CL2_UNKNOWN) {
             // Just another split here
-            SeparateCachesMemoryTopology l2Miss(*this), l2Hit(*this);
+            SeparateCachesMemoryTopology l2Miss(*this);
             l2Miss.processInstrCacheAccess(CL2_MISS);
-            l2Hit.processInstrCacheAccess(CL2_HIT);
             resultList.emplace_back(l2Miss);
-            resultList.emplace_back(l2Hit);
 
+            SeparateCachesMemoryTopology l2Hit(*this);
+            l2Hit.processInstrCacheAccess(CL2_HIT);
+            resultList.emplace_back(l2Hit);
           } else {
+            SeparateCachesMemoryTopology scmtMiss(*this);
             scmtMiss.processInstrCacheAccess(CL);
+            resultList.push_back(scmtMiss);
           }
-          resultList.push_back(scmtMiss);
           processInstrCacheAccess(CL_HIT);
         }
       } else {
@@ -695,7 +704,24 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           resultList.push_back(scmtMiss);
         }
         // process with the given result
-        processInstrCacheAccess(res);
+        if (res == CL_MISS) {
+          // L1 miss 分析层2
+          Classification CL = instructionComponent.cache->classifyL2(
+              instructionComponent.ongoingAccess.get().access.addr);
+          SeparateCachesMemoryTopology scmtMiss(*this);
+          if (CL == CL2_UNKNOWN) {
+            // Just another split here
+            SeparateCachesMemoryTopology l2Hit(*this);
+            processInstrCacheAccess(CL2_MISS);
+            l2Hit.processInstrCacheAccess(CL2_HIT);
+            resultList.emplace_back(l2Hit);
+          } else {
+            this->processInstrCacheAccess(CL);
+          }
+        } else {
+          // L1 hit
+          processInstrCacheAccess(res);
+        }
       }
     }
   }
@@ -726,9 +752,21 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           processDataCacheAccess(CL_UNKNOWN);
         } else {
           // split here - this is hit state, need another state for miss
-          SeparateCachesMemoryTopology scmtMiss(*this);
-          scmtMiss.processDataCacheAccess(CL_MISS);
-          resultList.push_back(scmtMiss);
+          //层1miss分析层2
+          Classification CL = dataComponent.cache->classifyL2(
+              dataComponent.ongoingAccess.get().access.addr);
+          if (CL == CL2_UNKNOWN) {
+            // Just another split here
+            SeparateCachesMemoryTopology l2Miss(*this), l2Hit(*this);
+            l2Miss.processDataCacheAccess(CL2_MISS);
+            l2Hit.processDataCacheAccess(CL2_HIT);
+            resultList.emplace_back(l2Miss);
+            resultList.emplace_back(l2Hit);
+          } else {
+            SeparateCachesMemoryTopology scmtMiss(*this);
+            scmtMiss.processDataCacheAccess(CL);
+            resultList.push_back(scmtMiss);
+          }
           processDataCacheAccess(CL_HIT);
         }
       } else {
@@ -740,7 +778,24 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           scmtMiss.processDataCacheAccess(CL_MISS);
           resultList.push_back(scmtMiss);
         }
-        processDataCacheAccess(res);
+        if (res == CL_MISS) {
+          // L1 miss 分析层2
+          Classification CL = dataComponent.cache->classifyL2(
+              dataComponent.ongoingAccess.get().access.addr);
+          SeparateCachesMemoryTopology scmtMiss(*this);
+          if (CL == CL2_UNKNOWN) {
+            // Just another split here
+            SeparateCachesMemoryTopology l2Hit(*this);
+            processDataCacheAccess(CL2_MISS);
+            l2Hit.processDataCacheAccess(CL2_HIT);
+            resultList.emplace_back(l2Hit);
+          } else {
+            this->processDataCacheAccess(CL);
+          }
+        } else {
+          // L1 hit
+          this->processDataCacheAccess(res);
+        }
       }
     }
   }
@@ -760,29 +815,31 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
     auto &ongoingAcc = instructionComponent.ongoingAccess.get();
     // check whether something was accessed in the l2 cache
     if (ongoingAcc.bgl2AccessId != 0) {
-      if (memory.finishedInstrAccess(ongoingAcc.bgl2AccessId)) {
+      if (memory.l2finishedInstrAccess(ongoingAcc.bgl2AccessId)) {
         // Not waiting for memory any more
         ongoingAcc.bgl2AccessId = 0;
         // Blocked for cache update
-        ongoingAcc.l2timeBlocked = instructionComponent.cache->getHitLatency();
+        ongoingAcc.l1timeBlocked = instructionComponent.cache->getHitLatency();
       }
-    } else { // ongoingAcc.bgl2AccessId == 0
-      // something was accessed in cache2 and a hit
+    } else if (ongoingAcc.bgMemAccessId == 0 &&
+               ongoingAcc.bgl2AccessId == 0) { // ongoingAcc.bgl2AccessId == 0
+      // something was accessed in L1cache and a hit
 
       /* decrement remaining blocking time.
        * the if guards against underflow */
-      if (ongoingAcc.l2timeBlocked > 0) {
-        ongoingAcc.l2timeBlocked--;
+
+      if (ongoingAcc.l1timeBlocked > 0) {
+        ongoingAcc.l1timeBlocked--;
       }
 
-      if (ongoingAcc.l2timeBlocked == 0) {
+      if (ongoingAcc.l1timeBlocked == 0) {
         instructionComponent.finishedId = ongoingAcc.access.id;
         if (needAccessedInstructionAddresses()) {
           instructionComponent.justUpdatedCache = ongoingAcc.access.addr;
         }
-        instructionComponent.cache->l2update(ongoingAcc.access.addr,
-                                             ongoingAcc.access.load_store,
-                                             false, ongoingAcc.cl);
+        instructionComponent.cache->update(ongoingAcc.access.addr,
+                                           ongoingAcc.access.load_store, false,
+                                           ongoingAcc.cl);
         instructionComponent.ongoingAccess = boost::none;
       }
     }
@@ -792,26 +849,32 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         // Not waiting for memory any more
         ongoingAcc.bgMemAccessId = 0;
         // Blocked for cache update
-        ongoingAcc.timeBlocked = instructionComponent.cache->getHitLatency();
+        ongoingAcc.l2timeBlocked = instructionComponent.cache->getHitLatency();
       }
-    } else { // ongoingAcc.bgMemAccessId == 0
-      // something was accessed in cache and a hit
+    } else if (ongoingAcc.bgMemAccessId == 0 &&
+               (ongoingAcc.bgl2AccessId != 0 || ongoingAcc.l2timeBlocked > 0)) {
+      // ongoingAcc.bgMemAccessId == 0
+      // something was accessed in L2cache and a hit
 
       /* decrement remaining blocking time.
        * the if guards against underflow */
-      if (ongoingAcc.timeBlocked > 0) {
-        ongoingAcc.timeBlocked--;
+      if (ongoingAcc.l2timeBlocked > 0) {
+        ongoingAcc.l2timeBlocked--;
       }
 
-      if (ongoingAcc.timeBlocked == 0) {
-        instructionComponent.finishedId = ongoingAcc.access.id;
+      if (ongoingAcc.l2timeBlocked == 0) {
+        // instructionComponent.finishedId = ongoingAcc.access.id;
         if (needAccessedInstructionAddresses()) {
           instructionComponent.justUpdatedCache = ongoingAcc.access.addr;
         }
-        instructionComponent.cache->update(ongoingAcc.access.addr,
-                                           ongoingAcc.access.load_store, false,
-                                           ongoingAcc.cl);
-        instructionComponent.ongoingAccess = boost::none;
+        instructionComponent.cache->l2update(ongoingAcc.access.addr,
+                                             ongoingAcc.access.load_store,
+                                             false, ongoingAcc.cl);
+        // data和instr共用一个L2 cache
+        dataComponent.cache->l2update(ongoingAcc.access.addr,
+                                      ongoingAcc.access.load_store, false,
+                                      ongoingAcc.cl);
+        // instructionComponent.ongoingAccess = boost::none;
       }
     }
   }
@@ -850,31 +913,29 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
     } else {
       switch (ongoingAcc.phase) {
       case AccessPhase::WaitForLOAD: {
-        assert(ongoingAcc.bgMemAccessId != 0 &&
-               "Waiting for load but not accessing anything");
+        assert(
+            (ongoingAcc.bgMemAccessId != 0 || ongoingAcc.bgl2AccessId != 0) &&
+            "Waiting for load but not accessing anything");
         if (memory.finishedDataAccess(
                 ongoingAcc
                     .bgMemAccessId)) { // We waited for load and are finished
           ongoingAcc.bgMemAccessId = 0;
-          ongoingAcc.timeBlocked = dataComponent.cache->getHitLatency();
-          ongoingAcc.phase = AccessPhase::WaitForCACHE;
+          ongoingAcc.l1timeBlocked = dataComponent.cache->getHitLatency();
+          ongoingAcc.l2timeBlocked = dataComponent.cache->getHitLatency();
+          ongoingAcc.phase = AccessPhase::WaitForl1l2CACHE;
         }
         break;
       }
-      case AccessPhase::WaitForCACHE: {
-        // something was accessed in cache (either a hit, or an update after a
-        // miss) and we wait for it to process
-        assert(ongoingAcc.bgMemAccessId == 0 &&
-               "Waiting for cache but accessing in main memory");
-
-        /* decrement remaining blocking time.
-         * The if guards against underflow */
-        if (ongoingAcc.timeBlocked > 0) {
-          ongoingAcc.timeBlocked--;
+      case AccessPhase::WaitForl1l2CACHE: {
+        if (ongoingAcc.l2timeBlocked > 0) {
+          ongoingAcc.l2timeBlocked--;
+        }
+        if (ongoingAcc.l1timeBlocked > 0) {
+          ongoingAcc.l1timeBlocked--;
         }
 
         /* check if we are ready to progress */
-        if (ongoingAcc.timeBlocked > 0) {
+        if (ongoingAcc.l2timeBlocked > 0 && ongoingAcc.l1timeBlocked > 0) {
           break;
         }
 
@@ -884,9 +945,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         if (needAccessedDataAddresses()) {
           dataComponent.justUpdatedCache = addr;
         }
-
         bool mightMiss =
-            ongoingAcc.cl == CL_MISS || ongoingAcc.cl == CL_UNKNOWN;
+            ongoingAcc.cl == CL2_MISS || ongoingAcc.cl == CL2_UNKNOWN;
         bool isWBCache = dataComponent.cache->getWritePolicy().WriteBack;
 
         /* In the absence of any further information assume any access causes a
@@ -898,11 +958,239 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
          */
         bool wantReport =
             isWBCache && (mightMiss || accType == AccessType::STORE);
-        UpdateReport *report = dataComponent.cache->update(
-            addr, accType, wantReport, ongoingAcc.cl);
+        UpdateReport *report;
+        if (ongoingAcc.l1timeBlocked == 0) {
+          report = dataComponent.cache->update(addr, accType, wantReport,
+                                               ongoingAcc.cl);
+        }
+        if (ongoingAcc.l2timeBlocked == 0) {
+          report = dataComponent.cache->l2update(addr, accType, wantReport,
+                                                 ongoingAcc.cl);
+        }
         if (isWBCache) {
-          /* If the report is a WriteBackReport improve our writeback/dirtifying
-           * store information */
+          /* If the report is a WriteBackReport improve our
+           * writeback/dirtifying store information */
+          auto wbreport = dynamic_cast<WritebackReport *>(report);
+          if (wbreport && StaticallyRefuteWritebacks) {
+            WBVictimItv = wbreport->potentialWritebacks();
+          }
+          if (accType == AccessType::STORE) {
+            dataComponent.justDirtifiedLine = acc.addr;
+            if (WBBound == WBBoundType::DIRTIFYING_STORE && wbreport &&
+                !wbreport->dirtifyingStore) {
+              dataComponent.justDirtifiedLine = boost::none;
+            }
+          }
+
+          if (mightMiss) {
+            AnalysisResults::getInstance().incrementResult("staticMisses");
+            if (!WBVictimItv) {
+              AnalysisResults::getInstance().incrementResult(
+                  "staticallyRefutedWritebacks");
+            }
+          }
+        }
+
+        if (accType == AccessType::STORE && !isWBCache) {
+          // Write-through policy and we have a store
+          // We want to launch a store to the address we were accessing
+          // originally
+          auto res =
+              memory.accessData(acc.addr, AccessType::STORE, acc.numWords);
+          if (res) {
+            ongoingAcc.bgMemAccessId = res.get();
+          } else {
+            ongoingAcc.bgmemStall = true;
+          }
+          ongoingAcc.phase = AccessPhase::WaitForSTORE;
+          ++dataComponent.numStoreBusAccess;
+        }
+        /* We split if we cannot prove there is no writeback
+           TODO should we try to prove that there *is* a
+           writeback to save a split? It might also help when we add
+           storebuffers, since it might draw writeback budget away from more
+           critical points */
+        else if (isWBCache && mightMiss && WBVictimItv) {
+          SeparateCachesMemoryTopology scmtNoWriteback(*this);
+          scmtNoWriteback.dataComponent.finishedId =
+              scmtNoWriteback.dataComponent.ongoingAccess.get().access.id;
+          scmtNoWriteback.dataComponent.ongoingAccess = boost::none;
+          resultList.push_back(scmtNoWriteback);
+
+          // We should do a write-back
+          auto res = memory.accessData(WBVictimItv.get(), AccessType::STORE,
+                                       Dlinesize / 4);
+          assert(res && "Background Memory Topology rejected data access!");
+          ongoingAcc.bgMemAccessId = res.get();
+          ongoingAcc.phase = AccessPhase::WaitForSTORE;
+          ++dataComponent.numStoreBusAccess;
+          dataComponent.justWroteBackLine = true;
+        } else { // We are finished, nothing left to do
+          dataComponent.finishedId =
+              dataComponent.ongoingAccess.get().access.id;
+          dataComponent.ongoingAccess = boost::none;
+        }
+
+        if (isWBCache && dataComponent.justDirtifiedLine) {
+          /* split the states to allow restricting the
+           * dfs by persistence constraints */
+          SeparateCachesMemoryTopology noDFSsplit(*this);
+          noDFSsplit.dataComponent.justDirtifiedLine = boost::none;
+          resultList.push_back(noDFSsplit);
+        }
+        delete report;
+        break;
+      }
+      case AccessPhase::WaitForl1CACHE: {
+        if (ongoingAcc.l1timeBlocked > 0) {
+          ongoingAcc.l1timeBlocked--;
+        }
+
+        /* check if we are ready to progress */
+        if (ongoingAcc.l1timeBlocked > 0) {
+          break;
+        }
+
+        Access acc = ongoingAcc.access;
+        AbstractAddress addr = ongoingAcc.access.addr;
+        AccessType accType = ongoingAcc.access.load_store;
+        if (needAccessedDataAddresses()) {
+          dataComponent.justUpdatedCache = addr;
+        }
+        bool mightMiss =
+            ongoingAcc.cl == CL2_MISS || ongoingAcc.cl == CL2_UNKNOWN;
+        bool isWBCache = dataComponent.cache->getWritePolicy().WriteBack;
+
+        /* In the absence of any further information assume any access causes a
+         * writeback and any store is dirtifying */
+        boost::optional<AbstractAddress> WBVictimItv(
+            AbstractAddress::getUnknownAddress());
+
+        /* we are interested in the report for dirtifying stores and writebacks
+         */
+        bool wantReport =
+            isWBCache && (mightMiss || accType == AccessType::STORE);
+        UpdateReport *report;
+        if (ongoingAcc.l1timeBlocked == 0) {
+          report = dataComponent.cache->update(addr, accType, wantReport,
+                                               ongoingAcc.cl);
+        }
+        if (isWBCache) {
+          /* If the report is a WriteBackReport improve our
+           * writeback/dirtifying store information */
+          auto wbreport = dynamic_cast<WritebackReport *>(report);
+          if (wbreport && StaticallyRefuteWritebacks) {
+            WBVictimItv = wbreport->potentialWritebacks();
+          }
+          if (accType == AccessType::STORE) {
+            dataComponent.justDirtifiedLine = acc.addr;
+            if (WBBound == WBBoundType::DIRTIFYING_STORE && wbreport &&
+                !wbreport->dirtifyingStore) {
+              dataComponent.justDirtifiedLine = boost::none;
+            }
+          }
+
+          if (mightMiss) {
+            AnalysisResults::getInstance().incrementResult("staticMisses");
+            if (!WBVictimItv) {
+              AnalysisResults::getInstance().incrementResult(
+                  "staticallyRefutedWritebacks");
+            }
+          }
+        }
+
+        if (accType == AccessType::STORE && !isWBCache) {
+          // Write-through policy and we have a store
+          // We want to launch a store to the address we were accessing
+          // originally
+          auto res =
+              memory.accessData(acc.addr, AccessType::STORE, acc.numWords);
+          if (res) {
+            ongoingAcc.bgMemAccessId = res.get();
+          } else {
+            ongoingAcc.bgmemStall = true;
+          }
+          ongoingAcc.phase = AccessPhase::WaitForSTORE;
+          ++dataComponent.numStoreBusAccess;
+        }
+        /* We split if we cannot prove there is no writeback
+           TODO should we try to prove that there *is* a
+           writeback to save a split? It might also help when we add
+           storebuffers, since it might draw writeback budget away from more
+           critical points */
+        else if (isWBCache && mightMiss && WBVictimItv) {
+          SeparateCachesMemoryTopology scmtNoWriteback(*this);
+          scmtNoWriteback.dataComponent.finishedId =
+              scmtNoWriteback.dataComponent.ongoingAccess.get().access.id;
+          scmtNoWriteback.dataComponent.ongoingAccess = boost::none;
+          resultList.push_back(scmtNoWriteback);
+
+          // We should do a write-back
+          auto res = memory.accessData(WBVictimItv.get(), AccessType::STORE,
+                                       Dlinesize / 4);
+          assert(res && "Background Memory Topology rejected data access!");
+          ongoingAcc.bgMemAccessId = res.get();
+          ongoingAcc.phase = AccessPhase::WaitForSTORE;
+          ++dataComponent.numStoreBusAccess;
+          dataComponent.justWroteBackLine = true;
+        } else { // We are finished, nothing left to do
+          dataComponent.finishedId =
+              dataComponent.ongoingAccess.get().access.id;
+          dataComponent.ongoingAccess = boost::none;
+        }
+
+        if (isWBCache && dataComponent.justDirtifiedLine) {
+          /* split the states to allow restricting the
+           * dfs by persistence constraints */
+          SeparateCachesMemoryTopology noDFSsplit(*this);
+          noDFSsplit.dataComponent.justDirtifiedLine = boost::none;
+          resultList.push_back(noDFSsplit);
+        }
+        delete report;
+        break;
+      }
+      case AccessPhase::WaitForL2CACHE: {
+        if (memory.l2finishedDataAccess(ongoingAcc.bgl2AccessId)) {
+          ongoingAcc.bgl2AccessId = 0;
+          ongoingAcc.l1timeBlocked = dataComponent.cache->getHitLatency();
+          ongoingAcc.phase = AccessPhase::WaitForl1CACHE;
+        }
+        if (ongoingAcc.l2timeBlocked > 0) {
+          ongoingAcc.l2timeBlocked--;
+        }
+
+        /* check if we are ready to progress */
+        if (ongoingAcc.l2timeBlocked > 0) {
+          break;
+        }
+
+        Access acc = ongoingAcc.access;
+        AbstractAddress addr = ongoingAcc.access.addr;
+        AccessType accType = ongoingAcc.access.load_store;
+        if (needAccessedDataAddresses()) {
+          dataComponent.justUpdatedCache = addr;
+        }
+        bool mightMiss =
+            ongoingAcc.cl == CL2_MISS || ongoingAcc.cl == CL2_UNKNOWN;
+        bool isWBCache = dataComponent.cache->getWritePolicy().WriteBack;
+
+        /* In the absence of any further information assume any access causes a
+         * writeback and any store is dirtifying */
+        boost::optional<AbstractAddress> WBVictimItv(
+            AbstractAddress::getUnknownAddress());
+
+        /* we are interested in the report for dirtifying stores and writebacks
+         */
+        bool wantReport =
+            isWBCache && (mightMiss || accType == AccessType::STORE);
+        UpdateReport *report;
+        if (ongoingAcc.l2timeBlocked == 0) {
+          report = dataComponent.cache->l2update(addr, accType, wantReport,
+                                                 ongoingAcc.cl);
+        }
+        if (isWBCache) {
+          /* If the report is a WriteBackReport improve our
+           * writeback/dirtifying store information */
           auto wbreport = dynamic_cast<WritebackReport *>(report);
           if (wbreport && StaticallyRefuteWritebacks) {
             WBVictimItv = wbreport->potentialWritebacks();
@@ -975,8 +1263,9 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         break;
       }
       case AccessPhase::WaitForSTORE: {
-        assert(ongoingAcc.bgMemAccessId != 0 &&
-               "Waiting for store but not accessing anything");
+        assert(
+            (ongoingAcc.bgMemAccessId != 0 || ongoingAcc.bgl2AccessId != 0) &&
+            "Waiting for store but not accessing anything");
         if (UnblockStores) { // If option for unblocking stores is set, finish
                              // access directly
           dataComponent.finishedId = ongoingAcc.access.id;
@@ -984,7 +1273,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         } else {
           // We wait for the store to finish before signaling finish to the
           // outside
-          if (memory.finishedDataAccess(ongoingAcc.bgMemAccessId)) {
+          if (memory.finishedDataAccess(ongoingAcc.bgMemAccessId) ||
+              memory.l2finishedDataAccess(ongoingAcc.bgl2AccessId)) {
             dataComponent.finishedId = ongoingAcc.access.id;
             dataComponent.ongoingAccess = boost::none;
           }
@@ -1018,14 +1308,13 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
   // assert((actualcl == copycl || PreemptiveExecution) &&
   //        "Incompatible classifications detected");
 
-  // TODO, make it looks more clearly
-  auto &l1misses = instructionComponent.l2nmisses;
-
   if (cl == CL_HIT) {
-    ongoingAcc.timeBlocked = instructionComponent.cache->getHitLatency();
+    ongoingAcc.l1timeBlocked = instructionComponent.cache->getHitLatency();
+    ongoingAcc.bgl2AccessId = 0;
+    ongoingAcc.bgMemAccessId = 0;
 
   } else if (cl == CL2_HIT) {
-    l1misses++;
+    ++instructionComponent.l1nmisses;
     Access acc = ongoingAcc.access;
     ongoingAcc.l2timeBlocked =
         instructionComponent.cache
@@ -1035,7 +1324,8 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
         memory.l2accessInstr(acc.addr.getAsInterval().lower(),
                              Ilinesize / 4); //指令取的字节数固定
     if (res) {
-      ongoingAcc.bgMemAccessId = *res;
+      ongoingAcc.bgl2AccessId = *res;
+      ongoingAcc.bgMemAccessId = 0;
     } else {
       assert(false &&
              "Background memory topology rejected instruction access.");
@@ -1048,8 +1338,8 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
     //          cl == CL_UNKNOWN)) &&
     //        "Classification was neither HIT nor MISS.");
 
+    ++instructionComponent.l1nmisses;
     ++instructionComponent.nmisses;
-    ++l1misses;
     Access acc = ongoingAcc.access;
     // if (cl == CL_MISS &&
     //     (InstrCachePersType != PersistenceType::NONE || PreemptiveExecution))
@@ -1065,7 +1355,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
         acc.addr.getAsInterval().lower(), Ilinesize / 4); //指令取的字节数固定
     if (res) {
       ongoingAcc.bgMemAccessId = *res;
-      ongoingAcc.bgl2AccessId = *res;
+      // ongoingAcc.bgl2AccessId = *res;
     } else {
       assert(false &&
              "Background memory topology rejected instruction access.");
@@ -1080,22 +1370,22 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
   auto &ongoingAcc = dataComponent.ongoingAccess.get();
   ongoingAcc.cl = cl;
 
-  // Assert part
-  Classification actualcl =
-      dataComponent.cache->classify(ongoingAcc.access.addr);
-  Classification copycl(actualcl);
-  copycl.join(cl);
-  assert((actualcl == copycl || PreemptiveExecution) &&
-         "Incompatible classifications detected");
+  // // Assert part
+  // Classification actualcl =
+  //     dataComponent.cache->classify(ongoingAcc.access.addr);
+  // Classification copycl(actualcl);
+  // copycl.join(cl);
+  // assert((actualcl == copycl || PreemptiveExecution) &&
+  //        "Incompatible classifications detected");
 
   if (cl == CL_HIT) { // We hit the cache (in case we load and in case we store)
-    ongoingAcc.timeBlocked = dataComponent.cache->getHitLatency();
-    ongoingAcc.phase = AccessPhase::WaitForCACHE;
+    ongoingAcc.l1timeBlocked = dataComponent.cache->getHitLatency();
+    ongoingAcc.phase = AccessPhase::WaitForl1CACHE;
   } else {
-    assert((cl == CL_MISS ||
-            (FollowLocalWorstType.isSet(LocalWorstCaseType::DCMISS) &&
-             cl == CL_UNKNOWN)) &&
-           "Classification was neither HIT nor MISS.");
+    // assert((cl == CL_MISS ||
+    //         (FollowLocalWorstType.isSet(LocalWorstCaseType::DCMISS) &&
+    //          cl == CL_UNKNOWN)) &&
+    //        "Classification was neither HIT nor MISS.");
     Access acc = dataComponent.ongoingAccess.get().access;
 
     // What shall we do?
@@ -1106,18 +1396,22 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
              "Only write-through can be non-write-allocate");
       auto res = memory.accessData(acc.addr, AccessType::STORE, acc.numWords);
       if (res) {
-        ongoingAcc.bgMemAccessId = res.get();
+        if (cl == CL2_HIT) {
+          ongoingAcc.bgl2AccessId = res.get();
+        } else {
+          ongoingAcc.bgMemAccessId = res.get();
+        }
       } else {
         ongoingAcc.bgmemStall = true;
       }
+
       ongoingAcc.phase = AccessPhase::WaitForSTORE;
       ++dataComponent.numStoreBusAccess;
-    } else {
-      // We load (missed) or we store (missed) write-allocate
+    }
 
-      // Only in these cases, we account for misses
-      ++dataComponent.nmisses;
-      if (cl == CL_MISS &&
+    else {
+      // We load (missed) or we store (missed) write-allocate
+      if (cl == CL2_MISS &&
           (DataCachePersType != PersistenceType::NONE || PreemptiveExecution)) {
         // We just missed the data cache (only needed for persistence analysis
         // and integrated preemptive execution mode)
@@ -1135,16 +1429,24 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
           dataComponent.justMissedCache = acc.addr;
         }
       }
-
       auto res =
-          memory.accessData(acc.addr, AccessType::LOAD,
-                            Dlinesize / 4); // first load the necessary data
+          memory.l2accessData(acc.addr, AccessType::LOAD,
+                              Dlinesize / 4); // first load the necessary data
       if (res) {
-        ongoingAcc.bgMemAccessId = res.get();
+        ongoingAcc.bgl2AccessId = res.get();
       } else {
         ongoingAcc.bgmemStall = true;
       }
-      ongoingAcc.phase = AccessPhase::WaitForLOAD; // We wait for the load
+      if (cl == CL2_HIT) {
+        dataComponent.l1nmisses++;
+        ongoingAcc.l2timeBlocked = dataComponent.cache->getHitLatency();
+        ongoingAcc.phase = AccessPhase::WaitForL2CACHE;
+      } else if (cl == CL2_MISS) {
+        // Only in these cases, we account for misses
+        ++dataComponent.nmisses;
+        dataComponent.l1nmisses++;
+        ongoingAcc.phase = AccessPhase::WaitForLOAD; // We wait for the load
+      }
     }
   }
 }
@@ -1182,12 +1484,14 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::hashcode()
   if (instructionComponent.ongoingAccess) {
     Super::hash_access(res, instructionComponent.ongoingAccess.get().access,
                        this->currentId);
-    hash_combine(res, instructionComponent.ongoingAccess.get().timeBlocked);
+    hash_combine(res, instructionComponent.ongoingAccess.get().l1timeBlocked);
+    hash_combine(res, instructionComponent.ongoingAccess.get().l2timeBlocked);
   }
   if (dataComponent.ongoingAccess) {
     Super::hash_access(res, dataComponent.ongoingAccess.get().access,
                        this->currentId);
-    hash_combine(res, dataComponent.ongoingAccess.get().timeBlocked);
+    hash_combine(res, dataComponent.ongoingAccess.get().l1timeBlocked);
+    hash_combine(res, dataComponent.ongoingAccess.get().l2timeBlocked);
   }
   if (instructionComponent.finishedId != 0)
     hash_combine(res, instructionComponent.finishedId - this->currentId);
@@ -1260,7 +1564,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
   bool instrCompAllowsFastForward =
       (instrCompIdle ||
        (instructionComponent.ongoingAccess &&
-        instructionComponent.ongoingAccess.get().bgMemAccessId != 0)) &&
+        (instructionComponent.ongoingAccess.get().bgMemAccessId != 0 ||
+         instructionComponent.ongoingAccess.get().bgl2AccessId != 0))) &&
       instructionComponent.justMissedCache ==
           boost::none // Do not forget any events
       && instructionComponent.justUpdatedCache == boost::none;
@@ -1320,7 +1625,7 @@ operator<<(std::ostream &stream,
 
   stream << "Instruction Cache:\n " << *scmt.instructionComponent.cache << "\n";
   stream << "L2Misses up to now: " << scmt.instructionComponent.nmisses << "\n";
-  stream << "L1Misses up to now: " << scmt.instructionComponent.l2nmisses
+  stream << "L1Misses up to now: " << scmt.instructionComponent.l1nmisses
          << "\n";
   if (scmt.instructionComponent.justUpdatedCache) {
     stream << "Just updated: "
@@ -1338,8 +1643,12 @@ operator<<(std::ostream &stream,
            << (int)scmt.instructionComponent.ongoingAccess.get().phase << "\n";
     stream << "BgMem Stall: "
            << scmt.instructionComponent.ongoingAccess.get().bgmemStall << "\n";
-    stream << "Cache TimeBlocked: "
-           << scmt.instructionComponent.ongoingAccess.get().timeBlocked << "\n";
+    stream << "l1Cache TimeBlocked: "
+           << scmt.instructionComponent.ongoingAccess.get().l1timeBlocked
+           << "\n";
+    stream << "l2Cache TimeBlocked: "
+           << scmt.instructionComponent.ongoingAccess.get().l2timeBlocked
+           << "\n";
     stream << "Classification: "
            << scmt.instructionComponent.ongoingAccess.get().cl << "\n";
   } else {
@@ -1366,7 +1675,9 @@ operator<<(std::ostream &stream,
 
   stream << "Data Cache:\n " << *scmt.dataComponent.cache;
   stream << "L2Misses up to now: " << scmt.dataComponent.nmisses << "\n";
-  stream << "L1Misses up to now: " << scmt.dataComponent.l2nmisses << "\n";
+  stream << "L1Misses up to now: " << scmt.dataComponent.l1nmisses << "\n";
+  stream << "L2 Cache:\n ";
+  scmt.dataComponent.cache->l2dump(stream);
   stream << "Stores to bus up to now: " << scmt.dataComponent.numStoreBusAccess
          << "\n";
   if (scmt.dataComponent.justUpdatedCache) {
@@ -1390,8 +1701,10 @@ operator<<(std::ostream &stream,
            << (int)scmt.dataComponent.ongoingAccess.get().phase << "\n";
     stream << "BgMem Stall: "
            << scmt.dataComponent.ongoingAccess.get().bgmemStall << "\n";
-    stream << "Cache TimeBlocked: "
-           << scmt.dataComponent.ongoingAccess.get().timeBlocked << "\n";
+    stream << "l1Cache TimeBlocked: "
+           << scmt.dataComponent.ongoingAccess.get().l1timeBlocked << "\n";
+    stream << "l2Cache TimeBlocked: "
+           << scmt.dataComponent.ongoingAccess.get().l2timeBlocked << "\n";
     stream << "Classification: " << scmt.dataComponent.ongoingAccess.get().cl
            << "\n";
   } else {

@@ -295,7 +295,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.WRITEBACK = DataCacheWriteBack;
   dcacheConf.WRITEALLOCATE = DataCacheWriteAllocate;
   // TODO
-  dcacheConf.L2N_SETS = 128;
+  dcacheConf.L2N_SETS = NN_SET;
   dcacheConf.checkParams();
 
   // Select the analysis to execute

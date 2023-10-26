@@ -429,7 +429,7 @@ void performCRPDAnalysis(
   assert(CT == CacheType::INSTRUCTION || CT == CacheType::DATA);
 
   if (CT == CacheType::DATA) {
-    performCRPDAnalysisCC<&dcacheConf>(SimpleGraph, provider);
+    performCRPDAnalysisCC<&icacheConf>(SimpleGraph, provider);
   } else {
     performCRPDAnalysisCC<&icacheConf>(SimpleGraph, provider);
   }

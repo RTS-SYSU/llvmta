@@ -115,11 +115,20 @@ inline LruMaxAgeAbstractCache<T>::LruMaxAgeAbstractCache(
 template <CacheTraits *T>
 Classification
 LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
-  TagType tag = getTag<T>(addr);
+  unsigned ASSO;
+  TagType tag;
+  if (this->isl2) {
+    ASSO = T->L2ASSOCIATIVITY;
+    tag = l2getTag<T>(addr);
+  } else {
+    ASSO = T->ASSOCIATIVITY;
+    tag = getTag<T>(addr);
+  }
+
   for (unsigned i = 0; i < size; ++i)
     if (tags[i] == tag)
       return CL_HIT;
-  if (size == T->ASSOCIATIVITY)
+  if (size == ASSO)
     return CL_MISS;
   return CL_UNKNOWN;
 }
@@ -134,13 +143,19 @@ LruMaxAgeAbstractCache<T>::potentialUpdate(AbstractAddress addr,
                                            AccessType load_store,
                                            bool wantReport) {
   unsigned pos = size;
+  unsigned ASSO;
+  if (this->isl2) {
+    ASSO = T->L2ASSOCIATIVITY;
+  } else {
+    ASSO = T->ASSOCIATIVITY;
+  }
   LruMaxAgeUpdateReport<TagType> *report = nullptr;
   if (wantReport) {
     report = new LruMaxAgeUpdateReport<TagType>;
   }
 
   // Evict all elements with age A-1
-  while (pos > 0 && ages[pos - 1] == T->ASSOCIATIVITY - 1) {
+  while (pos > 0 && ages[pos - 1] == ASSO - 1) {
     if (wantReport) {
       report->evictedElements.insert(tags[pos - 1]);
     }
@@ -167,10 +182,10 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
   unsigned ASSO;
   if (this->isl2) {
     ASSO = accessedAge = T->L2ASSOCIATIVITY;
-    TagType tag = l2getTag<T>(addr);
+    tag = l2getTag<T>(addr);
   } else {
     ASSO = accessedAge = T->ASSOCIATIVITY;
-    TagType tag = getTag<T>(addr);
+    tag = getTag<T>(addr);
   }
 
   LruMaxAgeUpdateReport<TagType> *report = nullptr;
@@ -191,7 +206,7 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
     // an element will be added
     ++size;
     // But we actually assumed a hit
-    if (assumption == CL_HIT) {
+    if (assumption == CL_HIT || assumption == CL2_HIT) {
       // No evictions, age at most k-1
       assert(size <= ASSO &&
              "Full cache and addr not in there, cannot assume a hit (illegal "
@@ -243,9 +258,15 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
 
 ///\see dom::cache::CacheSetAnalysis<T>::join(const Self& y)
 template <CacheTraits *T> void LruMaxAgeAbstractCache<T>::join(const Self &y) {
-  std::vector<TagType> outTags(T->ASSOCIATIVITY);
-  std::vector<WayType> outAges(T->ASSOCIATIVITY);
-  int out = T->ASSOCIATIVITY - 1;
+  unsigned ASSO = 0;
+  if (isl2) {
+    ASSO = T->L2ASSOCIATIVITY;
+  } else {
+    ASSO = T->ASSOCIATIVITY;
+  }
+  std::vector<TagType> outTags(ASSO);
+  std::vector<WayType> outAges(ASSO);
+  int out = ASSO - 1;
   int xIn = size - 1;
   int yIn = y.size - 1;
 
@@ -287,7 +308,7 @@ template <CacheTraits *T> void LruMaxAgeAbstractCache<T>::join(const Self &y) {
 
   // Move elements to member variables.
   ++out;
-  size = T->ASSOCIATIVITY - out;
+  size = ASSO - out;
   for (unsigned i = 0; i < size; ++i) {
     tags[i] = outTags[out + i];
     ages[i] = outAges[out + i];
@@ -341,10 +362,16 @@ inline bool LruMaxAgeAbstractCache<T>::operator<(const Self &y) const {
 ///\see dom::cache::CacheSetAnalysis<T>::dump(std::ostream& os) const
 template <CacheTraits *T>
 std::ostream &LruMaxAgeAbstractCache<T>::dump(std::ostream &os) const {
+  unsigned ASSO = 0;
+  if (isl2) {
+    ASSO = T->L2ASSOCIATIVITY;
+  } else {
+    ASSO = T->ASSOCIATIVITY;
+  }
   WayType pos = 0;
 
   os << "[";
-  for (unsigned age = 0; age < T->ASSOCIATIVITY; ++age) {
+  for (unsigned age = 0; age < ASSO; ++age) {
     if (age != 0)
       os << ", ";
 
@@ -376,10 +403,16 @@ inline std::ostream &operator<<(std::ostream &os,
  */
 template <CacheTraits *T>
 unsigned LruMaxAgeAbstractCache<T>::getMaxAge(const TagType tag) const {
+  unsigned ASSO = 0;
+  if (isl2) {
+    ASSO = T->L2ASSOCIATIVITY;
+  } else {
+    ASSO = T->ASSOCIATIVITY;
+  }
   for (unsigned i = 0; i < size; ++i)
     if (tags[i] == tag)
       return ages[i];
-  return T->ASSOCIATIVITY; // TODO Should this return \infty?
+  return ASSO; // TODO Should this return \infty?
 }
 
 template <CacheTraits *T>

@@ -631,7 +631,7 @@ auto CacheRelatedPreemptionDelay<CacheConfig>::readECBs(
 
   std::string line;
   for (unsigned i = 0; i < N_SETS; ++i) {
-    bool ok = (bool) std::getline(ECBfile, line);
+    bool ok = (bool)std::getline(ECBfile, line);
 
     if (!ok) {
       std::cout << "File does not have " << N_SETS << " lines!" << std::endl;
@@ -794,6 +794,6 @@ auto CacheRelatedPreemptionDelay<CacheConfig>::computeCommonElements(
 // List of instantiations of CRPD
 
 template class CacheRelatedPreemptionDelay<&icacheConf>;
-template class CacheRelatedPreemptionDelay<&dcacheConf>;
+// template class CacheRelatedPreemptionDelay<&dcacheConf>;
 
 } // namespace TimingAnalysisPass
