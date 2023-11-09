@@ -41,6 +41,7 @@
 
 #include <iostream>
 #include <map>
+#include <queue>
 #include <string>
 
 using namespace llvm;
@@ -60,6 +61,12 @@ class AddressInformation;
  *
  */
 class TimingAnalysisMain : public MachineFunctionPass {
+protected:
+  typedef std::map<int64_t, std::queue<std::string>> CoreInfoMapping;
+
+  CoreInfoMapping mp;
+
+  void parseCoreInfo(const std::string &);
 
 public:
   unsigned int coreNum = 0;

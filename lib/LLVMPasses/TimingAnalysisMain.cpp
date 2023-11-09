@@ -49,8 +49,10 @@
 #include "llvm/Support/Format.h"
 
 #include "llvm/Support/JSON.h"
+#include "llvm/Support/MemoryBuffer.h"
 
 #include <cmath>
+#include <cstdint>
 #include <fstream>
 #include <limits>
 #include <list>
@@ -66,10 +68,6 @@ using namespace std;
 namespace TimingAnalysisPass {
 
 TimingAnalysisMain **MultiCorePasses = nullptr;
-
-typedef std::map<unsigned, std::queue<std::string>> CoreInfoMapping;
-
-CoreInfoMapping mp;
 
 unsigned getInitialStackPointer() { return InitialStackPointer; }
 
@@ -98,8 +96,48 @@ bool TimingAnalysisMain::runOnMachineFunction(MachineFunction &MF) {
   return Changed;
 }
 
-void parseCoreInfo(const std::string &fileName) {
+void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
   // TODO
+  auto jsonfile = MemoryBuffer::getFile(fileName, true);
+  if (!jsonfile) {
+    fprintf(stderr, "Unable to open file %s, exit.", fileName.c_str());
+    exit(1);
+  }
+  auto jsondata = json::parse(jsonfile.get()->getBuffer());
+  if (!jsondata) {
+    fprintf(stderr, "Unable to parse json file %s, exit.", fileName.c_str());
+    exit(1);
+  }
+
+  json::Array *cores = jsondata->getAsArray();
+  if (!cores) {
+    fprintf(stderr, "File should be an array of cores, exit.",
+            fileName.c_str());
+    exit(1);
+  }
+  for (json::Value &e : *cores) {
+    json::Object *obj = e.getAsObject();
+    if (!obj) {
+      fprintf(stderr, "Core info shoule be an object, exit.", fileName.c_str());
+      exit(1);
+    }
+    int64_t core = obj->getInteger("core").getValue();
+
+    json::Array *functions = obj->getArray("tasks");
+    if (!functions) {
+      fprintf(stderr, "Unable to get tasks for core %lu, exit.", core);
+      exit(1);
+    }
+
+    for (json::Value &task : *functions) {
+      auto taskName = task.getAsObject()->get("function")->getAsString();
+      if (!taskName) {
+        fprintf(stderr, "Unable to get task name for core %lu, exit.", core);
+        exit(1);
+      }
+      mp[core].push(taskName.getValue().str());
+    }
+  }
 }
 
 // boost::optional<std::string>
@@ -138,6 +176,17 @@ TimingAnalysisMain::getNextFunction(unsigned int core) {
 bool TimingAnalysisMain::doFinalization(Module &M) {
   // do File parsing
   parseCoreInfo(coreInfo);
+
+  // for Debug
+  // for (auto &e : mp) {
+  //   outs() << "Core: " << e.first << " ";
+  //   while (!e.second.empty()) {
+  //     outs() << e.second.front() << " ";
+  //     e.second.pop();
+  //   }
+  //   outs() << "\n";
+  // }
+  // exit(0);
 
   // if (!machineFunctionCollector->hasFunctionByName(AnalysisEntryPoint)) {
   //   outs() << "No Timing Analysis Run. There is no entry point: "
@@ -366,8 +415,7 @@ TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
     return dispatchInOrderTimingAnalysis(AddressInfo,
                                          this->coreNum); //严格顺序执行
   case MicroArchitecturalType::OUTOFORDER:
-    return dispatchOutOfOrderTimingAnalysis(AddressInfo,
-                                            this->coreNum);
+    return dispatchOutOfOrderTimingAnalysis(AddressInfo, this->coreNum);
   default:
     errs() << "No known microarchitecture chosen.\n";
     return boost::none;
