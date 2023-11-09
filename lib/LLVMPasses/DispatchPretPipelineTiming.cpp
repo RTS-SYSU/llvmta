@@ -35,7 +35,7 @@
 namespace TimingAnalysisPass {
 
 boost::optional<BoundItv>
-dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string entryPoint,int coreNum) {
+dispatchPretTimingAnalysis(AddressInformation &addressInfo, unsigned int coreNum) {
   std::tuple<AddressInformation &> addrInfoTuple(addressInfo);
 
   configureCyclingMemories();
@@ -46,7 +46,7 @@ dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string entryPoi
            DataCachePersType == PersistenceType::NONE &&
            "Cannot use Persistence analyses here");
     typedef SingleMemoryTopology<makeOptionsBackgroundMem> MemTop;
-    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, entryPoint,coreNum);
+    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, coreNum);
   }
   case MemoryTopologyType::SEPARATECACHES: {
     typedef SingleMemoryTopology<makeOptionsBackgroundMem> BgMem;
@@ -54,7 +54,7 @@ dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string entryPoi
                                          CacheFactory::makeOptionsDataCache,
                                          BgMem>
         MemTop;
-    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, entryPoint,coreNum);
+    return dispatchTimingAnalysisJoin<PretPipelineState<MemTop>>(addrInfoTuple, coreNum);
   }
   default:
     errs() << "No known memory topology chosen.\n";

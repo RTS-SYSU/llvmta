@@ -1415,9 +1415,12 @@ void StateSensitiveGraph<MicroArchDom>::filterExitingStates(
       bool foundMatch = false;
       // A matching output-state must have the same context as we have at the
       // end of the basic block
-      for (auto sId : outStatesPerMBBPerContext.at(MI->getParent())
-                          .at(id2context.at(stateId))) {
-        if (id2state.at(stateId) == id2state.at(sId)) {
+      auto id=MI->getParent();
+      auto mycontext=outStatesPerMBBPerContext.at(id);
+      auto context=mycontext.at(id2context.at(stateId));
+      for (auto sId :context) {
+        //TODO!!!!
+        if (id2state.at(stateId)== id2state.at(sId)) {
           DEBUG_WITH_TYPE(
               "detailedStateGraph",
               debugDump << "node : {\n	title : \"" << sId

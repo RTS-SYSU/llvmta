@@ -33,7 +33,7 @@
 namespace TimingAnalysisPass {
 
 boost::optional<BoundItv>
-dispatchPretTimingAnalysis(AddressInformation &addressInfo, std::string,int);
+dispatchPretTimingAnalysis(AddressInformation &addressInfo, unsigned int);
 
 }
 

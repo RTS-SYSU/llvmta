@@ -43,6 +43,7 @@ namespace TimingAnalysisPass {
  */
 class AbstractCyclingMemory {
 public:
+  virtual void addaccessCounter(){};
   virtual AbstractCyclingMemory *clone() const = 0;
 
   virtual ~AbstractCyclingMemory(){};

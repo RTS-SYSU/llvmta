@@ -48,6 +48,8 @@
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/Support/Format.h"
 
+#include "llvm/Support/JSON.h"
+
 #include <cmath>
 #include <fstream>
 #include <limits>
@@ -97,33 +99,7 @@ bool TimingAnalysisMain::runOnMachineFunction(MachineFunction &MF) {
 }
 
 void parseCoreInfo(const std::string &fileName) {
-  std::ifstream in(fileName, std::ios::in);
-  if (!in.is_open()) {
-    fprintf(stderr, "Unable to open file, exit...\n");
-    exit(1);
-  }
-
-  VERBOSE_PRINT(" -> Parsing from file: " << fileName << "\n");
-
-  unsigned num;
-  std::string functionName;
-
-  while (!in.eof()) {
-    in >> num >> functionName;
-    if (num >= CoreNums ||
-        !machineFunctionCollector->hasFunctionByName(functionName)) {
-      if (num >= CoreNums)
-        fprintf(stderr, "Core num(%u) is out of range, we only got: %u\n", num,
-                CoreNums.getValue());
-      else
-        fprintf(stderr, "Unable to find function %s\n", functionName.c_str());
-      exit(3);
-    }
-
-    mp[num].push(functionName);
-  }
-
-  in.close();
+  // TODO
 }
 
 // boost::optional<std::string>
@@ -153,7 +129,7 @@ TimingAnalysisMain::getNextFunction(unsigned int core) {
   if (it->second.empty())
     return boost::none;
 
-  auto functionName = it->second.front();
+  std::string functionName = it->second.front();
   it->second.pop();
 
   return functionName;
@@ -216,7 +192,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
 
     while (functionName) {
       outs() << " entry point: " << functionName.get() << '\n';
-      this->entrypoint = functionName.get();
+      // this->entrypoint = functionName.get();
       AnalysisEntryPoint = functionName.get();
       // Dispatch the value analysis
       auto Arch = getTargetMachine().getTargetTriple().getArch();
@@ -241,8 +217,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   ofstream Myfile;
 
   std::tuple<> NoDep;
-  AnalysisDriverInstr<ConstantValueDomain<ISA>> ConstValAna(this->entrypoint,
-                                                            NoDep);
+  AnalysisDriverInstr<ConstantValueDomain<ISA>> ConstValAna(NoDep);
   auto CvAnaInfo = ConstValAna.runAnalysis();
 
   LoopBoundInfo->computeLoopBoundFromCVDomain(*CvAnaInfo);
@@ -299,7 +274,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.checkParams();
 
   // Select the analysis to execute
-  dispatchAnalysisType(AddrInfo, this->entrypoint);
+  dispatchAnalysisType(AddrInfo);
 
   // No need for constant value information
   delete CvAnaInfo;
@@ -312,34 +287,33 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   // Stats.stopMeasurement("Complete Analysis");
 
-  Myfile.open(std::to_string(this->coreNum) + "_" + this->entrypoint +
+  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint +
                   "_Statistics.txt",
               ios_base::trunc);
   Stats.dump(Myfile);
   Myfile.close();
 
-  Myfile.open(std::to_string(this->coreNum) + "_" + this->entrypoint +
+  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint +
                   "_TotalBound.xml",
               ios_base::trunc);
   Ar.dump(Myfile);
   Myfile.close();
 }
 
-void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo,
-                                              std::string functionName) {
+void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
   AnalysisResults &Ar = AnalysisResults::getInstance();
   // Timing & CRPD calculation need normal muarch analysis first
   if (AnaType.isSet(AnalysisType::TIMING) ||
       AnaType.isSet(AnalysisType::CRPD)) {
-    auto Bound = dispatchTimingAnalysis(AddressInfo, functionName);
+    auto Bound = dispatchTimingAnalysis(AddressInfo);
     Ar.registerResult("total", Bound);
     if (Bound) {
       outs() << std::to_string(this->coreNum)
-             << "-Core:   " + this->entrypoint + "_Calculated Timing Bound: "
+             << "-Core:   " + AnalysisEntryPoint + "_Calculated Timing Bound: "
              << llvm::format("%-20.0f", Bound.get().ub) << "\n";
     } else {
       outs() << std::to_string(this->coreNum)
-             << "-Core:   " + this->entrypoint +
+             << "-Core:   " + AnalysisEntryPoint +
                     "Calculated Timing Bound: infinite\n";
     }
   }
@@ -374,8 +348,7 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo,
 ///////////////////////////////////////////////////////////////////////////////
 
 boost::optional<BoundItv>
-TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo,
-                                           std::string functionName) {
+TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
   // Note, we no longer need this, this functionName will get check before enter
   // if (!functionName) {
   //   fprintf(stderr, "You should not come here");
@@ -385,15 +358,15 @@ TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo,
   case MicroArchitecturalType::FIXEDLATENCY:
     assert(MemTopType == MemoryTopologyType::NONE &&
            "Fixed latency has no external memory");
-    return dispatchFixedLatencyTimingAnalysis(functionName, this->coreNum);
+    return dispatchFixedLatencyTimingAnalysis(this->coreNum);
   case MicroArchitecturalType::PRET:
-    return dispatchPretTimingAnalysis(AddressInfo, functionName, this->coreNum);
+    return dispatchPretTimingAnalysis(AddressInfo, this->coreNum);
   case MicroArchitecturalType::INORDER:
   case MicroArchitecturalType::STRICTINORDER:
-    return dispatchInOrderTimingAnalysis(AddressInfo, functionName,
+    return dispatchInOrderTimingAnalysis(AddressInfo,
                                          this->coreNum); //严格顺序执行
   case MicroArchitecturalType::OUTOFORDER:
-    return dispatchOutOfOrderTimingAnalysis(AddressInfo, functionName,
+    return dispatchOutOfOrderTimingAnalysis(AddressInfo,
                                             this->coreNum);
   default:
     errs() << "No known microarchitecture chosen.\n";
@@ -417,15 +390,5 @@ TimingAnalysisMain::dispatchCacheAnalysis(AnalysisType Anatype,
 } // namespace TimingAnalysisPass
 
 FunctionPass *llvm::createTimingAnalysisMain(TargetMachine &TM) {
-  // TimingAnalysisPass::MultiCorePasses = new
-  // TimingAnalysisPass::TimingAnalysisMain*[CoreNums]; for (unsigned i = 0; i <
-  // CoreNums; ++i) {
-  //   TimingAnalysisPass::MultiCorePasses[i] = new
-  //   TimingAnalysisPass::TimingAnalysisMain(TM);
-  //   TimingAnalysisPass::MultiCorePasses[i]->coreNum = i;
-  // }
-
-  // return TimingAnalysisPass::MultiCorePasses[0];
-
   return new TimingAnalysisPass::TimingAnalysisMain(TM);
 }

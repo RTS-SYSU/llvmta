@@ -93,8 +93,7 @@ public:
    * Constructor, takes the entry point for this analysis, and valid analysis
    * information for the analyses AnaDeps as AnalysisDom depends on them.
    */
-  AnalysisDriver(std::string entrypoint, AnaDeps anaDeps)
-      : entrypoint(entrypoint), analysisResults(anaDeps) {}
+  AnalysisDriver(AnaDeps anaDeps) : analysisResults(anaDeps) {}
 
   /**
    * Perform the analysis of type AnalysisDom on function given by entrypoint on
@@ -110,7 +109,7 @@ protected:
    * The entrypoint for which an analysis is about to be done
    * (interprocedurally).
    */
-  std::string entrypoint;
+  // std::string entrypoint;
   /**
    * References to the analyses information that are required by AnalysisDom.
    */
@@ -138,8 +137,8 @@ public:
   /**
    * Constructor, calls the superclass constructor
    */
-  AnalysisDriverInstr(std::string entrypoint, AnaDeps anaDeps)
-      : AnalysisDriver<AnalysisDom, MachineInstr>(entrypoint, anaDeps),
+  AnalysisDriverInstr(AnaDeps anaDeps)
+      : AnalysisDriver<AnalysisDom, MachineInstr>(anaDeps),
         mbb2anainfo(new BB2AnaInfoType()), func2anainfo(new Func2AnaInfoType()),
         worklist() {}
 
@@ -286,7 +285,7 @@ template <class AnalysisDom>
 void AnalysisDriverInstr<AnalysisDom>::initialize() {
   // Put analysis entry-point into worklist
   assert(worklist.empty());
-  auto MF = machineFunctionCollector->getFunctionByName(this->entrypoint);
+  auto MF = machineFunctionCollector->getFunctionByName(AnalysisEntryPoint);
   const MachineBasicBlock *analysisStart = &*(MF->begin());
   Context initialCtx;
   // Directive handling on function called
@@ -308,7 +307,7 @@ void AnalysisDriverInstr<AnalysisDom>::initialize() {
                          PartitionedAnalysisDom(AnaDomInit::BOTTOM));
     // If this is the (reachable) analysis entry point, use START analysis
     // information instead
-    if (currFunc->getName() == this->entrypoint) {
+    if (currFunc->getName() == AnalysisEntryPoint) {
       tmp.in = PartitionedAnalysisDom(AnaDomInit::START);
     }
     func2anainfo->insert(make_pair(currFunc, tmp));
@@ -543,6 +542,7 @@ void AnalysisDriverInstr<AnalysisDom>::handleBranchInstruction(
       branchTakenInfo.enterBasicBlock(targetMBB);
       // Join incoming information, and check whether the join changed something
       auto &targetMBBAnaInfo = mbb2anainfo->find(targetMBB)->second;
+
       bool changed = targetMBBAnaInfo.addContext(targetCtx, branchTakenInfo);
       // Add potential affected contexts to worklist
       if (changed) {
@@ -552,9 +552,6 @@ void AnalysisDriverInstr<AnalysisDom>::handleBranchInstruction(
                                       << " of function "
                                       << targetMBB->getParent()->getName().str()
                                       << " and context " << targetCtx << "\n");
-        std::cerr << "Added BB" << targetMBB->getNumber() << " of function "
-                  << targetMBB->getParent()->getName().str() << " and context "
-                  << targetCtx << "\n";
       }
     }
   }
@@ -900,19 +897,16 @@ public:
    * Constructor, calls the superclass constructor
    */
   template <class TailAnaDeps>
-  AnalysisDriverInstrContextMapping(std::string entrypoint,
-                                    TailAnaDeps tAnaDeps)
-      : AnalysisDriverInstr<AnalysisDom>(
-            entrypoint, std::tuple_cat(std::tuple<InstrContextMapping &>(
-                                           *(new InstrContextMapping())),
-                                       tAnaDeps))
+  AnalysisDriverInstrContextMapping(TailAnaDeps tAnaDeps)
+      : AnalysisDriverInstr<AnalysisDom>(std::tuple_cat(
+            std::tuple<InstrContextMapping &>(*(new InstrContextMapping())),
+            tAnaDeps))
   // Allocate the InstrContext-map on the heap as it is needed even after the
   // lifetime of the analysis-driver It is freed within the state graph
   // construction, once the microarchitectural information is no longer needed
   {
     std::tuple<> noDep; //&给analysisResults
-    AnalysisDriverInstr<CollectingContextsDomain> collectCtxsAna(entrypoint,
-                                                                 noDep);
+    AnalysisDriverInstr<CollectingContextsDomain> collectCtxsAna(noDep);
     auto *ccAnaInfo = collectCtxsAna.runAnalysis();
     // ccAnaInfo->dump(std::cout);
     //  Get handle for the instr-context-mapping stored inside the analysis

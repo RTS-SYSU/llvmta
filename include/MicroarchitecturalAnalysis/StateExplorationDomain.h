@@ -585,15 +585,18 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::join(
     return;
   } // set union (with potential merging of states) is join for this powerset
     // domains
-  for (auto &state : this->states) {
-    std::cerr << state;
-  }
+  // for (auto &state : this->states) {
+  //   std::cerr << state;
+  // }
+  // for (auto &state : element.states) {
+  //   std::cerr << state;
+  // }
   for (auto &state : element.states) {
     StateExplorationDom<MicroArchState>::insertOnInstr(this->states, state);
   }
-  for (auto &state : this->states) {
-    std::cerr << state;
-  }
+  // for (auto &state : this->states) {
+  //   std::cerr << state;
+  // }
 }
 
 template <template <class> class StateExplorationDom, class MicroArchState>
@@ -604,14 +607,16 @@ bool StateExplorationDomainBase<StateExplorationDom, MicroArchState>::lessequal(
   if (top) // We are top and element is not
     return false;
   // return false if any state is not included in element.states
-  for (auto &st : states) {
-    size_t hash_value = st.hashcode();
-    std::cerr << hash_value << "\n";
-  }
-  for (auto &st : element.states) {
-    size_t hash_value = st.hashcode();
-    std::cerr << hash_value << "\n";
-  }
+  //  for (auto &st : states) {
+  //    size_t hash_value = st.hashcode();
+  //    std::cerr << hash_value << "\n";
+  //    std::cerr << st << "\n";
+  //  }
+  //  for (auto &st : element.states) {
+  //    size_t hash_value = st.hashcode();
+  //    std::cerr << hash_value << "\n";
+  //    std::cerr << st << "\n";
+  //  }
   for (auto &st : states) {
     if (element.states.count(st) == 0)
       return false;
@@ -726,7 +731,7 @@ public:
           // std::cerr << mas;
           states.erase(st);
           stCopy.join(mas);
-          // states.insert(stCopy);
+          states.insert(stCopy);
           // std::cerr << stCopy;
           // There is only one element we can join, as states is minimal and
           // isJoinable is transitive
