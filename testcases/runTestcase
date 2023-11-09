@@ -46,9 +46,9 @@ llvmta_defaults
 # are excluded when trying to search for a valid testcase
 # We need to uniquely identify the testcase that the user requested
 TESTCASE_DIR=$(find "$BENCHMARK_DIR" \
-					-type d \
-					-wholename "*/$TESTCASE" \
-					! -wholename "*/build/*")
+	-type d \
+	-wholename "*/$TESTCASE" \
+	! -wholename "*/build/*")
 # This check ensures that both the cases mentioned earlier are flagged and the
 # script can make an early exit
 if [ ! -d "$TESTCASE_DIR" ]; then
@@ -67,7 +67,7 @@ CTXFLAGS=$(get_ctx_flags "${USEROPTS[@]}")
 loopanno="${TESTCASE_DIR}/LoopAnnotations_${CTXFLAGS}.csv"
 ctxsensloopanno="${TESTCASE_DIR}/CtxSensLoopAnnotations_${CTXFLAGS}.csv"
 extfuncanno="${TESTCASE_DIR}/ExtFuncAnnotations.csv"
-coreinfo="${TESTCASE_DIR}/CoreInfo.txt"
+coreinfo="${TESTCASE_DIR}/CoreInfo.json"
 corenum=4
 
 if [ -z ${CTXSENSFILE+x} ]; then
@@ -104,7 +104,7 @@ fi
 # for this analysis.
 if [ -f "$ctxsensitivity" ]; then
 	if ! optIn "--ta-num-callsite-tokens" "${USEROPTS[@]}"; then
-		SHORTCTXFLAGS=$(cut -d "|" -f 2- <<< "${CTXFLAGS}")
+		SHORTCTXFLAGS=$(cut -d "|" -f 2- <<<"${CTXFLAGS}")
 		CTXSENS=$(grep "^$SHORTCTXFLAGS [[:digit:]]" "$ctxsensitivity" | awk '{print $2}' || true)
 		if [ -z $CTXSENS ]; then
 			echo "Context Sensitivity data not found for options: $SHORTCTXFLAGS." >&2
@@ -119,7 +119,7 @@ fi
 if [ -f "$spoptions" ]; then
 	while read -r line; do
 		add_option "$line"
-	done < "$spoptions"
+	done <"$spoptions"
 fi
 
 # runllvmta.sh expects that the command line provided to it does not contain
