@@ -32,8 +32,7 @@
 
 namespace TimingAnalysisPass {
 
-boost::optional<BoundItv> dispatchFixedLatencyTimingAnalysis(std::string,
-                                                             unsigned);
+boost::optional<BoundItv> dispatchFixedLatencyTimingAnalysis(unsigned);
 
 }
 

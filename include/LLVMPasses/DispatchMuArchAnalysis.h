@@ -31,6 +31,7 @@
 #include "AnalysisFramework/PartitioningDomain.h"
 #include "LLVMPasses/DispatchPathAnalysis.h"
 #include "MicroarchitecturalAnalysis/StateExplorationDomain.h"
+#include "Util/Options.h"
 
 #include <fstream>
 #include <string>
@@ -40,35 +41,39 @@ namespace TimingAnalysisPass {
 template <class MuArchDomain, class Deps>
 AnalysisInformation<PartitioningDomain<MuArchDomain, MachineInstr>,
                     MachineInstr> *
-doMuArchTimingAnalysis(Deps deps, std::string entryPoint, unsigned coreNum = 0) {
+doMuArchTimingAnalysis(Deps deps, unsigned coreNum = 0) {
   VERBOSE_PRINT(" -> Starting Microarchitectural Analysis:\n"
-                << typeid(MuArchDomain).name() << " on function " << entryPoint << "\n");
+                << typeid(MuArchDomain).name() << " on function "
+                << AnalysisEntryPoint << "\n");
 
-  AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(
-      entryPoint, deps);
+  AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(deps);
   auto microArchAnaInfo = microArchAna.runAnalysis();
 
   if (!QuietMode) {
     std::ofstream myfile;
-    std::string fileName=std::to_string(coreNum)+"_core_MicroArchAnalysis.txt";
+    std::string fileName =
+        std::to_string(coreNum) + "_core_MicroArchAnalysis.txt";
     myfile.open(fileName, std::ios_base::trunc);
     microArchAnaInfo->dump(myfile);
     myfile.close();
   }
 
-  VERBOSE_PRINT(" -> Finished _core_" + std::to_string(coreNum) + " entrypoint_" + entryPoint + "Microarchitectural Analysis\n");
+  VERBOSE_PRINT(" -> Finished _core_" + std::to_string(coreNum) +
+                " entrypoint_" + AnalysisEntryPoint +
+                "Microarchitectural Analysis\n");
 
   return microArchAnaInfo;
 }
 
 template <class MuState, class Deps>
-boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entryPoint, unsigned coreNum) {
+boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps,
+                                                     unsigned coreNum) {
   if (MuJoinEnabled) {
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
     // stats.startMeasurement("Timing MuArch Analysis");
-    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint, coreNum);
+    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, coreNum);
     // Res deleted at the end of state graph construction
     // stats.stopMeasurement("Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
@@ -87,7 +92,7 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps, std::string entr
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;
-  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, entryPoint,coreNum);
+  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, coreNum);
   auto bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
   // Res deleted at the end of state graph construction
   return bound;
@@ -100,7 +105,7 @@ boost::optional<BoundItv> dispatchCacheAnalysisJoin(Deps deps,
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
     Statistics &stats = Statistics::getInstance();
     stats.startMeasurement(prefix + "Cache MuArch Analysis");
-    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, "TODO");
+    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
     stats.stopMeasurement(prefix + "Cache MuArch Analysis");
     // TODO split the next measuremtn in two for stategraph and ILP
     stats.startMeasurement(prefix + "Cache Path Analysis");
@@ -110,7 +115,7 @@ boost::optional<BoundItv> dispatchCacheAnalysisJoin(Deps deps,
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;
-  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, "TODO");
+  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
   auto bound = dispatchCachePathAnalysis<MuArchDomain>(*res);
   // Res deleted at the end of state graph construction
   return bound;

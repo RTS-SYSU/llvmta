@@ -128,7 +128,9 @@ public:
   announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
                  bool isL2 = false) const;
 
-protected:
+  virtual void addaccessCounter();
+
+public:
   /**
    * The internal access counter.
    */
@@ -220,11 +222,18 @@ AccessCounterCyclingMemory<Memory, LowerBoundNeeded, UpperBoundNeeded,
 
   // increase the access counter
   auto copy = this->clone();
-  ++copy->accessCounter;
+  // ++copy->accessCounter;
 
   auto res = copy->Base::announceAccess(addr, t, numWords, isL2);
   delete copy;
   return res;
+}
+
+template <class Memory, bool LowerBoundNeeded, bool UpperBoundNeeded,
+          bool AllowJoin>
+void AccessCounterCyclingMemory<Memory, LowerBoundNeeded, UpperBoundNeeded,
+                                AllowJoin>::addaccessCounter() {
+  ++this->accessCounter;
 }
 
 } // namespace TimingAnalysisPass

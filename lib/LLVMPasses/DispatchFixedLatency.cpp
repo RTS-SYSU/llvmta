@@ -31,9 +31,8 @@
 namespace TimingAnalysisPass {
 
 boost::optional<BoundItv>
-dispatchFixedLatencyTimingAnalysis(std::string entryPoint, unsigned coreNume) {
-  return dispatchTimingAnalysisJoin<FixedLatencyState>(std::tuple<>(),
-                                                       entryPoint, coreNume);
+dispatchFixedLatencyTimingAnalysis(unsigned coreNum) {
+  return dispatchTimingAnalysisJoin<FixedLatencyState>(std::tuple<>(), coreNum);
 }
 
 } // namespace TimingAnalysisPass

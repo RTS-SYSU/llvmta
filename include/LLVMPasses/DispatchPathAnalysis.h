@@ -387,7 +387,7 @@ void dispatchMetricsOnWCEP(TimingPathAnalysis<MuState> &tpa, double wcet) {
 
   if (MetricsOnWCEP.isSet(MetricType::L1IMISSES)) {
     // Maximize I$-misses
-    auto objicmisses = tpa.sgnicmp->getEdgeWeightTimesTakenVector();
+    auto objicmisses = tpa.l2sgnicmp->getEdgeWeightTimesTakenVector();
     auto resInstrMisses =
         doPathAnalysis(std::string("Time_MissesI$"), ExtremumType::Maximum,
                        objicmisses, wcetpathconstraints);
@@ -395,7 +395,7 @@ void dispatchMetricsOnWCEP(TimingPathAnalysis<MuState> &tpa, double wcet) {
   }
   if (MetricsOnWCEP.isSet(MetricType::L1DMISSES)) {
     // Maximize D$-Misses
-    auto objdcmisses = tpa.sgndcmp->getEdgeWeightTimesTakenVector();
+    auto objdcmisses = tpa.l2sgndcmp->getEdgeWeightTimesTakenVector();
     auto resDataMisses =
         doPathAnalysis(std::string("Time_MissesD$"), ExtremumType::Maximum,
                        objdcmisses, wcetpathconstraints);
@@ -447,7 +447,7 @@ void dispatchAdditionalMetricsToMax(TimingPathAnalysis<MuState> &tpa) {
   if (MetricsToMax.isSet(MetricType::L1IMISSES) ||
       (CompAnaType.isSet(CompositionalAnalysisType::DCACHE) &&
        !CompAnaType.isSet(CompositionalAnalysisType::ICACHE))) {
-    auto objInstrMisses = tpa.sgnicmp->getEdgeWeightTimesTakenVector();
+    auto objInstrMisses = tpa.l2sgnicmp->getEdgeWeightTimesTakenVector();
     auto resInstrMisses =
         doPathAnalysis(std::string("MissesI$"), ExtremumType::Maximum,
                        objInstrMisses, constraints);
@@ -456,7 +456,7 @@ void dispatchAdditionalMetricsToMax(TimingPathAnalysis<MuState> &tpa) {
   if (MetricsToMax.isSet(MetricType::L1DMISSES) ||
       (CompAnaType.isSet(CompositionalAnalysisType::ICACHE) &&
        !CompAnaType.isSet(CompositionalAnalysisType::DCACHE))) {
-    auto objDataMisses = tpa.sgndcmp->getEdgeWeightTimesTakenVector();
+    auto objDataMisses = tpa.l2sgndcmp->getEdgeWeightTimesTakenVector();
     auto resDataMisses =
         doPathAnalysis(std::string("MissesD$"), ExtremumType::Maximum,
                        objDataMisses, constraints);

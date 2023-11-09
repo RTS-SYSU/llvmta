@@ -64,7 +64,7 @@ class TimingAnalysisMain : public MachineFunctionPass {
 public:
   unsigned int coreNum = 0;
   static char ID;
-  std::string entrypoint;
+  // std::string entrypoint;
 
   TimingAnalysisMain(TargetMachine &TM);
 
@@ -113,7 +113,7 @@ private:
    *
    * @param AddressInfo
    */
-  void dispatchAnalysisType(AddressInformation &AddressInfo, std::string);
+  void dispatchAnalysisType(AddressInformation &AddressInfo);
 
   ///////////////////////////
   // Timing/Cache Analysis //
@@ -127,7 +127,7 @@ private:
    * @return boost::optional<BoundItv>
    */
   boost::optional<BoundItv>
-  dispatchTimingAnalysis(AddressInformation &AddressInfo, std::string);
+  dispatchTimingAnalysis(AddressInformation &AddressInfo);
 
   /**
    * @brief Dispatch the individual Cache Analysis with different memory

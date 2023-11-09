@@ -1,3 +1,21 @@
 [
-    ""
+    {
+        "core": 0,
+        "tasks": [
+            {
+                "funcion": "main"
+            },
+            {
+                "funcion": "myloop"
+            }
+        ]
+    },
+    {
+        "core": 1,
+        "tasks": [
+            {
+                "funcion": "myloop"
+            }
+        ]
+    }
 ]
