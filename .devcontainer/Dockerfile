@@ -11,7 +11,7 @@ SHELL ["/bin/bash", "-c"]
 #        && sed -i 's/security.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
 
 # [Optional] Uncomment this section to install additional OS packages.
-RUN sed -i 's/archive.ubuntu.com/mirrors.matrix.moe/g' /etc/apt/sources.list && sed -i 's/security.ubuntu.com/mirrors.matrix.moe/g' /etc/apt/sources.list && apt-get update --fix-missing && export DEBIAN_FRONTEND=noninteractive \
+RUN apt-get update --fix-missing && export DEBIAN_FRONTEND=noninteractive \
         && apt-get -y install --no-install-recommends --fix-missing \
         lldb gcc gdb cmake make ninja-build libboost-all-dev git clangd \
         htop wget fish zsh lld time parallel lp-solve liblpsolve55-dev \
