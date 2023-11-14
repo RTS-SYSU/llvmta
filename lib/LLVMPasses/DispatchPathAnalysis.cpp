@@ -106,7 +106,7 @@ doPathAnalysis(const std::string identifier, const ExtremumType extremumType,
   VERBOSE_PRINT(" -> Finished Path Analysis\n");
   const bool maximum = extremumType == ExtremumType::Maximum;
   const std::string outputFileName =
-      "PathAnalysis_" + identifier + "_" + (maximum ? "Max" : "Min") + ".txt";
+      std::to_string(Core) + "_" + AnalysisEntryPoint +"_PathAnalysis_" + identifier + "_" + (maximum ? "Max" : "Min") + ".txt";
   if (!QuietMode) {
     std::ofstream myfile;
     auto openMode = writtenByDoPathAnalysis.count(outputFileName) == 0

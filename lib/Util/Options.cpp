@@ -50,8 +50,13 @@ cl::opt<std::string>
              cl::desc("Used to descripe which core runs which function"),
              cl::cat(MultiCoreCat));
 
-cl::opt<unsigned> CoreNums("core-numbers", cl::init(1), cl::desc("TODO"),
-                           cl::cat(MultiCoreCat));
+cl::opt<unsigned>
+    CoreNums("core-numbers", cl::init(1),
+             cl::desc("The number of core for the analysis (default '1')"),
+             cl::cat(MultiCoreCat));
+cl::opt<unsigned> Core("core", cl::init(0),
+                       cl::desc("The core for the analysis (default '0')"),
+                       cl::cat(MultiCoreCat));
 
 cl::opt<bool>
     QuietMode("ta-quiet", cl::init(false),
@@ -229,7 +234,7 @@ cl::opt<unsigned>
     NN_SET("ta-l2cache-nsets", cl::init(128),
            cl::desc("The number of cache sets of L2 cache. The default is 128"),
            cl::cat(MultiCoreCat));
-
+Multicoreinfo mcif(0);
 cl::opt<CacheReplPolicyType> DataCacheReplPolType(
     "ta-dcache-replpol",
     cl::desc("Choose which replacement policy should be used for the data "

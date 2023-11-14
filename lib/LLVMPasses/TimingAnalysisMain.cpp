@@ -98,6 +98,7 @@ bool TimingAnalysisMain::runOnMachineFunction(MachineFunction &MF) {
 
 void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
   // TODO
+  mcif.setSize(CoreNums.getValue());
   auto jsonfile = MemoryBuffer::getFile(fileName, true);
   if (!jsonfile) {
     fprintf(stderr, "Unable to open file %s, exit.", fileName.c_str());
@@ -136,6 +137,8 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
         exit(1);
       }
       mp[core].push(taskName.getValue().str());
+      // NOTICE: blabla
+      mcif.addTask(core, taskName.getValue().str());
     }
   }
 }
@@ -238,6 +241,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   for (unsigned i = 0; i < CoreNums; ++i) {
     outs() << "Timing Analysis for core: " << this->coreNum;
     auto functionName = this->getNextFunction(this->coreNum);
+    Core = this->coreNum;
 
     while (functionName) {
       outs() << " entry point: " << functionName.get() << '\n';
@@ -255,6 +259,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
       functionName = this->getNextFunction(this->coreNum);
     }
     outs() << " No next analyse point for this core.\n";
+    //这里的核心是从0增加顺序分析；
     this->coreNum++;
   }
 

@@ -33,12 +33,14 @@
 
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
+#include "llvm/CodeGen/StackProtector.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/CommandLine.h"
 
 #include "AnalysisFramework/AnalysisResults.h"
 #include "Util/Options.h"
 
+#include "Util/muticoreinfo.h"
 #include <iostream>
 #include <map>
 #include <queue>
@@ -66,6 +68,7 @@ protected:
 
   CoreInfoMapping mp;
 
+protected:
   void parseCoreInfo(const std::string &);
 
 public:
