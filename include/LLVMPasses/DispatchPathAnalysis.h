@@ -387,7 +387,7 @@ void dispatchMetricsOnWCEP(TimingPathAnalysis<MuState> &tpa, double wcet) {
 
   if (MetricsOnWCEP.isSet(MetricType::L1IMISSES)) {
     // Maximize I$-misses
-    auto objicmisses = tpa.l2sgnicmp->getEdgeWeightTimesTakenVector();
+    auto objicmisses = tpa.l1sgnicmp->getEdgeWeightTimesTakenVector();
     auto resInstrMisses =
         doPathAnalysis(std::string("Time_MissesI$"), ExtremumType::Maximum,
                        objicmisses, wcetpathconstraints);
@@ -395,7 +395,7 @@ void dispatchMetricsOnWCEP(TimingPathAnalysis<MuState> &tpa, double wcet) {
   }
   if (MetricsOnWCEP.isSet(MetricType::L1DMISSES)) {
     // Maximize D$-Misses
-    auto objdcmisses = tpa.l2sgndcmp->getEdgeWeightTimesTakenVector();
+    auto objdcmisses = tpa.l1sgndcmp->getEdgeWeightTimesTakenVector();
     auto resDataMisses =
         doPathAnalysis(std::string("Time_MissesD$"), ExtremumType::Maximum,
                        objdcmisses, wcetpathconstraints);
@@ -537,9 +537,13 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
     VERBOSE_PRINT(" -> Finished Microarchitectural State Graph Construction\n");
     std::ofstream myfile;
     if (!DumpVcgGraph) {
-      myfile.open("StateGraph_Time.dot", std::ios_base::trunc);
+      myfile.open(std::to_string(Core) + "_" + AnalysisEntryPoint +
+                      "_StateGraph_Time.dot",
+                  std::ios_base::trunc);
     } else {
-      myfile.open("StateGraph_Time.vcg", std::ios_base::trunc);
+      myfile.open(std::to_string(Core) + "_" + AnalysisEntryPoint +
+                      "_StateGraph_Time.vcg",
+                  std::ios_base::trunc);
     }
     sg->dump(myfile, nullptr);
     myfile.close();
@@ -552,9 +556,11 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   sg->deleteMuArchInfo();
 
   // Trigger the next measurement phase
-  // Statistics &stats = Statistics::getInstance();
-  // stats.stopMeasurement("Timing Stategraph Generation");
-  // stats.startMeasurement("Timing Path Analysis");
+  Statistics &stats = Statistics::getInstance();
+  stats.stopMeasurement("core_" + std::to_string(Core) + "_" +
+                        AnalysisEntryPoint + "_Timing Stategraph Generation");
+  stats.startMeasurement("core_" + std::to_string(Core) + "_" +
+                         AnalysisEntryPoint + "_Timing Path Analysis");
 
   // Dump Interference response curves
   if (DumpInterferenceResponseCurve.getBits()) {
@@ -588,31 +594,38 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
 
   // Extremal path
   LPAssignment longestPath;
+  LPAssignment shortestPath;
   // Perform the longest path search (under given interference budgets)
-  auto res = doPathAnalysis("Time", ExtremumType::Maximum, timeObjective,
-                            constraints, &longestPath);
-
+  auto WCETres = doPathAnalysis("Time", ExtremumType::Maximum, timeObjective,
+                                constraints, &longestPath);
+  auto BCETres = doPathAnalysis("Time", ExtremumType::Minimum, timeObjective,
+                                constraints, &shortestPath);
   /* dump the state graph with coloring information, overwriting the
    * previous dump */
   if (!QuietMode) {
     std::ofstream myfile;
     if (!DumpVcgGraph) {
-      myfile.open("StateGraph_Time.dot", std::ios_base::trunc);
+      myfile.open(std::to_string(Core) + "_" + AnalysisEntryPoint +
+                      "_StateGraph_Time.dot",
+                  std::ios_base::trunc);
     } else {
-      myfile.open("StateGraph_Time.vcg", std::ios_base::trunc);
+      myfile.open(std::to_string(Core) + "_" + AnalysisEntryPoint +
+                      "_StateGraph_Time.vcg",
+                  std::ios_base::trunc);
     }
     sg->dump(myfile, &longestPath);
+    // sg->dump(myfile, &shortestPath);
     myfile.close();
   }
 
   AnalysisResults &ar = AnalysisResults::getInstance();
-  ar.registerResult("time", res);
+  ar.registerResult("time", WCETres);
 
   // If required, calculate additional metrics on a worst-case timing path
   if (MetricsOnWCEP.getBits() && longestPath.size() > 0) {
-    assert(res.get().lb == res.get().ub &&
+    assert(WCETres.get().lb == WCETres.get().ub &&
            "Cannot compute metrics on WCEP if bound is imprecise");
-    dispatchMetricsOnWCEP(tpa, res.get().ub);
+    dispatchMetricsOnWCEP(tpa, WCETres.get().ub);
   }
   // If requested or needed for compositional analysis, maximise additional
   // metrics
@@ -621,7 +634,7 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   }
 
   // Write-back cache additional stuff
-  if (res && DataCacheWriteBack) {
+  if (WCETres && DataCacheWriteBack) {
     // Compute write-back cleanup cost (i.e. the cost of writing all left-over
     // dirty blocks)
     double cleanupCost = computeWBCleanupCost(longestPath);
@@ -651,19 +664,22 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
       auto resMaxTimeBlocking =
           doPathAnalysis(std::string("IntAna_MaxTimeBlocking"),
                          ExtremumType::Maximum, objUbAccesses, constraints);
-      res = resMaxTimeBlocking;
+      WCETres = resMaxTimeBlocking;
     } else {
-      if (res && resUbAccesses) {
-        res = BoundItv{
-            res.get().ub + resUbAccesses.get().ub * MaxBlockingPerAccess,
-            res.get().lb + resUbAccesses.get().lb * MaxBlockingPerAccess};
+      if (WCETres && resUbAccesses) {
+        WCETres = BoundItv{
+            WCETres.get().ub + resUbAccesses.get().ub * MaxBlockingPerAccess,
+            WCETres.get().lb + resUbAccesses.get().lb * MaxBlockingPerAccess};
       } else {
-        res = boost::none;
+        WCETres = boost::none;
       }
     }
   }
+  // pair of 2 u
+  mcif.updateTaskTime(Core, AnalysisEntryPoint, BCETres.get().lb,
+                      WCETres.get().ub);
 
-  return res;
+  return WCETres;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

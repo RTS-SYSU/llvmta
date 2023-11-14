@@ -22,6 +22,7 @@
                 "--ta-num-callsite-tokens=1",
                 "--core-info='/workspaces/llvmta/testcases/Benchmarks/loopexamples/nested/CoreInfo.json'",
                 "--core-numbers=2",
+                "-debug-only=",
                 "optimized.ll"
             ],
             "stopAtEntry": false,

@@ -106,7 +106,7 @@ protected:
    * the WCETPathStyle */
   virtual void dumpEdge(std::ostream &stream,
                         std::pair<unsigned, unsigned> edge, std::string &label,
-                        bool onWCETPath) const {
+                        bool onWCETPath, bool onBCETPath=false) const {
     if (!DumpVcgGraph) {
       stream << edge.first << "->" << edge.second << "[ label = \"" << label
              << "\"\n";
@@ -114,6 +114,10 @@ protected:
       if (onWCETPath) {
         stream << ", color = " << this->WCETPathStyle.color
                << ", penwidth = " << this->WCETPathStyle.thickness << " ";
+      }
+      else if(onBCETPath){
+            stream << ", color = " << this->BCETPathStyle.color
+               << ", penwidth = " << this->BCETPathStyle.thickness << " ";
       }
       stream << "]\n";
     } else {
@@ -126,6 +130,10 @@ protected:
         stream << "\tcolor : " << this->WCETPathStyle.color << "\n";
         stream << "\tthickness: " << this->WCETPathStyle.thickness << "\n";
       }
+      else if(onBCETPath){
+            stream << ", color = " << this->BCETPathStyle.color
+               << ", penwidth = " << this->BCETPathStyle.thickness << " ";
+      }
       stream << "}\n";
     }
   }
@@ -136,6 +144,10 @@ protected:
     std::string color = "red";
     int thickness = 3;
   } WCETPathStyle;
+  const struct {
+    std::string color = "green";
+    int thickness = 3;
+  } BCETPathStyle;
 };
 
 template <class MuState> class MuStateGraph : public StateGraph {
