@@ -24,19 +24,21 @@ class Multicoreinfo {
 private:
   // CoreNum -> <Earlest Start, Latest Stop>
   std::vector<std::vector<std::pair<unsigned, unsigned>>> schedule;
-  // CoreNum -> vector of function
-  std::vector<std::vector<std::string>> coreinfo;
-  // CoreNum -> map<function, address of Instruction>
-  std::map<std::string, std::set<unsigned>> addressinfo;
+
   // CoreNum -> map<function, index>
   // BTW, this is actually core order (orz)
   std::vector<std::map<std::string, unsigned>> coreOrz;
 
 public:
+  bool change;
+  // CoreNum -> map<function, address of Instruction>
+  std::map<std::string, std::set<unsigned>> addressinfo;
+  // CoreNum -> vector of function
+  std::vector<std::vector<std::string>> coreinfo;
   Multicoreinfo();
   // Make all constructor and destructor to be default
   Multicoreinfo(unsigned coreNum)
-      : schedule(coreNum), coreinfo(coreNum), coreOrz(coreNum){};
+      : schedule(coreNum), coreinfo(coreNum), coreOrz(coreNum), change(true){};
   ~Multicoreinfo() = default;
   Multicoreinfo(const Multicoreinfo &) = default;
 
@@ -90,16 +92,46 @@ public:
     }
 
     unsigned taskNum = coreOrz[core][function];
+    unsigned preLend = schedule[core][taskNum].second;
+    bool changed = false;
     if (taskNum == 0) {
-      schedule[core][coreOrz[core][function]].second = 0u + latest;
+      schedule[core][taskNum].second = 0u + latest;
     } else {
-      schedule[core][coreOrz[core][function]].second =
-          schedule[core][coreOrz[core][function] - 1].second + latest;
+      schedule[core][taskNum].second =
+          schedule[core][taskNum - 1].second + latest;
+    }
+    if (preLend != schedule[core][taskNum].second) {
+      changed = true;
     }
     if (taskNum != schedule[core].size() - 1) {
-      schedule[core][coreOrz[core][function] + 1].first =
-          schedule[core][coreOrz[core][function]].first + early;
+      unsigned pre = schedule[core][taskNum + 1].first;
+      schedule[core][taskNum + 1].first = schedule[core][taskNum].first + early;
+      if (pre != schedule[core][taskNum + 1].first) {
+        changed = true;
+      }
     }
+    this->change = changed;
+  }
+
+  std::vector<std::string> getConflictFunction(unsigned core,
+                                               const std::string &function) {
+    std::vector<std::string> list;
+    auto liftime = schedule[core][coreOrz[core][function]];
+    for (int i = 0; i < schedule.size(); i++) {
+      if (i == core) {
+        continue;
+      }
+      for (int j = 0; j < schedule[i].size(); j++) {
+        auto &tlifetime = schedule[i][j];
+        if (tlifetime.first < liftime.first &&
+                tlifetime.second > liftime.first ||
+            liftime.first < tlifetime.first &&
+                liftime.second > tlifetime.first) {
+          list.emplace_back(coreinfo[i][j]);
+        }
+      }
+    }
+    return list;
   }
 
   std::pair<unsigned, unsigned> getPreTask(unsigned core,

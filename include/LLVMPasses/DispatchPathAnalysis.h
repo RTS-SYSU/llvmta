@@ -45,6 +45,7 @@
 #include "LLVMPasses/DispatchMemory.h"
 #include "Memory/AbstractCyclingMemory.h"
 
+#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 #include "Util/Statistics.h"
 #include "Util/TplTools.h"
@@ -307,7 +308,7 @@ void dispatchCompositionalBaseBound(TimingPathAnalysis<MuState> &tpa) {
   VarCoeffVector timeObjective = tpa.sgtp->getEdgeWeightTimesTakenVector();
 
   Statistics &stats = Statistics::getInstance();
-  stats.startMeasurement("Comp Base Bound Path Analysis");
+  // stats.startMeasurement("Comp Base Bound Path Analysis");
 
   // Calculate a compositional base bound (this is a normal ILP run, because we
   // build the state graph that way)
@@ -556,11 +557,11 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   sg->deleteMuArchInfo();
 
   // Trigger the next measurement phase
-  Statistics &stats = Statistics::getInstance();
-  stats.stopMeasurement("core_" + std::to_string(Core) + "_" +
-                        AnalysisEntryPoint + "_Timing Stategraph Generation");
-  stats.startMeasurement("core_" + std::to_string(Core) + "_" +
-                         AnalysisEntryPoint + "_Timing Path Analysis");
+  // Statistics &stats = Statistics::getInstance();
+  // stats.stopMeasurement("core_" + std::to_string(Core) + "_" +
+  //                       AnalysisEntryPoint + "_Timing Stategraph Generation");
+  // stats.startMeasurement("core_" + std::to_string(Core) + "_" +
+  //                        AnalysisEntryPoint + "_Timing Path Analysis");
 
   // Dump Interference response curves
   if (DumpInterferenceResponseCurve.getBits()) {

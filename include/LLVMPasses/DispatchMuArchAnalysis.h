@@ -31,6 +31,7 @@
 #include "AnalysisFramework/PartitioningDomain.h"
 #include "LLVMPasses/DispatchPathAnalysis.h"
 #include "MicroarchitecturalAnalysis/StateExplorationDomain.h"
+#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 
 #include <fstream>
@@ -47,12 +48,13 @@ doMuArchTimingAnalysis(Deps deps, unsigned coreNum = 0) {
                 << AnalysisEntryPoint << "\n");
 
   AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(deps);
+  conflicFunctions = mcif.getConflictFunction(Core, AnalysisEntryPoint);
   auto microArchAnaInfo = microArchAna.runAnalysis();
 
   if (!QuietMode) {
     std::ofstream myfile;
-    std::string fileName =
-        std::to_string(coreNum) + "_core"+AnalysisEntryPoint+"_MicroArchAnalysis.txt";
+    std::string fileName = std::to_string(coreNum) + "_core" +
+                           AnalysisEntryPoint + "_MicroArchAnalysis.txt";
     myfile.open(fileName, std::ios_base::trunc);
     microArchAnaInfo->dump(myfile);
     myfile.close();
@@ -72,12 +74,12 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps,
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
-    stats.startMeasurement("core_"+std::to_string(coreNum) +
-                " entrypoint_" + AnalysisEntryPoint +"_Timing MuArch Analysis");
+    // stats.startMeasurement("core_" + std::to_string(coreNum) + " entrypoint_" +
+    //                        AnalysisEntryPoint + "_Timing MuArch Analysis");
     auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, coreNum);
     // Res deleted at the end of state graph construction
-    stats.stopMeasurement("core_"+std::to_string(coreNum) +
-                " entrypoint_" + AnalysisEntryPoint +"_Timing MuArch Analysis");
+    // stats.stopMeasurement("core_" + std::to_string(coreNum) + " entrypoint_" +
+    //                       AnalysisEntryPoint + "_Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
 
     assert(AnaType.isSet(AnalysisType::CRPD) ||
@@ -87,11 +89,12 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps,
       dispatchCRPDPathAnalysis<MuArchDomain>(*res, TplSpecial());
     }
     if (AnaType.isSet(AnalysisType::TIMING)) {
-      stats.startMeasurement("core_"+std::to_string(coreNum) +"_"+
-                 AnalysisEntryPoint +"_Timing Stategraph Generation");
+      // stats.startMeasurement("core_" + std::to_string(coreNum) + "_" +
+      //                        AnalysisEntryPoint +
+      //                        "_Timing Stategraph Generation");
       bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
-      stats.stopMeasurement("core_"+std::to_string(coreNum) +
-                "_" + AnalysisEntryPoint +"_Timing Path Analysis");
+      // stats.stopMeasurement("core_" + std::to_string(coreNum) + "_" +
+      //                       AnalysisEntryPoint + "_Timing Path Analysis");
     }
     return bound;
   } // else
@@ -108,14 +111,14 @@ boost::optional<BoundItv> dispatchCacheAnalysisJoin(Deps deps,
   if (MuJoinEnabled) {
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
     Statistics &stats = Statistics::getInstance();
-    stats.startMeasurement(prefix + "Cache MuArch Analysis");
+    // stats.startMeasurement(prefix + "Cache MuArch Analysis");
     auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
-    stats.stopMeasurement(prefix + "Cache MuArch Analysis");
+    // stats.stopMeasurement(prefix + "Cache MuArch Analysis");
     // TODO split the next measuremtn in two for stategraph and ILP
-    stats.startMeasurement(prefix + "Cache Path Analysis");
+    // stats.startMeasurement(prefix + "Cache Path Analysis");
     // Res deleted at the end of state graph construction
     auto bound = dispatchCachePathAnalysis<MuArchDomain>(*res);
-    stats.stopMeasurement(prefix + "Cache Path Analysis");
+    // stats.stopMeasurement(prefix + "Cache Path Analysis");
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;

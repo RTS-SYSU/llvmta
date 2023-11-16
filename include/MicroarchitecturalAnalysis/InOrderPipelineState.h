@@ -32,6 +32,7 @@
 #include "MicroarchitecturalAnalysis/ConvergenceType.h"
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
+#include "Util/Options.h"
 #include "Util/Util.h"
 
 #include "ARM.h"
@@ -41,6 +42,8 @@
 #include <iostream>
 
 #include <boost/optional/optional.hpp>
+
+#include "Util/GlobalVars.h"
 
 #include <set>
 
@@ -772,6 +775,8 @@ void InOrderPipelineState<MemoryTopology>::accessDataFromMemoryTopology(
         dataAccessIds.insert(
             std::pair<unsigned, unsigned>(currMemoryAccess, *dataAccess));
         currMemoryAccess++;
+        //全局信息
+        mcif.addaddress(AnalysisEntryPoint, dataAccess.get());
       }
     }
   }

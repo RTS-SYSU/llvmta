@@ -36,7 +36,12 @@
 #include "Memory/UpdateReports.h"
 #include "Memory/progana/Lattice.h"
 #include "Memory/util/CacheSetAnalysisConcept.h"
+#include "Util/GlobalVars.h"
 
+#include "LLVMPasses/DispatchMemory.h"
+#include "Memory/CacheTraits.h"
+#include "Memory/LruMaxAgeAbstractCache.h"
+#include "Memory/LruMinAgeAbstractCache.h"
 namespace TimingAnalysisPass {
 
 namespace dom {
@@ -69,6 +74,9 @@ protected:
   BOOST_CONCEPT_ASSERT((concepts::CacheSetAnalysis<SetType2>));
 
   SetType1 analysis1;
+  // TimingAnalysisPass::dom::cache::LruMinAgeAbstractCache<
+  //     &TimingAnalysisPass::icacheConf>
+  //     analysis1;
   SetType2 analysis2;
 
 public:

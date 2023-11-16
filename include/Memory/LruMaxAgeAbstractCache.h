@@ -29,14 +29,16 @@
 #include <algorithm>
 #include <ostream>
 
+#include "AbstractCache.h"
 #include "Memory/CacheTraits.h"
 #include "Memory/Classification.h"
 #include "Memory/progana/Lattice.h"
 #include "Memory/util/CacheUtils.h"
 #include "Memory/util/ImplicitSet.h"
-
+#include "Util/GlobalVars.h"
 #include "Util/PersistenceScope.h"
-
+#include <boost/tuple/tuple.hpp>
+#include <string>
 namespace TimingAnalysisPass {
 
 namespace dom {
@@ -117,17 +119,33 @@ Classification
 LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
   unsigned ASSO;
   TagType tag;
+  unsigned index;
+  unsigned CNN = 0;  
   if (this->isl2) {
     ASSO = T->L2ASSOCIATIVITY;
     tag = l2getTag<T>(addr);
+    index = l2getindex<T>(addr);
+    //计算冲突
+    for (std::string &funtion : conflicFunctions) {
+      for (unsigned address : mcif.addressinfo[funtion]) {
+        if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+          CNN++;
+        }
+      }
+    } 
   } else {
     ASSO = T->ASSOCIATIVITY;
     tag = getTag<T>(addr);
   }
 
   for (unsigned i = 0; i < size; ++i)
-    if (tags[i] == tag)
+    if (tags[i] == tag) {
+      if (ages[i] + CNN >= ASSO) {
+        // ages[i]+=CNN;
+        return CL_MISS;
+      }
       return CL_HIT;
+    }
   if (size == ASSO)
     return CL_MISS;
   return CL_UNKNOWN;

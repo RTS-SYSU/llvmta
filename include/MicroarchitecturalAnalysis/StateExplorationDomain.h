@@ -30,6 +30,7 @@
 #include "AnalysisFramework/AnalysisDomain.h"
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
 #include "PartitionUtil/DirectiveHeuristics.h"
+#include "Util/GlobalVars.h"
 #include "Util/Util.h"
 
 #include <boost/static_assert.hpp>
