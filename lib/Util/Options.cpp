@@ -234,7 +234,7 @@ cl::opt<unsigned>
     NN_SET("ta-l2cache-nsets", cl::init(128),
            cl::desc("The number of cache sets of L2 cache. The default is 128"),
            cl::cat(MultiCoreCat));
-Multicoreinfo mcif(0);
+
 cl::opt<CacheReplPolicyType> DataCacheReplPolType(
     "ta-dcache-replpol",
     cl::desc("Choose which replacement policy should be used for the data "

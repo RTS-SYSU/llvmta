@@ -31,7 +31,6 @@
 #include "llvm/ADT/StringRef.h"
 #define GUROBIINSTALLED
 
-#include "muticoreinfo.h"
 #include "llvm/Support/CommandLine.h"
 
 // the following include would have closed
@@ -43,7 +42,6 @@ enum class GetEdges_method : char;
 }
 using TimingAnalysisPass::GetEdges_method;
 
-extern Multicoreinfo mcif;
 /**
  * The available analysis types
  */

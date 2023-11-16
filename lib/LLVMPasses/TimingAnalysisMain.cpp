@@ -39,7 +39,7 @@
 #include "PathAnalysis/LoopBoundInfo.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
 #include "PreprocessingAnalysis/ConstantValueDomain.h"
-
+#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 #include "Util/Statistics.h"
 #include "Util/Util.h"
@@ -237,30 +237,27 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   }
 
   VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
-
-  for (unsigned i = 0; i < CoreNums; ++i) {
-    outs() << "Timing Analysis for core: " << this->coreNum;
-    auto functionName = this->getNextFunction(this->coreNum);
-    Core = this->coreNum;
-
-    while (functionName) {
-      outs() << " entry point: " << functionName.get() << '\n';
-      // this->entrypoint = functionName.get();
-      AnalysisEntryPoint = functionName.get();
-      // Dispatch the value analysis
-      auto Arch = getTargetMachine().getTargetTriple().getArch();
-      if (Arch == Triple::ArchType::arm) {
-        dispatchValueAnalysis<Triple::ArchType::arm>();
-      } else if (Arch == Triple::ArchType::riscv32) {
-        // dispatchValueAnalysis<Triple::ArchType::riscv32>();
-      } else {
-        assert(0 && "Unsupported ISA for LLVMTA");
+  while (mcif.change) {
+    for (unsigned i = 0; i < CoreNums; ++i) {
+      outs() << "Timing Analysis for core: " <<i;
+      // auto functionName = this->getNextFunction(i);
+      Core = i;
+      for(std::string &functionName : mcif.coreinfo[i]){
+        outs() << " entry point: " << functionName << '\n';
+        AnalysisEntryPoint = functionName;
+        // Dispatch the value analysis
+        auto Arch = getTargetMachine().getTargetTriple().getArch();
+        if (Arch == Triple::ArchType::arm) {
+          dispatchValueAnalysis<Triple::ArchType::arm>();
+        } else if (Arch == Triple::ArchType::riscv32) {
+          dispatchValueAnalysis<Triple::ArchType::riscv32>();
+        } else {
+          assert(0 && "Unsupported ISA for LLVMTA");
+        }
+        // functionName = this->getNextFunction(i);        
       }
-      functionName = this->getNextFunction(this->coreNum);
+      outs() << " No next analyse point for this core.\n";
     }
-    outs() << " No next analyse point for this core.\n";
-    //这里的核心是从0增加顺序分析；
-    this->coreNum++;
   }
 
   return false;
@@ -362,11 +359,11 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
     auto Bound = dispatchTimingAnalysis(AddressInfo);
     Ar.registerResult("total", Bound);
     if (Bound) {
-      outs() << std::to_string(this->coreNum)
+      outs() << std::to_string(Core)
              << "-Core:   " + AnalysisEntryPoint + "_Calculated Timing Bound: "
              << llvm::format("%-20.0f", Bound.get().ub) << "\n";
     } else {
-      outs() << std::to_string(this->coreNum)
+      outs() << std::to_string(Core)
              << "-Core:   " + AnalysisEntryPoint +
                     "Calculated Timing Bound: infinite\n";
     }
@@ -412,15 +409,15 @@ TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
   case MicroArchitecturalType::FIXEDLATENCY:
     assert(MemTopType == MemoryTopologyType::NONE &&
            "Fixed latency has no external memory");
-    return dispatchFixedLatencyTimingAnalysis(this->coreNum);
+    return dispatchFixedLatencyTimingAnalysis(Core);
   case MicroArchitecturalType::PRET:
-    return dispatchPretTimingAnalysis(AddressInfo, this->coreNum);
+    return dispatchPretTimingAnalysis(AddressInfo, Core);
   case MicroArchitecturalType::INORDER:
   case MicroArchitecturalType::STRICTINORDER:
     return dispatchInOrderTimingAnalysis(AddressInfo,
-                                         this->coreNum); //严格顺序执行
+                                         Core); //严格顺序执行
   case MicroArchitecturalType::OUTOFORDER:
-    return dispatchOutOfOrderTimingAnalysis(AddressInfo, this->coreNum);
+    return dispatchOutOfOrderTimingAnalysis(AddressInfo, Core);
   default:
     errs() << "No known microarchitecture chosen.\n";
     return boost::none;

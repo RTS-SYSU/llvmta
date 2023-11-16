@@ -40,6 +40,7 @@
 #include "Memory/util/CacheUtils.h"
 #include "Memory/util/ImplicitSet.h"
 #include "Util/PersistenceScope.h"
+#include "Util/GlobalVars.h"
 
 namespace TimingAnalysisPass {
 
@@ -134,20 +135,36 @@ Classification
 LruMinAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
   unsigned ASSO;
   TagType tag;
+  unsigned index;
+  int CNN=0;
   if (this->isl2) {
     ASSO = T->L2ASSOCIATIVITY;
     tag = l2getTag<T>(addr);
+    index=l2getindex<T>(addr);
+    for (std::string &funtion : conflicFunctions) {
+      for (unsigned address : mcif.addressinfo[funtion]) {
+        if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+          CNN++;
+        }
+      }
+    }
   } else {
     ASSO = T->ASSOCIATIVITY;
     tag = getTag<T>(addr);
   }
-  if (ageOfImplicitTags < ASSO)
-    return CL_UNKNOWN;
+  // if (ageOfImplicitTags < ASSO)
+  //   return CL_UNKNOWN;
 
-  for (unsigned i = 0; i < explicitTags.size(); ++i)
-    if (explicitTags[i].tag == tag)
+
+
+  for (unsigned i = 0; i < explicitTags.size(); ++i){
+    if (explicitTags[i].tag == tag){
+      if(explicitTags[i].age+CNN>=ASSO){
+        return CL_MISS;
+      }
       return CL_UNKNOWN;
-
+    }    
+  }
   return CL_MISS;
 }
 

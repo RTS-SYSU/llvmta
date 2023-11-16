@@ -302,6 +302,7 @@ AbstractCacheImpl<T, C>::classify(const AbstractAddress &addr) const {
   unsigned tag, index;
   while (lowAligned <= upAligned && result != CL_UNKNOWN) {
     boost::tie(tag, index) = getTagAndIndex(lowAligned);
+
     result.join(cacheSets[index]->classify(AbstractAddress(lowAligned)));
     lowAligned += T->LINE_SIZE;
   }

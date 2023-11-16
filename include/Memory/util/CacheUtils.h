@@ -44,11 +44,20 @@ typename dom::cache::CacheTraits::TagType
 getTag(typename dom::cache::CacheTraits::AddressType addr) {
   return (addr / CacheConfig->LINE_SIZE) / CacheConfig->N_SETS;
 }
+template <dom::cache::CacheTraits *CacheConfig>
+unsigned getindex(typename dom::cache::CacheTraits::AddressType addr) {
+  return (addr / CacheConfig->LINE_SIZE) % CacheConfig->N_SETS;
+}
 
 template <dom::cache::CacheTraits *CacheConfig>
 typename dom::cache::CacheTraits::TagType
 l2getTag(typename dom::cache::CacheTraits::AddressType addr) {
   return (addr / CacheConfig->LINE_SIZE) / CacheConfig->L2N_SETS;
+}
+
+template <dom::cache::CacheTraits *CacheConfig>
+unsigned l2getindex(typename dom::cache::CacheTraits::AddressType addr) {
+  return (addr / CacheConfig->LINE_SIZE) % CacheConfig->L2N_SETS;
 }
 
 template <dom::cache::CacheTraits *CacheConfig>
@@ -59,7 +68,13 @@ typename dom::cache::CacheTraits::TagType getTag(AbstractAddress addr) {
 
   return getTag<CacheConfig>(itv.lower());
 }
-
+template <dom::cache::CacheTraits *CacheConfig>
+typename dom::cache::CacheTraits::TagType getindex(AbstractAddress addr) {
+  AddressInterval itv = addr.getAsInterval();
+  assert(getCachelineAddress<CacheConfig>(itv.lower()) ==
+         getCachelineAddress<CacheConfig>(itv.upper()));
+  return getindex<CacheConfig>(itv.lower());
+}
 template <dom::cache::CacheTraits *CacheConfig>
 typename dom::cache::CacheTraits::TagType l2getTag(AbstractAddress addr) {
   AddressInterval itv = addr.getAsInterval();
@@ -69,6 +84,13 @@ typename dom::cache::CacheTraits::TagType l2getTag(AbstractAddress addr) {
   return l2getTag<CacheConfig>(itv.lower());
 }
 
+template <dom::cache::CacheTraits *CacheConfig>
+typename dom::cache::CacheTraits::TagType l2getindex(AbstractAddress addr) {
+  AddressInterval itv = addr.getAsInterval();
+  assert(getCachelineAddress<CacheConfig>(itv.lower()) ==
+         getCachelineAddress<CacheConfig>(itv.upper()));
+  return l2getindex<CacheConfig>(itv.lower());
+}
 /* returns (in cycles) how long the transfer of a cache line between cache and
  * main memory takes */
 unsigned getCachelineMemoryLatency(CacheType type);
