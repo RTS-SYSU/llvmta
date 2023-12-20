@@ -68,7 +68,8 @@ loopanno="${TESTCASE_DIR}/LoopAnnotations_${CTXFLAGS}.csv"
 ctxsensloopanno="${TESTCASE_DIR}/CtxSensLoopAnnotations_${CTXFLAGS}.csv"
 extfuncanno="${TESTCASE_DIR}/ExtFuncAnnotations.csv"
 coreinfo="${TESTCASE_DIR}/CoreInfo.json"
-corenum=4
+# Get from user args
+corenum=$(get_option "core-numbers") || 4
 
 if [ -z ${CTXSENSFILE+x} ]; then
 	ctxsensitivity="${TESTCASE_DIR}/ContextSensitivity.txt"
@@ -77,7 +78,7 @@ else
 fi
 spoptions="${TESTCASE_DIR}/SpecialOptions.txt"
 
-# Add the CoreInfo.txt file if it exists
+# Add the CoreInfo.json file if it exists
 if [ -f "$coreinfo" ]; then
 	add_option "--core-info=$coreinfo"
 fi
