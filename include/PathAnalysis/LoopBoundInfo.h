@@ -32,6 +32,7 @@
 #include "llvm/Analysis/ScalarEvolution.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineLoopInfo.h"
+#include "llvm/Transforms/Scalar/LoopDeletion.h"
 
 #include "AnalysisFramework/PartitioningDomain.h"
 #include "PartitionUtil/Context.h"
@@ -53,6 +54,8 @@ class LoopBoundInfoPass : public llvm::MachineFunctionPass {
 public:
   static char ID;
   LoopBoundInfoPass();
+  //   ~LoopBoundInfoPass() { delete UpperLoopBoundsSCEV; }
+  //   virtual void dump() const {}
 
   /**
    * This is a dummy function.
@@ -244,6 +247,7 @@ private:
    */
   bool isMachineLoopPartialMatch(const llvm::MachineLoop *Maloop,
                                  const llvm::Loop *Irloop);
+  SCEV *copySCEV(const SCEV *N);
   /**
    * @brief Internal Function: Map the function to the SCEV that
    *        represents its loopbound.

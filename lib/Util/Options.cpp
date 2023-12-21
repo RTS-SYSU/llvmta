@@ -46,7 +46,7 @@ cl::OptionCategory
 cl::OptionCategory MultiCoreCat("7. TODO");
 
 cl::opt<std::string>
-    coreInfo("core-info", cl::init("CoreInfo.txt"),
+    coreInfo("core-info", cl::init("CoreInfo.json"),
              cl::desc("Used to descripe which core runs which function"),
              cl::cat(MultiCoreCat));
 
@@ -57,7 +57,6 @@ cl::opt<unsigned>
 cl::opt<unsigned> Core("core", cl::init(0),
                        cl::desc("The core for the analysis (default '0')"),
                        cl::cat(MultiCoreCat));
-
 cl::opt<bool>
     QuietMode("ta-quiet", cl::init(false),
               cl::desc("Quiet mode: do not report on progress and do not dump "
@@ -214,24 +213,24 @@ cl::opt<PersistenceType> InstrCachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> Ilinesize(
-    "ta-icache-linesize", cl::init(16),
+    "ta-icache-linesize", cl::init(64),
     cl::desc(
         "The linesize of the instruction cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Iassoc(
-    "ta-icache-assoc", cl::init(2),
+    "ta-icache-assoc", cl::init(3),
     cl::desc("The associativity of the instruction cache. The default is 2"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Insets(
-    "ta-icache-nsets", cl::init(32),
+    "ta-icache-nsets", cl::init(256), // 256
     cl::desc(
         "The number of cache sets of the instruction cache. The default is 32"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    NN_SET("ta-l2cache-nsets", cl::init(128),
+    NN_SET("ta-l2cache-nsets", cl::init(1024), // 1024
            cl::desc("The number of cache sets of L2 cache. The default is 128"),
            cl::cat(MultiCoreCat));
 
@@ -266,7 +265,7 @@ cl::opt<PersistenceType> DataCachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> Dlinesize(
-    "ta-dcache-linesize", cl::init(16),
+    "ta-dcache-linesize", cl::init(64),
     cl::desc("The linesize of the data cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
 
@@ -276,7 +275,7 @@ cl::opt<unsigned>
            cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Dnsets(
-    "ta-dcache-nsets", cl::init(32),
+    "ta-dcache-nsets", cl::init(256), // 256
     cl::desc("The number of cache sets of the data cache. The default is 32"),
     cl::cat(CacheConfigCat));
 
@@ -312,13 +311,13 @@ cl::opt<BgMemType> BackgroundMemoryType(
     cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
-    Latency("ta-mem-latency", cl::init(6),
+    Latency("ta-mem-latency", cl::init(151),
             cl::desc("The latency of the background memory. (default '9', i.e. "
                      "transferring a single word takes 14 cycles)"),
             cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
-    L2Latency("ta-L2-latency", cl::init(3),
+    L2Latency("ta-L2-latency", cl::init(10),
               cl::desc("The latency of the L2 cache. (default '4', i.e. "
                        "transferring a single word takes 5 cycles)"),
               cl::cat(HardwareDescrCat));
@@ -550,6 +549,12 @@ cl::opt<unsigned>
 
 cl::list<std::string> ManualLoopBounds(
     "ta-loop-bounds-file", cl::ZeroOrMore,
+    cl::desc("Takes the file with the given name and uses the loop bounds in "
+             "it for the analysis (default: no file given)"),
+    cl::cat(LLVMTACat));
+
+cl::list<std::string> ManuallowerLoopBounds(
+    "ta-loop-lowerbounds-file", cl::ZeroOrMore,
     cl::desc("Takes the file with the given name and uses the loop bounds in "
              "it for the analysis (default: no file given)"),
     cl::cat(LLVMTACat));

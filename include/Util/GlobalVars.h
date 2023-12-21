@@ -5,11 +5,7 @@
 #include <string>
 #include <vector>
 extern Multicoreinfo mcif;
-
+extern bool isBCET;
 extern std::vector<std::string> conflicFunctions;
-
-// extern TimingAnalysisPass::dom::cache::LruMaxAgeAbstractCache<
-//     &TimingAnalysisPass::icacheConf>
-//     analysis1;
 
 #endif

@@ -233,14 +233,16 @@ std::list<AbstractCyclingMemory *>
 FixedLatencyCyclingMemory<Config>::announceAccess(AbstractAddress addr,
                                                   AccessType t,
                                                   unsigned numWords,
-                                                  bool isL2) const {
+                                                  bool accl2) const {
   assert(!isBusy() && "Don't announce an access to a busy memory!");
   std::list<AbstractCyclingMemory *> res;
   FixedLatencyCyclingMemory *r = this->clone();
-  if (isL2) {
-    r->timeBlocked = L2Latency + 1;
+  if (accl2) {
+    // L2hit    numWords * PerWordLatency
+    r->timeBlocked = L2Latency; //  L2 access
   } else {
-    r->timeBlocked = L2Latency + Latency + numWords * PerWordLatency + 1;
+    // l2miss
+    r->timeBlocked = Latency; // memory access
   }
   res.push_back(r);
   return res;

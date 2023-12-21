@@ -10,10 +10,10 @@
 
 pushd "/workspaces/llvmta/build" || echo "Unable to compile"
     echo "compiling..."
-    ninja llvmta
+    ninja -j4 llvmta
 popd || exit
 
-testcases=loopexamples/nested
+testcases=test
 
 WORKDIR=$(mktemp -d -p /workspaces/llvmta/testcases)
 
@@ -32,9 +32,9 @@ clang -w -S -gline-tables-only -O0 -Xclang \
         -disable-O0-optnone -fno-builtin \
         -target arm -march=armv4t \
         -mfloat-abi=hard \
-        -emit-llvm /workspaces/llvmta/testcases/Benchmarks/"$testcases"/*.c \
-        -o tmp.ll
-llvm-link tmp.ll /workspaces/llvmta/testcases/libraries/arm/builtininteger.ll \
+        -emit-llvm /workspaces/llvmta/testcases/"$testcases"/*.c 
+
+llvm-link *.ll /workspaces/llvmta/testcases/libraries/arm/builtininteger.ll \
                    /workspaces/llvmta/testcases/libraries/arm/builtinstd.ll \
                    -o unoptimized.ll
 opt -S unoptimized.ll \

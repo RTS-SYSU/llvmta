@@ -590,9 +590,11 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::join(
   // for (auto &state : this->states) {
   //   std::cerr << state;
   // }
+  // std::cerr << "------------------------------------\n";
   // for (auto &state : element.states) {
   //   std::cerr << state;
   // }
+  // std::cerr << "------------------------------------\n";
   for (auto &state : element.states) {
     StateExplorationDom<MicroArchState>::insertOnInstr(this->states, state);
   }

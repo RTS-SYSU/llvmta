@@ -83,7 +83,10 @@ public:
   /**
    * Resets the local metrics to their initial values.
    */
-  void resetLocalMetrics() { memory->resetLocalMetrics(); }
+  void resetLocalMetrics() {
+    memory->resetLocalMetrics();
+    l2Cache->resetLocalMetrics();
+  }
 
   /**
    * Tells the memory topology to access an instruction.

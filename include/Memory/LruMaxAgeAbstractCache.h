@@ -120,7 +120,7 @@ LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
   unsigned ASSO;
   TagType tag;
   unsigned index;
-  unsigned CNN = 0;  
+  unsigned CNN = 0;
   if (this->isl2) {
     ASSO = T->L2ASSOCIATIVITY;
     tag = l2getTag<T>(addr);
@@ -132,7 +132,7 @@ LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
           CNN++;
         }
       }
-    } 
+    }
   } else {
     ASSO = T->ASSOCIATIVITY;
     tag = getTag<T>(addr);
@@ -224,7 +224,7 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
     // an element will be added
     ++size;
     // But we actually assumed a hit
-    if (assumption == CL_HIT || assumption == CL2_HIT) {
+    if (assumption == CL_HIT || (this->isl2 && assumption == CL2_HIT)) {
       // No evictions, age at most k-1
       assert(size <= ASSO &&
              "Full cache and addr not in there, cannot assume a hit (illegal "

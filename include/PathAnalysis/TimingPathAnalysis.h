@@ -196,7 +196,8 @@ public:
   void registerWeightProvider();
 
   void getBasicConstraints(std::list<GraphConstraint> &constraints);
-
+  void getUpperConstraints(std::list<GraphConstraint> &constraints);
+  void getLowerConstraints(std::list<GraphConstraint> &constraints);
   void
   addAvailableInterferenceConstraints(std::list<GraphConstraint> &constraints);
 
@@ -347,6 +348,49 @@ void TimingPathAnalysis<MuState>::getBasicConstraints(
   // Add flow constraints
   FlowConstraintProvider fcprov(sg);
   fcprov.buildConstraints();
+  auto flowConstr = fcprov.getConstraints();
+  constraints.insert(constraints.end(), flowConstr.begin(), flowConstr.end());
+
+  // Add persistence constraints for data and instruction cache
+  if (sgdcpers) {
+    const auto &dataPersConstr = sgdcpers->getPersistenceConstraints();
+    constraints.insert(constraints.end(), dataPersConstr.begin(),
+                       dataPersConstr.end());
+  }
+  if (sgicpers) {
+    const auto &instrPersConstr = sgicpers->getPersistenceConstraints();
+    constraints.insert(constraints.end(), instrPersConstr.begin(),
+                       instrPersConstr.end());
+  }
+}
+
+template <class MuState>
+void TimingPathAnalysis<MuState>::getUpperConstraints(
+    std::list<GraphConstraint> &constraints) {
+  // Add flow constraints
+  FlowConstraintProvider fcprov(sg);
+  fcprov.buildUpperConstraints();
+  auto flowConstr = fcprov.getConstraints();
+  constraints.insert(constraints.end(), flowConstr.begin(), flowConstr.end());
+
+  // Add persistence constraints for data and instruction cache
+  if (sgdcpers) {
+    const auto &dataPersConstr = sgdcpers->getPersistenceConstraints();
+    constraints.insert(constraints.end(), dataPersConstr.begin(),
+                       dataPersConstr.end());
+  }
+  if (sgicpers) {
+    const auto &instrPersConstr = sgicpers->getPersistenceConstraints();
+    constraints.insert(constraints.end(), instrPersConstr.begin(),
+                       instrPersConstr.end());
+  }
+}
+template <class MuState>
+void TimingPathAnalysis<MuState>::getLowerConstraints(
+    std::list<GraphConstraint> &constraints) {
+  // Add flow constraints
+  FlowConstraintProvider fcprov(sg);
+  fcprov.buildLowerConstraints();
   auto flowConstr = fcprov.getConstraints();
   constraints.insert(constraints.end(), flowConstr.begin(), flowConstr.end());
 

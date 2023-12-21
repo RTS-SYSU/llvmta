@@ -180,23 +180,6 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   // do File parsing
   parseCoreInfo(coreInfo);
 
-  // for Debug
-  // for (auto &e : mp) {
-  //   outs() << "Core: " << e.first << " ";
-  //   while (!e.second.empty()) {
-  //     outs() << e.second.front() << " ";
-  //     e.second.pop();
-  //   }
-  //   outs() << "\n";
-  // }
-  // exit(0);
-
-  // if (!machineFunctionCollector->hasFunctionByName(AnalysisEntryPoint)) {
-  //   outs() << "No Timing Analysis Run. There is no entry point: "
-  //          << AnalysisEntryPoint << "\n";
-  //   exit(1);
-  // }
-
   ofstream Myfile;
 
   // Default analysis type: timing
@@ -239,22 +222,27 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
   while (mcif.change) {
     for (unsigned i = 0; i < CoreNums; ++i) {
-      outs() << "Timing Analysis for core: " <<i;
+      outs() << "Timing Analysis for core: " << i;
       // auto functionName = this->getNextFunction(i);
       Core = i;
-      for(std::string &functionName : mcif.coreinfo[i]){
+      for (std::string &functionName : mcif.coreinfo[i]) {
         outs() << " entry point: " << functionName << '\n';
         AnalysisEntryPoint = functionName;
         // Dispatch the value analysis
         auto Arch = getTargetMachine().getTargetTriple().getArch();
         if (Arch == Triple::ArchType::arm) {
           dispatchValueAnalysis<Triple::ArchType::arm>();
+          // pair of 2 u
+          mcif.updateTaskTime(Core, AnalysisEntryPoint, this->BCETtime,
+                              this->WCETtime);
         } else if (Arch == Triple::ArchType::riscv32) {
           dispatchValueAnalysis<Triple::ArchType::riscv32>();
+          mcif.updateTaskTime(Core, AnalysisEntryPoint, this->BCETtime,
+                              this->WCETtime);
         } else {
           assert(0 && "Unsupported ISA for LLVMTA");
         }
-        // functionName = this->getNextFunction(i);        
+        // functionName = this->getNextFunction(i);
       }
       outs() << " No next analyse point for this core.\n";
     }
@@ -275,24 +263,26 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   if (OutputLoopAnnotationFile) {
     ofstream Myfile2;
-    Myfile.open("CtxSensLoopAnnotations.csv", ios_base::trunc);
-    Myfile2.open("LoopAnnotations.csv", ios_base::trunc);
+    Myfile.open("CtxSensLoopAnnotations.csv", ios_base::app);
+    Myfile2.open("LoopAnnotations.csv", ios_base::app);
     LoopBoundInfo->dumpNonUpperBoundLoops(Myfile, Myfile2);
     Myfile2.close();
     Myfile.close();
     return;
   }
-
+  for (auto BoundsFile : ManuallowerLoopBounds) {
+    LoopBoundInfo->parseManualLowerLoopBounds(BoundsFile.c_str());
+  }
   for (auto BoundsFile : ManualLoopBounds) {
     LoopBoundInfo->parseManualUpperLoopBounds(BoundsFile.c_str());
   }
 
   if (!QuietMode) {
-    Myfile.open("LoopBounds.txt", ios_base::trunc);
+    Myfile.open("LoopBounds.txt", ios_base::app);
     LoopBoundInfo->dump(Myfile);
     Myfile.close();
 
-    Myfile.open("ConstantValueAnalysis.txt", ios_base::trunc);
+    Myfile.open("ConstantValueAnalysis.txt", ios_base::app);
     CvAnaInfo->dump(Myfile);
     Myfile.close();
   }
@@ -324,11 +314,9 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.L2N_SETS = NN_SET;
   dcacheConf.checkParams();
 
+  // WCET
   // Select the analysis to execute
   dispatchAnalysisType(AddrInfo);
-
-  // No need for constant value information
-  delete CvAnaInfo;
   // Release the call graph instance
   // CallGraph::getGraph().releaseInstance();
 
@@ -340,15 +328,27 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint +
                   "_Statistics.txt",
-              ios_base::trunc);
+              ios_base::app);
   Stats.dump(Myfile);
   Myfile.close();
 
-  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint +
+  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint + "B" +
                   "_TotalBound.xml",
-              ios_base::trunc);
+              ios_base::app);
   Ar.dump(Myfile);
   Myfile.close();
+  // BCET
+  ::isBCET = true;
+  dispatchAnalysisType(AddrInfo);
+  AnalysisResults &Ar1 = AnalysisResults::getInstance();
+  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint + "W" +
+                  "_TotalBound.xml",
+              ios_base::app);
+  Ar1.dump(Myfile);
+  Myfile.close();
+  ::isBCET = false;
+  // No need for constant value information
+  delete CvAnaInfo;
 }
 
 void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
@@ -359,9 +359,19 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
     auto Bound = dispatchTimingAnalysis(AddressInfo);
     Ar.registerResult("total", Bound);
     if (Bound) {
-      outs() << std::to_string(Core)
-             << "-Core:   " + AnalysisEntryPoint + "_Calculated Timing Bound: "
-             << llvm::format("%-20.0f", Bound.get().ub) << "\n";
+      if (!isBCET) {
+        outs() << std::to_string(Core)
+               << "-Core:   " + AnalysisEntryPoint +
+                      "_Calculated WCET Timing Bound: "
+               << llvm::format("%-20.0f", Bound.get().ub) << "\n";
+        this->WCETtime = Bound.get().ub;
+      } else {
+        outs() << std::to_string(Core)
+               << "-Core:   " + AnalysisEntryPoint +
+                      "_Calculated BCET Timing Bound: "
+               << llvm::format("%-20.0f", Bound.get().lb) << "\n";
+        this->BCETtime = Bound.get().lb;
+      }
     } else {
       outs() << std::to_string(Core)
              << "-Core:   " + AnalysisEntryPoint +

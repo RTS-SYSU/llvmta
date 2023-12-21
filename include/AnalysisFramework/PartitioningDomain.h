@@ -584,7 +584,8 @@ bool PartitioningDomain<AnalysisDom, Granularity>::addContext(
         AnalysisDom oldcopy(leaf->getValue());
         leaf->getValue().join(ana);
         // If nothing changed, signal this to outer calling funtions
-        return !(leaf->getValue().lessequal(oldcopy)); //&&oldcopy.lessequal(leaf->getValue())
+        return !(leaf->getValue().lessequal(oldcopy) &&
+                 oldcopy.lessequal(leaf->getValue())); //
       }
       // we are leaf but want to still append something context-sensitivity
       auto res = new ContextTreeNode();

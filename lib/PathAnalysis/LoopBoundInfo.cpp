@@ -45,7 +45,10 @@
 
 #include <boost/tokenizer.hpp>
 #include <cassert>
+#include <cstddef>
 #include <fstream>
+#include <memory>
+#include <utility>
 #include <vector>
 
 using namespace llvm;
@@ -56,7 +59,11 @@ LoopBoundInfoPass *LoopBoundInfo;
 
 char LoopBoundInfoPass::ID = 0;
 
-LoopBoundInfoPass::LoopBoundInfoPass() : MachineFunctionPass(ID) {}
+LoopBoundInfoPass::LoopBoundInfoPass() : MachineFunctionPass(ID) {
+  // UpperLoopBoundsSCEV =
+  //     new std::unordered_map<const llvm::MachineLoop *, const llvm::SCEV
+  //     *>();
+}
 
 void LoopBoundInfoPass::getAnalysisUsage(AnalysisUsage &AU) const {
   MachineFunctionPass::getAnalysisUsage(AU);
@@ -138,6 +145,37 @@ bool LoopBoundInfoPass::isMachineLoopPartialMatch(const MachineLoop *Maloop,
   }
   return FoundAllmaloopBb;
 }
+SCEV *LoopBoundInfoPass::copySCEV(const SCEV *N) {
+  SCEV *C = NULL;
+  switch (N->getSCEVType()) {
+  case scConstant: {
+    // SCEVConstant d = std::move(dyn_cast<SCEVConstant>(N));
+    // std::unique_ptr<SCEV> ptr(&d);
+    C = new SCEVConstant(*dyn_cast<SCEVConstant>(N));
+  } break;
+  case scAddExpr:
+  case scMulExpr:
+  case scUMaxExpr:
+  case scSMaxExpr: {
+    C = new SCEVNAryExpr(*dyn_cast<SCEVNAryExpr>(N));
+  } break;
+  case scUDivExpr: {
+    C = new SCEVUDivExpr(*dyn_cast<SCEVUDivExpr>(N));
+  } break;
+  case scUnknown: {
+    C = new SCEVUnknown(*dyn_cast<SCEVUnknown>(N));
+  } break;
+  // Cases that we don't handle
+  case scTruncate:
+  case scZeroExtend:
+  case scSignExtend:
+  case scAddRecExpr:
+  case scCouldNotCompute:
+  default:
+    C = new SCEV(*N);
+  }
+  return C;
+}
 
 void LoopBoundInfoPass::addSCEVMapping(const MachineLoop *ML,
                                        const Loop *Loop) {
@@ -145,7 +183,15 @@ void LoopBoundInfoPass::addSCEVMapping(const MachineLoop *ML,
   DEBUG_WITH_TYPE("loopbound", dbgs()
                                    << "Adding map for loop: " << *ML << "\n");
   if (SEInfo.hasLoopInvariantBackedgeTakenCount(Loop)) {
-    const SCEV *TakenCount = SEInfo.getBackedgeTakenCount(Loop);
+    // auto noop_deleter = [](const SCEV *) {};
+    // std::shared_ptr<const SCEV>
+    // TakenCount(SEInfo.getBackedgeTakenCount(Loop),
+    //                                        noop_deleter);
+    const SCEV *T = SEInfo.getBackedgeTakenCount(Loop);
+    const SCEV *TakenCount = copySCEV(T);
+    // std::unique_ptr<SCEV> TakenCount(T);
+    // SCEV d = std::move(T);
+
     DEBUG_WITH_TYPE("loopbound", dbgs()
                                      << "Loop SCEV: " << *TakenCount << "\n");
     DEBUG_WITH_TYPE("loopbound", dbgs() << "Loop SCEV: " << TakenCount << "\n");
@@ -326,11 +372,13 @@ bool LoopBoundInfoPass::getSCEVBoundFromCVDomain(
   switch (static_cast<SCEVTypes>(Equation->getSCEVType())) {
   case scConstant: {
     DEBUG_WITH_TYPE("loopbound", dbgs() << "Type: Constant\n");
-
+    if (!dyn_cast<SCEVConstant>(Equation)->getValue()) {
+      return false;
+    }
     volatile int64_t BitWidth =
         dyn_cast<SCEVConstant>(Equation)->getValue()->getBitWidth();
     if (BitWidth > 64) {
-      DEBUG_WITH_TYPE("loopbound", dbgs() << "Skipping too large constant\n");
+      DEBUG_WITH_TYPE("loopbound", dbgs() << "Skipping too largeconstant\n");
       AnalysisResults::getInstance().incrementResult("SCEV_constant");
       Ret = false;
       break;
@@ -352,6 +400,7 @@ bool LoopBoundInfoPass::getSCEVBoundFromCVDomain(
   case scMulExpr:
   case scUMaxExpr:
   case scSMaxExpr: {
+    return false;
     DEBUG_WITH_TYPE("loopbound", dbgs() << "Type: Nary\n");
     const SCEVNAryExpr *NAry = cast<SCEVNAryExpr>(Equation);
     unsigned FinalVal;
@@ -529,14 +578,14 @@ void LoopBoundInfoPass::computeLoopBoundFromCVDomain(
       "loopbound",
       dbgs() << "+++ Computing Loop Bounds from CV Domain Now +++\n");
   AnalysisResults &Ar = AnalysisResults::getInstance();
-  // Ar.registerResult("SCEV_constant", 0);
-  // Ar.registerResult("SCEV_argument_high", 0);
-  // Ar.registerResult("SCEV_arg_cv", 0);
-  // Ar.registerResult("SCEV_overflow", 0);
-  // Ar.registerResult("SCEV_unknown", 0);
-  // Ar.registerResult("SCEV_NotImplemented", 0);
-  computeLoopBounds(UpperLoopBoundsSCEV, UpperLoopBoundsCtx, CvAnaInfo);
+  Ar.registerResult("SCEV_constant", 0);
+  Ar.registerResult("SCEV_argument_high", 0);
+  Ar.registerResult("SCEV_arg_cv", 0);
+  Ar.registerResult("SCEV_overflow", 0);
+  Ar.registerResult("SCEV_unknown", 0);
+  Ar.registerResult("SCEV_NotImplemented", 0);
   computeLoopBounds(LowerLoopBoundsSCEV, LowerLoopBoundsCtx, CvAnaInfo);
+  computeLoopBounds(UpperLoopBoundsSCEV, UpperLoopBoundsCtx, CvAnaInfo);
 }
 
 template <llvm::Triple::ArchType ISA>
@@ -559,8 +608,9 @@ void LoopBoundInfoPass::computeLoopBounds(
       DEBUG_WITH_TYPE("loopbound", dbgs() << "We have analysis info.\n");
       auto AnaInfoCtx = CvAnaInfo.getAnaInfoBefore(FirstInstr);
       if (!AnaInfoCtx.isBottom()) {
-        auto CtxBounds = getContextSensitiveBounds(
-            Loop.first, Loop.second, AnaInfoCtx.getAnalysisInfoPerContext());
+        std::unordered_map<Context, unsigned> CtxBounds =
+            getContextSensitiveBounds(Loop.first, Loop.second,
+                                      AnaInfoCtx.getAnalysisInfoPerContext());
         LoopBounds.insert(std::make_pair(Loop.first, CtxBounds));
       } else {
         DEBUG_WITH_TYPE("loopbound", dbgs() << "No Analysis info for bottom\n");
@@ -721,13 +771,15 @@ unsigned LoopBoundInfoPass::getLoopBound(
     if (CtxBounds.count(Ctx) > 0) {
       auto AutoBound = CtxBounds.at(Ctx);
       if (FoundBoundManual && (AutoBound != Bound)) {
+        //找到了以注释优先
         errs() << "Warnings Both automatic and manual loop bounds were found "
                   "and bounds differ! (Automatic used) for:\n"
                << Loop->getHeader()->getParent()->getName().str() << " | "
                << *Loop << "| AutoBound: " << AutoBound << ", Bound: " << Bound
                << "\n";
+      } else {
+        Bound = AutoBound;
       }
-      Bound = AutoBound;
     }
   }
 
@@ -741,13 +793,26 @@ void LoopBoundInfoPass::dump(std::ostream &Mystream) const {
   for (auto LoopMap : LoopContextMap) {
     auto *Func = LoopMap.first->getHeader()->getParent();
     for (auto Ctx : LoopMap.second) {
-      if (hasUpperLoopBound(LoopMap.first, Ctx)) {
-        OrderedLoopBoundOutput.insert(
-            "# In function " + Func->getName().str() + ", loop:\n  " +
-            getLoopDesc(LoopMap.first) + " with context " + Ctx.serialize() +
-            "\nthe loop header is executed at most " +
-            std::to_string(getUpperLoopBound(LoopMap.first, Ctx)) +
-            " times.\n");
+      bool p1 = hasUpperLoopBound(LoopMap.first, Ctx);
+      bool p2 = hasLowerLoopBound(LoopMap.first, Ctx);
+      if (p1 || p2) {
+        if (p1) {
+          OrderedLoopBoundOutput.insert(
+              "# In function " + Func->getName().str() + ", loop:\n  " +
+              getLoopDesc(LoopMap.first) + " with context " + Ctx.serialize() +
+              "\nthe loop header is executed at most " +
+              std::to_string(getUpperLoopBound(LoopMap.first, Ctx)) +
+              " times.\n");
+        }
+        if (p2) {
+          OrderedLoopBoundOutput.insert(
+              "# In function " + Func->getName().str() + ", loop:\n  " +
+              getLoopDesc(LoopMap.first) + " with context " + Ctx.serialize() +
+              "\nthe loop header is executed at least " +
+              std::to_string(getLowerLoopBound(LoopMap.first, Ctx)) +
+              " times.\n");
+        }
+
       } else {
         OrderedLoopBoundOutput.insert(
             "# In function " + Func->getName().str() + ", loop:\n  " +

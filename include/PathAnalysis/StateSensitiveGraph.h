@@ -135,7 +135,8 @@ public:
   }
 
   void dump(std::ostream &mystream,
-            const std::map<std::string, double> *optTimesTaken) const;
+            const std::map<std::string, double> *optTimesTaken,
+            bool f = true) const;
 
   void deleteMuArchInfo();
 
@@ -253,6 +254,7 @@ private:
    */
   const MuAnaInfo &mai;
 
+public:
   /**
    * The Graph, represented by vertices.
    * All vertices know their incoming and outgoing edges.
@@ -286,6 +288,7 @@ private:
    */
   std::map<const MachineBasicBlock *, std::set<unsigned>> additionalStates;
 
+public:
   /**
    * Map which contains all call states, separated by basic block and callsite
    * (MI).
@@ -306,6 +309,7 @@ private:
 
   std::ofstream debugDump;
 
+public:
   /**
    * Remember the IDs of states that should be marked
    * as persistent in the construction of the graph.
@@ -1415,12 +1419,12 @@ void StateSensitiveGraph<MicroArchDom>::filterExitingStates(
       bool foundMatch = false;
       // A matching output-state must have the same context as we have at the
       // end of the basic block
-      auto id=MI->getParent();
-      auto mycontext=outStatesPerMBBPerContext.at(id);
-      auto context=mycontext.at(id2context.at(stateId));
-      for (auto sId :context) {
-        //TODO!!!!
-        if (id2state.at(stateId)== id2state.at(sId)) {
+      auto id = MI->getParent();
+      auto mycontext = outStatesPerMBBPerContext.at(id);
+      auto context = mycontext.at(id2context.at(stateId));
+      for (auto sId : context) {
+        // TODO!!!!
+        if (id2state.at(stateId) == id2state.at(sId)) {
           DEBUG_WITH_TYPE(
               "detailedStateGraph",
               debugDump << "node : {\n	title : \"" << sId
@@ -1654,8 +1658,8 @@ bool StateSensitiveGraph<MicroArchDom>::isDirectSuccessor(
 
 template <class MicroArchDom>
 void StateSensitiveGraph<MicroArchDom>::dump(
-    std::ostream &mystream,
-    const std::map<std::string, double> *optTimesTaken) const {
+    std::ostream &mystream, const std::map<std::string, double> *optTimesTaken,
+    bool f) const {
   if (!DumpVcgGraph) {
     int clusterNr = 0;
     mystream << "digraph WCET {\n    label = \"Microarchitectural State "
@@ -1806,7 +1810,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           }
         }
 
-        this->dumpEdge(mystream, edge, weight, onWCETPath);
+        this->dumpEdge(mystream, edge, weight, onWCETPath, false);
       }
     }
     mystream << "}\n}";
@@ -1845,8 +1849,8 @@ void StateSensitiveGraph<MicroArchDom>::dump(
     for (MachineFunction *currFunc :
          machineFunctionCollector->getAllMachineFunctions()) {
       std::string funcName = currFunc->getName().str();
-      mystream << "graph : {\n	title : \"" << funcName << "\"\n	label : \""
-               << funcName << "\"\n";
+      mystream << "graph : {\n	title : \"" << funcName
+               << "\"\n	label : \"" << funcName << "\"\n";
       for (auto &currMBB : *currFunc) {
         std::string mbbName = currMBB.getFullName();
         mystream << "graph : {\n	title : \"" << mbbName
@@ -1967,7 +1971,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           }
         }
 
-        this->dumpEdge(mystream, edge, weight, onWCETPath);
+        this->dumpEdge(mystream, edge, weight, onWCETPath, false);
       }
     }
     mystream << "}\n}";

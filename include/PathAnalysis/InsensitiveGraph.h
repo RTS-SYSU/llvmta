@@ -101,7 +101,8 @@ public:
   }
 
   void dump(std::ostream &mystream,
-            const std::map<std::string, double> *optTimesTaken) const;
+            const std::map<std::string, double> *optTimesTaken,
+            bool isWoRsT = true) const;
 
   void deleteMuArchInfo();
 
@@ -375,8 +376,8 @@ void InsensitiveGraph<MicroArchDom>::addExternalFunctionToGraph(
 
 template <class MicroArchDom>
 void InsensitiveGraph<MicroArchDom>::dump(
-    std::ostream &mystream,
-    const std::map<std::string, double> *optTimesTaken) const {
+    std::ostream &mystream, const std::map<std::string, double> *optTimesTaken,
+    bool f) const {
   if (!DumpVcgGraph) {
     int clusterNr = 0;
     mystream << "digraph WCET {\n    label = \"Microarchitectural State "
@@ -461,19 +462,21 @@ void InsensitiveGraph<MicroArchDom>::dump(
           weight += ccb->getWeightDescr(edge.first, edge.second);
           emitComma = true;
         }
-
-        bool onWCETPath = false;
+        // BTW, it is really not funny.
+        bool onPath = false;
         if (optTimesTaken) {
           Variable edgeVar =
               Variable::getEdgeVar(Variable::Type::timesTaken, edge);
           auto frequency = optTimesTaken->find(edgeVar.getName());
           if (frequency != optTimesTaken->end() && frequency->second > 0) {
             weight += "Frequency: " + std::to_string(frequency->second) + "\n";
-            onWCETPath = true;
+            onPath = true;
           }
         }
-
-        this->dumpEdge(mystream, edge, weight, onWCETPath);
+        if (f)
+          this->dumpEdge(mystream, edge, weight, onPath, false);
+        else
+          this->dumpEdge(mystream, edge, weight, false, onPath);
       }
     }
     mystream << "}\n}";
@@ -487,8 +490,8 @@ void InsensitiveGraph<MicroArchDom>::dump(
     for (MachineFunction *currFunc :
          machineFunctionCollector->getAllMachineFunctions()) {
       std::string funcName = currFunc->getName().str();
-      mystream << "graph : {\n	title : \"" << funcName
-               << "\"\n	label : \"" << funcName << "\"\n";
+      mystream << "graph : {\n	title : \"" << funcName << "\"\n	label : \""
+               << funcName << "\"\n";
       for (auto &currMBB : *currFunc) {
         std::string mbbName = currMBB.getFullName();
         mystream << "graph : {\n	title : \"" << mbbName
@@ -565,18 +568,20 @@ void InsensitiveGraph<MicroArchDom>::dump(
           emitComma = true;
         }
 
-        bool onWCETPath = false;
+        bool O9PaTh = false;
         if (optTimesTaken) {
           Variable edgeVar =
               Variable::getEdgeVar(Variable::Type::timesTaken, edge);
           auto frequency = optTimesTaken->find(edgeVar.getName());
           if (frequency != optTimesTaken->end() && frequency->second > 0) {
             weight += "Frequency: " + std::to_string(frequency->second) + "\n";
-            onWCETPath = true;
+            O9PaTh = true;
           }
         }
-
-        this->dumpEdge(mystream, edge, weight, onWCETPath);
+        if (f)
+          this->dumpEdge(mystream, edge, weight, O9PaTh, false);
+        else
+          this->dumpEdge(mystream, edge, weight, false, O9PaTh);
       }
     }
     mystream << "}\n}";

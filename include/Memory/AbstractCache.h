@@ -39,6 +39,7 @@
 #include "Memory/util/CacheSetAnalysisConcept.h"
 #include "Memory/util/CacheUtils.h"
 
+#include "Util/GlobalVars.h"
 #include "Util/SharedStorage.h"
 #include "Util/Util.h"
 
@@ -302,7 +303,6 @@ AbstractCacheImpl<T, C>::classify(const AbstractAddress &addr) const {
   unsigned tag, index;
   while (lowAligned <= upAligned && result != CL_UNKNOWN) {
     boost::tie(tag, index) = getTagAndIndex(lowAligned);
-
     result.join(cacheSets[index]->classify(AbstractAddress(lowAligned)));
     lowAligned += T->LINE_SIZE;
   }
@@ -313,7 +313,7 @@ Classification
 AbstractCacheImpl<T, C>::classifyL2(const AbstractAddress &addr) const {
   /* fastpath for unknownAddressInterval */
   if (addr.isSameInterval(AbstractAddress::getUnknownAddress())) {
-    return CL_UNKNOWN;
+    return CL2_UNKNOWN;
   }
 
   Address lowAligned = alignToCacheline(addr.getAsInterval().lower());
@@ -697,7 +697,7 @@ std::ostream &AbstractCacheImpl<T, C>::dump(std::ostream &os) const {
   os << "CacheAnalysis sets:\n";
   for (unsigned idx = 0; idx < T->N_SETS; ++idx) {
     printHex(os, idx);
-    os << ": " << *(cacheSets[idx]) << "\n";
+    os << ": " << *(cacheSets[idx]) << "\n"; //组数太多，为了方便调试不打印
   }
   return os;
 }

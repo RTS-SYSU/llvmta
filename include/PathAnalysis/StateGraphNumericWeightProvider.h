@@ -51,8 +51,8 @@ public:
           extractor,
       const std::string wName)
       //		@User You can also use non-closure lambdas: [] (const
-      //NumericType& a, const NumericType&b) -> const NumericType& {return
-      //std::max(a,b);} )
+      // NumericType& a, const NumericType&b) -> const NumericType& {return
+      // std::max(a,b);} )
       : StateGraphEdgeWeightProvider<MuState, NumericType>(stgr),
         extractor(extractor), weightName(wName) {}
 
@@ -190,7 +190,9 @@ NumericType
 StateGraphNumericWeightProvider<MuState, NumericType>::advanceWeight(
     const NumericType &weight, const LocalMetrics &curr,
     const LocalMetrics &succ) {
-  return extractWeight(succ) - extractWeight(curr) + weight;
+  auto pre = extractWeight(succ);
+  auto cur = extractWeight(curr);
+  return pre - cur + weight;
 }
 
 template <class MuState, typename NumericType>

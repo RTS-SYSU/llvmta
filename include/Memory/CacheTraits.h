@@ -49,7 +49,7 @@ namespace cache {
  */
 struct CacheTraits {
 
-  CacheTraits(unsigned L = 16, unsigned A = 2, unsigned A2 = 8, unsigned S = 32,
+  CacheTraits(unsigned L = 16, unsigned A = 4, unsigned A2 = 8, unsigned S = 32,
               unsigned S2 = 128, bool WB = false, bool WA = false)
       : LINE_SIZE(L), ASSOCIATIVITY(A), L2ASSOCIATIVITY(A2), N_SETS(S),
         L2N_SETS(S2), WRITEBACK(WB), WRITEALLOCATE(WA) {}
@@ -59,8 +59,8 @@ struct CacheTraits {
     // declarations below
     assert(IsPwr2(LINE_SIZE) && LINE_SIZE <= 256 &&
            "Line size must be a power of 2 and smaller than 256");
-    assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
-           "Associativity must be a power of 2 and smaller than 128");
+    //     assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
+    //            "Associativity must be a power of 2 and smaller than 128");
     assert(IsPwr2(L2ASSOCIATIVITY) && L2ASSOCIATIVITY <= 128 &&
            "Associativity must be a power of 2 and smaller than 128");
     assert(IsPwr2(N_SETS) && N_SETS <= 256 &&
@@ -78,7 +78,7 @@ struct CacheTraits {
   bool WRITEBACK;
   bool WRITEALLOCATE;
 
-  static const unsigned LATENCY = 1;
+  static const unsigned LATENCY = 4; // l1 access
 
   static const unsigned ADDRESS_BITS = 32;
   static const unsigned OFFSET_BITS_DECL = 8;

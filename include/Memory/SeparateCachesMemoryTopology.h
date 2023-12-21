@@ -32,6 +32,7 @@
 #include "Memory/AbstractCache.h"
 #include "Memory/Classification.h"
 #include "Memory/MemoryTopologyInterface.h"
+#include "Util/GlobalVars.h"
 
 #include <list>
 
@@ -676,61 +677,80 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
       Classification res = instructionComponent.cache->classify(
           instructionComponent.ongoingAccess.get().access.addr);
       if (res == CL_UNKNOWN) {
-        if (FollowLocalWorstType.isSet(LocalWorstCaseType::ICMISS)) {
-          processInstrCacheAccess(CL_UNKNOWN);
+        if (::isBCET) {
+          // BCET情况下会将UNKNOWN变成HIT
+          this->processInstrCacheAccess(CL_HIT);
+          resultList.push_back(*this);
+        } else if (FollowLocalWorstType.isSet(LocalWorstCaseType::ICMISS)) {
+          this->processInstrCacheAccess(CL2_MISS);
+          resultList.push_back(*this);
         } else {
           // split here - this is hit state, need another state for miss
-          //层1miss分析层2
+          //层1unknow分析层2
           Classification CL = instructionComponent.cache->classifyL2(
               instructionComponent.ongoingAccess.get().access.addr);
           if (CL == CL2_UNKNOWN) {
-            // Just another split here
-            SeparateCachesMemoryTopology l2Miss(*this);
-            l2Miss.processInstrCacheAccess(CL2_MISS);
-            resultList.emplace_back(l2Miss);
+            if (::isBCET) {
+              this->processInstrCacheAccess(CL2_HIT);
+              resultList.emplace_back(*this);
+            } else {
+              // Just another split here
+              SeparateCachesMemoryTopology l2Miss(*this);
+              l2Miss.processInstrCacheAccess(CL2_MISS);
+              resultList.emplace_back(l2Miss);
 
+              SeparateCachesMemoryTopology l2Hit(*this);
+              l2Hit.processInstrCacheAccess(CL2_HIT);
+              resultList.emplace_back(l2Hit);
+            }
+          } else {
+            SeparateCachesMemoryTopology scmt(*this);
+            scmt.processInstrCacheAccess(CL);
+            resultList.push_back(scmt);
+          }
+          processInstrCacheAccess(CL_HIT);
+          resultList.emplace_back(*this);
+        }
+      } else if (res == CL_MISS) {
+        // L1 miss 分析层2
+        Classification CL = instructionComponent.cache->classifyL2(
+            instructionComponent.ongoingAccess.get().access.addr);
+        if (CL == CL2_UNKNOWN) {
+          if (isBCET) {
+            this->processInstrCacheAccess(CL2_HIT);
+            resultList.push_back(*this);
+          } else {
+            // Just another split here
             SeparateCachesMemoryTopology l2Hit(*this);
             l2Hit.processInstrCacheAccess(CL2_HIT);
             resultList.emplace_back(l2Hit);
-          } else {
-            SeparateCachesMemoryTopology scmtMiss(*this);
-            scmtMiss.processInstrCacheAccess(CL);
-            resultList.push_back(scmtMiss);
+            this->processInstrCacheAccess(CL2_MISS);
+            resultList.push_back(*this);
           }
-          processInstrCacheAccess(CL_HIT);
+        } else {
+          this->processInstrCacheAccess(CL);
+          resultList.push_back(*this);
         }
       } else {
-        // If definite cache hit but in preemption mode, we consider also the
-        // instruction cache miss case (if not always hit)
+        // L1 HIT
+        //  If definite cache hit but in preemption mode, we consider also the
+        //  instruction cache miss case (if not always hit)
         if (res == CL_HIT && PreemptiveExecution &&
             InstrCacheReplPolType != CacheReplPolicyType::ALHIT) {
           SeparateCachesMemoryTopology scmtMiss(*this);
           scmtMiss.processInstrCacheAccess(CL_MISS);
           resultList.push_back(scmtMiss);
         }
-        // process with the given result
-        if (res == CL_MISS) {
-          // L1 miss 分析层2
-          Classification CL = instructionComponent.cache->classifyL2(
-              instructionComponent.ongoingAccess.get().access.addr);
-          SeparateCachesMemoryTopology scmtMiss(*this);
-          if (CL == CL2_UNKNOWN) {
-            // Just another split here
-            SeparateCachesMemoryTopology l2Hit(*this);
-            processInstrCacheAccess(CL2_MISS);
-            l2Hit.processInstrCacheAccess(CL2_HIT);
-            resultList.emplace_back(l2Hit);
-          } else {
-            this->processInstrCacheAccess(CL);
-          }
-        } else {
-          // L1 hit
-          processInstrCacheAccess(res);
-        }
+        processInstrCacheAccess(res);
+        resultList.push_back(*this);
       }
+    } else {
+      resultList.push_back(*this);
     }
+  } else {
+    resultList.push_back(*this);
   }
-  resultList.push_back(*this);
+
   return resultList;
 }
 
@@ -753,8 +773,13 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
       Classification res = dataComponent.cache->classify(
           dataComponent.ongoingAccess.get().access.addr);
       if (res == CL_UNKNOWN) {
-        if (FollowLocalWorstType.isSet(LocalWorstCaseType::DCMISS)) {
-          processDataCacheAccess(CL_UNKNOWN);
+        if (isBCET) {
+          // BCET情况下会将UNKNOWN变成HIT
+          this->processDataCacheAccess(CL_HIT);
+          resultList.emplace_back(*this);
+        } else if (FollowLocalWorstType.isSet(LocalWorstCaseType::DCMISS)) {
+          this->processDataCacheAccess(CL2_MISS);
+          resultList.emplace_back(*this);
         } else {
           // split here - this is hit state, need another state for miss
           //层1miss分析层2
@@ -768,43 +793,54 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
             resultList.emplace_back(l2Miss);
             resultList.emplace_back(l2Hit);
           } else {
-            SeparateCachesMemoryTopology scmtMiss(*this);
-            scmtMiss.processDataCacheAccess(CL);
-            resultList.push_back(scmtMiss);
+            SeparateCachesMemoryTopology scmt(*this);
+            scmt.processDataCacheAccess(CL);
+            resultList.push_back(scmt);
           }
-          processDataCacheAccess(CL_HIT);
+          this->processDataCacheAccess(CL_HIT);
+          resultList.emplace_back(*this);
+        }
+      } else if (res == CL_MISS) {
+        // L1 miss 分析层2
+        Classification CL = dataComponent.cache->classifyL2(
+            dataComponent.ongoingAccess.get().access.addr);
+        SeparateCachesMemoryTopology scmtMiss(*this);
+        if (CL == CL2_UNKNOWN) {
+          if (isBCET) {
+            // BCET情况下会将UNKNOWN变成HIT
+            this->processDataCacheAccess(CL2_HIT);
+            resultList.emplace_back(*this);
+          } else {
+            // Just another split here
+            SeparateCachesMemoryTopology l2Hit(*this);
+            l2Hit.processDataCacheAccess(CL2_HIT);
+            resultList.emplace_back(l2Hit);
+            this->processDataCacheAccess(CL2_MISS);
+            resultList.emplace_back(*this);
+          }
+        } else {
+          this->processDataCacheAccess(CL);
+          resultList.emplace_back(*this);
         }
       } else {
-        // If definite cache hit but in preemption mode, we consider also the
-        // data cache miss case (if not always hit)
+        // L1 Hit
+        //  If definite cache hit but in preemption mode, we consider also the
+        //  data cache miss case (if not always hit)
         if (res == CL_HIT && PreemptiveExecution &&
             DataCacheReplPolType != CacheReplPolicyType::ALHIT) {
           SeparateCachesMemoryTopology scmtMiss(*this);
           scmtMiss.processDataCacheAccess(CL_MISS);
           resultList.push_back(scmtMiss);
         }
-        if (res == CL_MISS) {
-          // L1 miss 分析层2
-          Classification CL = dataComponent.cache->classifyL2(
-              dataComponent.ongoingAccess.get().access.addr);
-          SeparateCachesMemoryTopology scmtMiss(*this);
-          if (CL == CL2_UNKNOWN) {
-            // Just another split here
-            SeparateCachesMemoryTopology l2Hit(*this);
-            processDataCacheAccess(CL2_MISS);
-            l2Hit.processDataCacheAccess(CL2_HIT);
-            resultList.emplace_back(l2Hit);
-          } else {
-            this->processDataCacheAccess(CL);
-          }
-        } else {
-          // L1 hit
-          this->processDataCacheAccess(res);
-        }
+        this->processDataCacheAccess(res);
+        resultList.push_back(*this);
       }
+    } else {
+      resultList.push_back(*this);
     }
+  } else {
+    resultList.push_back(*this);
   }
-  resultList.push_back(*this);
   return resultList;
 }
 

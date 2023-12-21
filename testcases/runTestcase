@@ -17,8 +17,9 @@ set -u
 
 # Define some constants
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BENCHMARK_DIR="$SCRIPT_DIR/Benchmarks"
-
+# 修改标记
+# BENCHMARK_DIR="$SCRIPT_DIR/Benchmarks"
+BENCHMARK_DIR="$SCRIPT_DIR"
 if [ $# -lt 1 ]; then
 	echo "Usage: $0 testcase [options]" >&2
 	exit 1
@@ -68,8 +69,7 @@ loopanno="${TESTCASE_DIR}/LoopAnnotations_${CTXFLAGS}.csv"
 ctxsensloopanno="${TESTCASE_DIR}/CtxSensLoopAnnotations_${CTXFLAGS}.csv"
 extfuncanno="${TESTCASE_DIR}/ExtFuncAnnotations.csv"
 coreinfo="${TESTCASE_DIR}/CoreInfo.json"
-# Get from user args
-corenum=$(get_option "core-numbers") || 4
+corenum=4
 
 if [ -z ${CTXSENSFILE+x} ]; then
 	ctxsensitivity="${TESTCASE_DIR}/ContextSensitivity.txt"
@@ -78,7 +78,7 @@ else
 fi
 spoptions="${TESTCASE_DIR}/SpecialOptions.txt"
 
-# Add the CoreInfo.json file if it exists
+# Add the CoreInfo.txt file if it exists
 if [ -f "$coreinfo" ]; then
 	add_option "--core-info=$coreinfo"
 fi
@@ -134,6 +134,10 @@ if [[ -n $entry_point ]]; then
 	rm_option "ta-analysis-entry-point"
 	add_option "--llvmta-entry-point=${entry_point}"
 fi
+#改动标记
+add_option "--ta-loop-bounds-file='/workspaces/llvmta/testcases/test/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'"
+add_option "--ta-loop-lowerbounds-file='/workspaces/llvmta/testcases/test/MLoopAnnotations_Arm|NotOptimized|HardFloat.csv'"
+add_option "--core-info='/workspaces/llvmta/testcases/test/CoreInfo.json'"
 
 # Generate the final command line that will be executed. We do this in order to
 # be able to print the entire command line to stdout.

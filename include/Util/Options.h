@@ -515,7 +515,7 @@ extern llvm::cl::opt<unsigned> LoopPeel;
  * The file path(s) for manual loop bounds.
  */
 extern llvm::cl::list<std::string> ManualLoopBounds;
-
+extern llvm::cl::list<std::string> ManuallowerLoopBounds;
 /**
  * Says whether a loop annotation file should be generated or not.
  */

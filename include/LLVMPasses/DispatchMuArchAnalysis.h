@@ -46,9 +46,9 @@ doMuArchTimingAnalysis(Deps deps, unsigned coreNum = 0) {
   VERBOSE_PRINT(" -> Starting Microarchitectural Analysis:\n"
                 << typeid(MuArchDomain).name() << " on function "
                 << AnalysisEntryPoint << "\n");
+  conflicFunctions = mcif.getConflictFunction(Core, AnalysisEntryPoint);
 
   AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(deps);
-  conflicFunctions = mcif.getConflictFunction(Core, AnalysisEntryPoint);
   auto microArchAnaInfo = microArchAna.runAnalysis();
 
   if (!QuietMode) {
@@ -74,11 +74,13 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps,
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
-    // stats.startMeasurement("core_" + std::to_string(coreNum) + " entrypoint_" +
+    // stats.startMeasurement("core_" + std::to_string(coreNum) + " entrypoint_"
+    // +
     //                        AnalysisEntryPoint + "_Timing MuArch Analysis");
     auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, coreNum);
     // Res deleted at the end of state graph construction
-    // stats.stopMeasurement("core_" + std::to_string(coreNum) + " entrypoint_" +
+    // stats.stopMeasurement("core_" + std::to_string(coreNum) + " entrypoint_"
+    // +
     //                       AnalysisEntryPoint + "_Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
 

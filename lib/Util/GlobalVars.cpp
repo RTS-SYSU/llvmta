@@ -8,9 +8,5 @@
 #include <vector>
 
 Multicoreinfo mcif(0);
-
 std::vector<std::string> conflicFunctions;
-
-// TimingAnalysisPass::dom::cache::LruMaxAgeAbstractCache<
-//     &TimingAnalysisPass::icacheConf>
-//     analysis1;
+bool isBCET = false;

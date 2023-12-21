@@ -274,7 +274,7 @@ inline bool CompositionalAbstractCache<A1, A2>::operator<(const Self &y) const {
 template <class A1, class A2>
 inline std::ostream &
 CompositionalAbstractCache<A1, A2>::dump(std::ostream &os) const {
-  return os << analysis1 << " " << analysis2;
+  return os << analysis1 << analysis2;
 }
 
 ///\see std::ostream& operator<<(std::ostream& os, const CacheSetAnalysis<T>& x)

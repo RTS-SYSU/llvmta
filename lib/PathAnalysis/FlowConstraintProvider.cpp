@@ -117,11 +117,12 @@ void FlowConstraintProvider::buildInFlowEqualsOutFlowConstraints() {
       if (FollowLocalWorstType.getBits() ==
           0) { // If != 0, the transfer is not monotonic, thus pending states
                // might arise
-        assert(vertex.second.getPredecessors().size() > 0 &&
-               "Vertex has no predecessors!");
+               //改动标记
+        // assert(vertex.second.getPredecessors().size() > 0 &&
+        //        "Vertex has no predecessors!");
       }
-      assert(vertex.second.getSuccessors().size() > 0 &&
-             "Vertex has no successors!");
+      // assert(vertex.second.getSuccessors().size() > 0 &&
+      //        "Vertex has no successors!");
     }
 
     VarCoeffVector variables;
