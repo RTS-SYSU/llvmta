@@ -50,15 +50,18 @@
 
 #include "llvm/Support/JSON.h"
 #include "llvm/Support/MemoryBuffer.h"
+#include "llvm/Support/raw_ostream.h"
 
 #include <cmath>
 #include <cstdint>
 #include <fstream>
 #include <limits>
 #include <list>
+#include <map>
 #include <queue>
 #include <sstream>
 #include <string>
+#include <system_error>
 #include <type_traits>
 #include <utility>
 
@@ -220,6 +223,10 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   }
 
   VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
+  // Create a json array
+  llvm::json::Array arr;
+  std::map<std::string, size_t> vec;
+  bool init = true;
   while (mcif.change) {
     for (unsigned i = 0; i < CoreNums; ++i) {
       outs() << "Timing Analysis for core: " << i;
@@ -242,11 +249,34 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
         } else {
           assert(0 && "Unsupported ISA for LLVMTA");
         }
+        if (init) {
+          llvm::json::Object obj{{"function", std::string(functionName)},
+                                 {"WCET", this->WCETtime},
+                                 {"BCET", this->BCETtime}};
+          arr.push_back(std::move(obj));
+          vec[functionName] = arr.size() - 1;
+        } else {
+          auto ptr = arr[vec[functionName]].getAsObject();
+          (*ptr)["WCET"] = this->WCETtime;
+          (*ptr)["BCET"] = this->BCETtime;
+        }
+
         // functionName = this->getNextFunction(i);
+      }
+      if (init) {
+        init = false;
       }
       outs() << " No next analyse point for this core.\n";
     }
   }
+
+  // Dump the json array to file
+  std::error_code EC;
+  llvm::raw_fd_ostream OS("WCET.json", EC);
+  llvm::json::Value val(std::move(arr));
+  OS << llvm::formatv("{0:4}", val) << '\n';
+  OS.flush();
+  OS.close();
 
   return false;
 }
