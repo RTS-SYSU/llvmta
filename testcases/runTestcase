@@ -134,10 +134,6 @@ if [[ -n $entry_point ]]; then
 	rm_option "ta-analysis-entry-point"
 	add_option "--llvmta-entry-point=${entry_point}"
 fi
-#改动标记
-add_option "--ta-loop-bounds-file='/workspaces/llvmta/testcases/test/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'"
-add_option "--ta-loop-lowerbounds-file='/workspaces/llvmta/testcases/test/MLoopAnnotations_Arm|NotOptimized|HardFloat.csv'"
-add_option "--core-info='/workspaces/llvmta/testcases/test/CoreInfo.json'"
 
 # Generate the final command line that will be executed. We do this in order to
 # be able to print the entire command line to stdout.

@@ -117,6 +117,10 @@ public:
                                                const std::string &function) {
     std::vector<std::string> list;
     auto liftime = schedule[core][coreOrz[core][function]];
+    if (liftime.first == 0 || liftime.second == 0) {
+      list.emplace_back("ALL");
+      return list;
+    }
     for (int i = 0; i < schedule.size(); i++) {
       if (i == core) {
         continue;

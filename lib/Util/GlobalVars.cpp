@@ -10,3 +10,6 @@
 Multicoreinfo mcif(0);
 std::vector<std::string> conflicFunctions;
 bool isBCET = false;
+int IMISS = 0;
+int DMISS = 0;
+int L2MISS = 0;

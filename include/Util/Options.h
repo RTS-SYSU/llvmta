@@ -58,8 +58,9 @@ enum class AnalysisType {
  * on the timing stategraph, or maximised on the worst-case path (WCEP).
  */
 enum class MetricType {
-  L1DMISSES,   // Number of L1-Data-Cache misses
-  L1IMISSES,   // Number of L1-Instruction-Cache misses
+  L1DMISSES, // Number of L1-Data-Cache misses
+  L1IMISSES, // Number of L1-Instruction-Cache misses
+  L2MISSES,
   BUSACCESSES, // Number of accesses to the (shared) bus
   BUSSTORES,   // Number of stores to the (shared) bus
   WRITEBACKS   // Number of writebacks. Only makes sense on write-back caches

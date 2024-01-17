@@ -411,7 +411,7 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
         r.currentIdAccessesInstr = false;
       }
     } else {
-      if (!l2instrQueue.empty()) { // miss的
+      if (!l2instrQueue.empty()) { // 层1 cache miss的
         // If data misses by previous instructions are still pending, wait for
         // them first in strictly in-order case
         if (!enableStrictInorderDataInstrArbitration() ||
@@ -432,21 +432,16 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
   for (SingleMemoryTopology &r : res) {
     // reset the waiting for join flag
     r.waitingForJoin = false;
-    // std::cerr <<r.memory->;
-    // cycle
     auto cycledMems = r.memory->cycle(); //--
     SingleMemoryTopology newInst(r);
     for (auto cM : cycledMems) {
-      // std::cerr <<"timeBlocked: \n"<<*cM<<'\n'
       delete newInst.memory;
       newInst.memory = cM;
-
       newInst.finishedAccess = 0;
       if (newInst.currentIdAccessed > 0 && !newInst.memory->isBusy()) {
         // there was an access which finished!
         newInst.finishAccess();
       }
-
       assert(!(newInst.waitingForJoin && newInst.currentIdAccessed != 0) &&
              "Should not be waiting for join when something is accessed!");
     }
@@ -454,13 +449,11 @@ SingleMemoryTopology<makeBgMem>::cycle(bool potentialDataMissesPending) const {
     for (auto cM : cycledMems) {
       delete newInst.l2Cache;
       newInst.l2Cache = cM;
-
       newInst.l2finishedAccess = 0;
       if (newInst.currentIdAccessedl2 > 0 && !newInst.l2Cache->isBusy()) {
         // there was an access which finished!
         newInst.l2finishAccess();
       }
-
       assert(!(newInst.waitingForJoin && newInst.currentIdAccessedl2 != 0 &&
                newInst.currentIdAccessed != 0) &&
              "Should not be waiting for join when something is accessed!");

@@ -245,10 +245,6 @@ AnalysisDriverInstr<AnalysisDom>::runAnalysis() {
                                   << " of function "
                                   << currentBB->getParent()->getName().str()
                                   << " in context " << currentCtx << "\n");
-    // std::cerr<< "Work on BB" << currentBB->getNumber()
-    //                               << " of function "
-    //                               << currentBB->getParent()->getName().str()
-    //                               << " in context " << currentCtx << "\n";
 
     // Compute new incoming information
     // For function entry blocks, we have information available in func2anainfo
@@ -271,11 +267,6 @@ AnalysisDriverInstr<AnalysisDom>::runAnalysis() {
       // context
       mbb2anainfo->at(currentBB).addContext(currentCtx, newIn);
     }
-    // std::cerr<< "Work on BB" << currentBB->getNumber()
-    //                               << " of function "
-    //                               << currentBB->getParent()->getName().str()
-    //                               << " in context " << currentCtx << "\n";
-    // Analyse current basic block by calling transfer functions per instruction
     analyseMachineBasicBlock(currentBB, currentCtx);
   }
   return getAnalysisResults();
@@ -370,9 +361,6 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
                                     << " of function "
                                     << targetMBB->getParent()->getName().str()
                                     << " and context " << targetCtx << "\n");
-      std::cerr << "Added BB" << targetMBB->getNumber() << " of function "
-                << targetMBB->getParent()->getName().str() << " and context "
-                << targetCtx << "\n";
     }
   }
 }

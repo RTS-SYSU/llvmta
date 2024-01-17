@@ -141,13 +141,32 @@ LruMinAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
     ASSO = T->L2ASSOCIATIVITY;
     tag = l2getTag<T>(addr);
     index = l2getindex<T>(addr);
-    for (std::string &funtion : conflicFunctions) {
-      for (unsigned address : mcif.addressinfo[funtion]) {
-        if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+    if (conflicFunctions.front() == "ALL") {
+      for (auto &i : StaticAddrProvider->Ins2addr) {
+        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
           CNN++;
         }
       }
+      for (auto &i : StaticAddrProvider->Cpe2addr) {
+        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
+          CNN++;
+        }
+      }
+      for (auto &i : StaticAddrProvider->Glvar2addr) {
+        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
+          CNN++;
+        }
+      }
+    } else {
+      for (std::string &funtion : conflicFunctions) {
+        for (unsigned address : mcif.addressinfo[funtion]) {
+          if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+            CNN++;
+          }
+        }
+      }
     }
+
   } else {
     ASSO = T->ASSOCIATIVITY;
     tag = getTag<T>(addr);
@@ -257,8 +276,8 @@ LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
     }
     int upperDelimiter = i - 1;
 
-    // Merge elements in the interval (lowerDelimiter, upperDelimiter] with the
-    // tag set of age (accessedAge+1)
+    // Merge elements in the interval (lowerDelimiter, upperDelimiter] with
+    // the tag set of age (accessedAge+1)
     for (int i = upperDelimiter; i > lowerDelimiter; --i) {
       unsigned currentTag = explicitTags[i].tag;
 

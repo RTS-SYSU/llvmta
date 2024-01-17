@@ -57,6 +57,8 @@ public:
                const std::list<GraphConstraint> &constraints);
 
   virtual ~PathAnalysis();
+  virtual void dumpinfp(std::string outputFileName, const VarCoeffVector &obj,
+                        std::string info) = 0;
 
   /**
    * This method adds a maximum time limit that

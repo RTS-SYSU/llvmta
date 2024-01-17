@@ -7,5 +7,8 @@
 extern Multicoreinfo mcif;
 extern bool isBCET;
 extern std::vector<std::string> conflicFunctions;
+extern int IMISS;
+extern int DMISS;
+extern int L2MISS;
 
 #endif

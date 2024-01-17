@@ -210,7 +210,7 @@ public:
    */
   void dump(std::ostream &Mystream) const;
 
-private:
+public: //改动标记
   TargetMachine &TM;
   std::unique_ptr<const DataLayout> DataLayoutInstance;
   /// The address where code placement starts

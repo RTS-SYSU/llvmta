@@ -370,7 +370,6 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::
         }
       }
     }
-    // std::cerr << "-----------------------------\n";
     // if the working set is empty, but we have some intermediate results,
     // use them to fill up the working set again.
     if (workingSet.empty() && !intermediateResults.empty()) {

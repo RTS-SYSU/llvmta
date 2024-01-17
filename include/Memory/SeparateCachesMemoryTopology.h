@@ -33,6 +33,7 @@
 #include "Memory/Classification.h"
 #include "Memory/MemoryTopologyInterface.h"
 #include "Util/GlobalVars.h"
+#include "Util/Options.h"
 
 #include <list>
 
@@ -623,8 +624,6 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
   // We delete scope entering
   succ.justEntered = boost::none;
 
-  // std::cout<<succ;
-
   // If starting instruction accesses is feasible, do it
   for (auto &startinstrTopology : succ.startInstructionAccess()) {
     for (auto &startdataTopology : startinstrTopology.startDataAccess()) {
@@ -640,12 +639,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
           resultList.push_back(afterbgmemcycle);
         } else {
           // Cycle Memory Topology
-          for (auto &memAfterInstr :
-               afterbgmemcycle.checkInstructionPart()) { // cache更新
+          for (auto &memAfterInstr : afterbgmemcycle.checkInstructionPart()) {
             for (auto &memAfterData : memAfterInstr.checkDataPart()) {
-              // fprintf(stderr, "MemAfterData: ");
-              // std::cerr << memAfterData;
-              // std::cerr << '\n';
               resultList.push_back(memAfterData);
             }
           }
@@ -832,7 +827,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           scmtMiss.processDataCacheAccess(CL_MISS);
           resultList.push_back(scmtMiss);
         }
-        this->processDataCacheAccess(res);
+        this->processDataCacheAccess(CL_HIT);
         resultList.push_back(*this);
       }
     } else {
@@ -860,7 +855,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         // Not waiting for memory any more
         ongoingAcc.bgl2AccessId = 0;
         // Blocked for cache update
-        ongoingAcc.l1timeBlocked = instructionComponent.cache->getHitLatency();
+        ongoingAcc.l1timeBlocked = 1;
       }
     } else if (ongoingAcc.bgMemAccessId == 0 &&
                ongoingAcc.bgl2AccessId == 0) { // ongoingAcc.bgl2AccessId == 0
@@ -890,7 +885,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         // Not waiting for memory any more
         ongoingAcc.bgMemAccessId = 0;
         // Blocked for cache update
-        ongoingAcc.l2timeBlocked = instructionComponent.cache->getHitLatency();
+        ongoingAcc.l2timeBlocked = 1;
       }
     } else if (ongoingAcc.bgMemAccessId == 0 &&
                (ongoingAcc.bgl2AccessId != 0 || ongoingAcc.l2timeBlocked > 0)) {
@@ -916,6 +911,11 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
                                       ongoingAcc.access.load_store, false,
                                       ongoingAcc.cl);
         // instructionComponent.ongoingAccess = boost::none;
+        instructionComponent.finishedId = ongoingAcc.access.id;
+        instructionComponent.cache->update(ongoingAcc.access.addr,
+                                           ongoingAcc.access.load_store, false,
+                                           ongoingAcc.cl);
+        instructionComponent.ongoingAccess = boost::none;
       }
     }
   }
@@ -960,8 +960,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
                 ongoingAcc
                     .bgMemAccessId)) { // We waited for load and are finished
           ongoingAcc.bgMemAccessId = 0;
-          ongoingAcc.l1timeBlocked = dataComponent.cache->getHitLatency();
-          ongoingAcc.l2timeBlocked = dataComponent.cache->getHitLatency();
+          ongoingAcc.l1timeBlocked = 1;
+          ongoingAcc.l2timeBlocked = 1;
           ongoingAcc.phase = AccessPhase::WaitForCACHE;
         }
       }
@@ -970,7 +970,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         if (ongoingAcc.bgl2AccessId != 0) {
           if (memory.l2finishedDataAccess(ongoingAcc.bgl2AccessId)) {
             ongoingAcc.bgl2AccessId = 0;
-            ongoingAcc.l1timeBlocked = dataComponent.cache->getHitLatency();
+            ongoingAcc.l1timeBlocked = 1;
             // ongoingAcc.phase = AccessPhase::WaitForl1CACHE;
           }
           if (ongoingAcc.l2timeBlocked > 0) {
@@ -1141,9 +1141,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
   } else if (cl == CL2_HIT) {
     ++instructionComponent.l1nmisses;
     Access acc = ongoingAcc.access;
-    ongoingAcc.l2timeBlocked =
-        instructionComponent.cache
-            ->getHitLatency(); //这是层2cache更新的timeblock
+    ongoingAcc.l2timeBlocked = L2Latency; //这是层2cache更新的timeblock
 
     boost::optional<unsigned> res =
         memory.l2accessInstr(acc.addr.getAsInterval().lower(),
@@ -1270,7 +1268,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
         } else {
           ongoingAcc.bgmemStall = true;
         }
-        ongoingAcc.l2timeBlocked = dataComponent.cache->getHitLatency();
+        ongoingAcc.l2timeBlocked = L2Latency;
         ongoingAcc.phase = AccessPhase::WaitForCACHE;
       } else if (cl == CL2_MISS) {
         // Only in these cases, we account for misses

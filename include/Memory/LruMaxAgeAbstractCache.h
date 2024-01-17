@@ -126,10 +126,28 @@ LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
     tag = l2getTag<T>(addr);
     index = l2getindex<T>(addr);
     //计算冲突
-    for (std::string &funtion : conflicFunctions) {
-      for (unsigned address : mcif.addressinfo[funtion]) {
-        if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+    if (conflicFunctions.front() == "ALL") {
+      for (auto &i : StaticAddrProvider->Ins2addr) {
+        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
           CNN++;
+        }
+      }
+      for (auto &i : StaticAddrProvider->Cpe2addr) {
+        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
+          CNN++;
+        }
+      }
+      for (auto &i : StaticAddrProvider->Glvar2addr) {
+        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
+          CNN++;
+        }
+      }
+    } else {
+      for (std::string &funtion : conflicFunctions) {
+        for (unsigned address : mcif.addressinfo[funtion]) {
+          if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+            CNN++;
+          }
         }
       }
     }

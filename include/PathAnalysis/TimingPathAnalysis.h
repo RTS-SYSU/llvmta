@@ -62,8 +62,9 @@ void createCacheRelatedWeightProvider(
     MuStateGraph<MuState> *sg, TplGeneral,
     StateGraphNumericWeightProvider<MuState> *&l1sgnicmp,
     StateGraphNumericWeightProvider<MuState> *&l1sgndcmp,
-    StateGraphNumericWeightProvider<MuState> *&l2sgnicmp,
-    StateGraphNumericWeightProvider<MuState> *&l2sgndcmp,
+    // StateGraphNumericWeightProvider<MuState> *&l2sgnicmp,
+    // StateGraphNumericWeightProvider<MuState> *&l2sgndcmp,
+    StateGraphNumericWeightProvider<MuState> *&l2sgncmp,
     StateGraphNumericWeightProvider<MuState> *&sgnsbap,
     StateGraphCacheMissProvider<MuState, CacheType::DATA> *&sgdcpers,
     StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *&sgicpers,
@@ -84,8 +85,9 @@ void createCacheRelatedWeightProvider(
     StateGraphNumericWeightProvider<MuState> *&l1sgnicmp,
     StateGraphNumericWeightProvider<MuState> *&l1sgndcmp,
     // l2
-    StateGraphNumericWeightProvider<MuState> *&l2sgnicmp,
-    StateGraphNumericWeightProvider<MuState> *&l2sgndcmp,
+    // StateGraphNumericWeightProvider<MuState> *&l2sgnicmp,
+    // StateGraphNumericWeightProvider<MuState> *&l2sgndcmp,
+    StateGraphNumericWeightProvider<MuState> *&l2sgncmp,
 
     StateGraphNumericWeightProvider<MuState> *&sgnsbap,
     StateGraphCacheMissProvider<MuState, CacheType::DATA> *&sgdcpers,
@@ -107,14 +109,20 @@ void createCacheRelatedWeightProvider(
       sg, [](const LocalMetrics &lm) { return lm.memoryTopology.l1dataMisses; },
       "UB l1D$ Misses");
   // l2
-  l2sgnicmp = new StateGraphNumericWeightProvider<MuState>(
-      sg,
-      [](const LocalMetrics &lm) { return lm.memoryTopology.l2instrMisses; },
-      "UB l2I$ Misses");
+  // l2sgnicmp = new StateGraphNumericWeightProvider<MuState>(
+  //     sg,
+  //     [](const LocalMetrics &lm) { return lm.memoryTopology.l2instrMisses; },
+  //     "UB l2I$ Misses");
 
-  l2sgndcmp = new StateGraphNumericWeightProvider<MuState>(
-      sg, [](const LocalMetrics &lm) { return lm.memoryTopology.l2dataMisses; },
-      "UB l2D$ Misses");
+  // l2sgndcmp = new StateGraphNumericWeightProvider<MuState>(
+  //     sg, [](const LocalMetrics &lm) { return lm.memoryTopology.l2dataMisses;
+  //     }, "UB l2D$ Misses");
+  l2sgncmp = new StateGraphNumericWeightProvider<MuState>(
+      sg,
+      [](const LocalMetrics &lm) {
+        return lm.memoryTopology.l2dataMisses + lm.memoryTopology.l2instrMisses;
+      },
+      "UB l2$ Misses");
 
   sgnsbap = new StateGraphNumericWeightProvider<MuState>(
       sg, [](const LocalMetrics &lm) { return lm.memoryTopology.storesToBus; },
@@ -170,18 +178,19 @@ template <class MuState> class TimingPathAnalysis {
 public:
   TimingPathAnalysis(MuStateGraph<MuState> *sg)
       : sg(sg), sgtp(nullptr), l1sgnicmp(nullptr), l1sgndcmp(nullptr),
-        l2sgnicmp(nullptr), l2sgndcmp(nullptr), sgnsbap(nullptr),
-        sgdcpers(nullptr), sgicpers(nullptr), sgicmpreemption(nullptr),
-        sgdcmpreemption(nullptr), sgdfs(nullptr), sgwbp(nullptr),
-        sgdramrefreshes(nullptr), ubAccessesProvider(nullptr) {}
+        l2sgncmp(nullptr), sgnsbap(nullptr), sgdcpers(nullptr),
+        sgicpers(nullptr), sgicmpreemption(nullptr), sgdcmpreemption(nullptr),
+        sgdfs(nullptr), sgwbp(nullptr), sgdramrefreshes(nullptr),
+        ubAccessesProvider(nullptr) {} // l2sgndcmp(nullptr),
 
   ~TimingPathAnalysis() {
     // Free stuff
     delete sgtp;
     delete l1sgnicmp;
     delete l1sgndcmp;
-    delete l2sgnicmp;
-    delete l2sgndcmp;
+    // delete l2sgnicmp;
+    // delete l2sgndcmp;
+    delete l2sgncmp;
     delete sgnsbap;
     delete sgdcpers;
     delete sgicpers;
@@ -217,8 +226,9 @@ public:
    */
   StateGraphNumericWeightProvider<MuState> *l1sgnicmp;
   StateGraphNumericWeightProvider<MuState> *l1sgndcmp;
-  StateGraphNumericWeightProvider<MuState> *l2sgnicmp;
-  StateGraphNumericWeightProvider<MuState> *l2sgndcmp;
+  // StateGraphNumericWeightProvider<MuState> *l2sgnicmp;
+  // StateGraphNumericWeightProvider<MuState> *l2sgndcmp;
+  StateGraphNumericWeightProvider<MuState> *l2sgncmp;
   StateGraphNumericWeightProvider<MuState> *sgnsbap;
   StateGraphCacheMissProvider<MuState, CacheType::DATA> *sgdcpers;
   StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *sgicpers;
@@ -277,9 +287,10 @@ void TimingPathAnalysis<MuState>::registerWeightProvider() {
 
   // Cache-related weight provider have to be filled outside due to template
   // magic
-  createCacheRelatedWeightProvider(
-      sg, TplSpecial(), l1sgnicmp, l1sgndcmp, l2sgnicmp, l2sgndcmp, sgnsbap,
-      sgdcpers, sgicpers, sgdfs, sgwbp, sgicmpreemption, sgdcmpreemption);
+  createCacheRelatedWeightProvider(sg, TplSpecial(), l1sgnicmp, l1sgndcmp,
+                                   l2sgncmp, sgnsbap, sgdcpers, sgicpers, sgdfs,
+                                   sgwbp, sgicmpreemption,
+                                   sgdcmpreemption); // l2sgnicmp, l2sgndcmp
 
   // DRAM Refreshes
   if (BackgroundMemoryType == BgMemType::SIMPLEDRAM &&

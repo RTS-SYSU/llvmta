@@ -50,6 +50,7 @@
 #include "Util/Statistics.h"
 #include "Util/TplTools.h"
 #include "Util/Util.h"
+#include "Util/UtilPathAnalysis.h"
 
 #include "llvm/Support/Format.h"
 
@@ -138,6 +139,11 @@ doPathAnalysis(const std::string identifier, const ExtremumType extremumType,
                const VarCoeffVector &objective,
                const std::list<GraphConstraint> &constraints,
                LPAssignment *extpath = nullptr, const double timeLimit = 0.0);
+boost::optional<BoundItv>
+doPathAnalysis2(const std::string identifier, const ExtremumType extremumType,
+                std::vector<VarCoeffVector> &objectivelist,
+                const std::list<GraphConstraint> &constraints,
+                LPAssignment *extpath = nullptr, const double timeLimit = 0.0);
 
 void calculateSoundSlope(double lower, double upper,
                          const std::list<GraphConstraint> &constraints,
@@ -448,7 +454,7 @@ void dispatchAdditionalMetricsToMax(TimingPathAnalysis<MuState> &tpa) {
   if (MetricsToMax.isSet(MetricType::L1IMISSES) ||
       (CompAnaType.isSet(CompositionalAnalysisType::DCACHE) &&
        !CompAnaType.isSet(CompositionalAnalysisType::ICACHE))) {
-    auto objInstrMisses = tpa.l2sgnicmp->getEdgeWeightTimesTakenVector();
+    auto objInstrMisses = tpa.l1sgnicmp->getEdgeWeightTimesTakenVector();
     auto resInstrMisses =
         doPathAnalysis(std::string("MissesI$"), ExtremumType::Maximum,
                        objInstrMisses, constraints);
@@ -457,11 +463,20 @@ void dispatchAdditionalMetricsToMax(TimingPathAnalysis<MuState> &tpa) {
   if (MetricsToMax.isSet(MetricType::L1DMISSES) ||
       (CompAnaType.isSet(CompositionalAnalysisType::ICACHE) &&
        !CompAnaType.isSet(CompositionalAnalysisType::DCACHE))) {
-    auto objDataMisses = tpa.l2sgndcmp->getEdgeWeightTimesTakenVector();
+    auto objDataMisses = tpa.l1sgndcmp->getEdgeWeightTimesTakenVector();
     auto resDataMisses =
         doPathAnalysis(std::string("MissesD$"), ExtremumType::Maximum,
                        objDataMisses, constraints);
     ar.registerResult("IntAna_MaxDataMisses_DataMisses", resDataMisses);
+  }
+  if (MetricsToMax.isSet(MetricType::L2MISSES) ||
+      (CompAnaType.isSet(CompositionalAnalysisType::ICACHE) &&
+       !CompAnaType.isSet(CompositionalAnalysisType::DCACHE))) {
+    auto objL2Misses = tpa.l2sgncmp->getEdgeWeightTimesTakenVector();
+    auto resL2Misses =
+        doPathAnalysis(std::string("MissesL2$"), ExtremumType::Maximum,
+                       objL2Misses, constraints);
+    ar.registerResult("IntAna_MaxL2Misses_L2Misses", resL2Misses);
   }
   // We need also the number of stores at max that went to the bus, for icache
   // miss penalty
@@ -594,6 +609,14 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
 
   // Optimize for maximum time
   VarCoeffVector timeObjective = tpa.sgtp->getEdgeWeightTimesTakenVector();
+  VarCoeffVector objInstMisses = tpa.l1sgnicmp->getEdgeWeightTimesTakenVector();
+  VarCoeffVector objDataMisses = tpa.l1sgndcmp->getEdgeWeightTimesTakenVector();
+  VarCoeffVector objL2Misses = tpa.l2sgncmp->getEdgeWeightTimesTakenVector();
+  std::vector<VarCoeffVector> VLIST;
+  VLIST.emplace_back(timeObjective);
+  VLIST.emplace_back(objInstMisses);
+  VLIST.emplace_back(objDataMisses);
+  VLIST.emplace_back(objL2Misses);
 
   // Extremal path
   LPAssignment Path;
@@ -601,12 +624,12 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   // Perform the longest path search (under given interference budgets)
   boost::optional<BoundItv> res;
   if (isBCET) {
-    res = doPathAnalysis("Time", ExtremumType::Minimum, timeObjective,
-                         constraints, &Path);
+    res = doPathAnalysis2("Time", ExtremumType::Minimum, VLIST, constraints,
+                          &Path);
   } else {
     // WCET
-    res = doPathAnalysis("Time", ExtremumType::Maximum, timeObjective,
-                         constraints, &Path);
+    res = doPathAnalysis2("Time", ExtremumType::Maximum, VLIST, constraints,
+                          &Path);
   }
   /* dump the state graph with coloring information, overwriting the
    * previous dump */

@@ -221,7 +221,7 @@ bool PathAnalysisLPSolve::calculateExtremalPath() {
   static char LpFileName[4096];
   memset(LpFileName, sizeof(char) * 4096, 0);
 
-  snprintf(LpFileName, 4096, "%u_%s_LongestPath.lp", Core.getValue(),
+  snprintf(LpFileName, 4096, "%u_%s_Path.lp", Core.getValue(),
            AnalysisEntryPoint.getValue().c_str());
 
   // Lpfilename[lpfilename.size()]='\0';

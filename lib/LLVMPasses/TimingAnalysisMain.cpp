@@ -226,7 +226,6 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   // Create a json array
   llvm::json::Array arr;
   std::map<std::string, size_t> vec;
-  bool init = true;
   while (mcif.change) {
     for (unsigned i = 0; i < CoreNums; ++i) {
       outs() << "Timing Analysis for core: " << i;
@@ -249,7 +248,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
         } else {
           assert(0 && "Unsupported ISA for LLVMTA");
         }
-        if (init) {
+        if (vec.count(functionName) == 0) {
           llvm::json::Object obj{{"function", std::string(functionName)},
                                  {"WCET", this->WCETtime},
                                  {"BCET", this->BCETtime}};
@@ -260,14 +259,18 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
           (*ptr)["WCET"] = this->WCETtime;
           (*ptr)["BCET"] = this->BCETtime;
         }
-
         // functionName = this->getNextFunction(i);
-      }
-      if (init) {
-        init = false;
       }
       outs() << " No next analyse point for this core.\n";
     }
+    std::ofstream myfile;
+    std::string fileName = "MISSC.txt";
+    myfile.open(fileName, std::ios_base::trunc);
+    myfile << "IMISS : " << ::IMISS << '\n'
+           << "DMISS : " << ::DMISS << '\n'
+           << "L2MISS : " << ::L2MISS << '\n';
+    myfile.close();
+    IMISS = DMISS = L2MISS = 0; // RESET
   }
 
   // Dump the json array to file
