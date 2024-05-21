@@ -54,6 +54,7 @@ public:
   virtual bool hasSolution();
   virtual BoundItv getSolution();
   virtual bool isSolutionBound();
+  // MISS信息输出改动标记
   void dumpinfp(std::string outputFileName, const VarCoeffVector &obj,
                 std::string info) {
     int res = 0;
@@ -71,8 +72,10 @@ public:
       ::IMISS += res;
     } else if (info == "DMISS") {
       ::DMISS += res;
-    } else {
+    } else if (info == "L2MISS") {
       ::L2MISS += res;
+    } else {
+      ::STBUS += res;
     }
   }
 

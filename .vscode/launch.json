@@ -19,7 +19,7 @@
                 "--ta-memory-type=separatecaches",
                 "--ta-strict=false",
                 "--ta-loop-bounds-file='/workspaces/llvmta/testcases/test/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
-                "--ta-loop-lowerbounds-file='/workspaces/llvmta/testcases/test/MLoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
+                "--ta-loop-lowerbounds-file='/workspaces/llvmta/testcases/test/LLoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
                 "--ta-num-callsite-tokens=1",
                 "--core-info='/workspaces/llvmta/testcases/test/CoreInfo.json'",
                 "--core-numbers=4",

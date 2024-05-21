@@ -41,7 +41,7 @@ const struct {
     return refreshPeriod * freq / numRows -
            (Latency + PerWordLatency * maxBurstLength);
   }
-} SDRAMConfig = {100000, 64, 8192, 8};
+} SDRAMConfig = {100000, 64, 8192, 16};
 
 /**
  * Class implementing a cycling memory based on a very simple SDRAM controller

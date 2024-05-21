@@ -50,6 +50,12 @@ public:
    * Provides access to the callgraph
    */
   static PersistenceScopeInfo &getInfo();
+  static void deletper() {
+    if (persistenceScopeInfo != nullptr) {
+      delete persistenceScopeInfo;
+      persistenceScopeInfo = nullptr;
+    }
+  }
 
   /**
    * Dump the computed scopes with entry and exit points.

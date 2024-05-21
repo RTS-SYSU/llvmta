@@ -1,0 +1,10 @@
+[
+    {
+        "core": 0,
+        "tasks": [
+            {
+                "function": "main"
+            }
+        ]
+    }
+]

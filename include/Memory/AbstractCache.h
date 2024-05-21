@@ -26,6 +26,7 @@
 #ifndef CACHEANALYSIS_H_
 #define CACHEANALYSIS_H_
 
+#include <algorithm>
 #include <boost/tuple/tuple.hpp>
 #include <iterator>
 #include <ostream>
@@ -641,26 +642,48 @@ void AbstractCacheImpl<T, C>::leaveScope(const PersistenceScope &scope) {
   }
 }
 
-////TODO!!!!
 template <CacheTraits *T, class C>
 std::set<PersistenceScope>
 AbstractCacheImpl<T, C>::getPersistentScopes(const AbstractAddress addr) const {
+  //持久性分析改动标记
   std::set<PersistenceScope> ret;
+  std::set<PersistenceScope> ret2;
   if (addr.isArray()) {
     auto csItv = getCacheSetInterval(addr.getAsInterval());
     ret = cacheSets[csItv.first]->getPersistentScopes(addr.getArray());
     for (unsigned index = csItv.first + 1; index <= csItv.second; index++) {
-      auto ret2 = cacheSets[index]->getPersistentScopes(addr.getArray());
+      auto ret3 = cacheSets[index]->getPersistentScopes(addr.getArray());
       std::set<PersistenceScope> intersection;
-      std::set_intersection(ret.begin(), ret.end(), ret2.begin(), ret2.end(),
+      std::set_intersection(ret.begin(), ret.end(), ret3.begin(), ret3.end(),
                             std::inserter(intersection, intersection.begin()));
       ret = std::move(intersection);
     }
+    auto csItv2 = l2getCacheSetInterval(addr.getAsInterval());
+    ret2 = L2cacheSets[csItv.first]->getPersistentScopes(addr.getArray());
+    for (unsigned index = csItv.first + 1; index <= csItv.second; index++) {
+      auto ret3 = L2cacheSets[index]->getPersistentScopes(addr.getArray());
+      std::set<PersistenceScope> intersection;
+      std::set_intersection(ret2.begin(), ret2.end(), ret3.begin(), ret3.end(),
+                            std::inserter(intersection, intersection.begin()));
+      ret2 = std::move(intersection);
+    }
+    std::set<PersistenceScope> intersection;
+    std::set_intersection(ret2.begin(), ret2.end(), ret.begin(), ret.end(),
+                          std::inserter(intersection, intersection.begin()));
+    ret = std::move(intersection);
   } else {
-    unsigned tag, index;
+    unsigned tag, index, tag2, index2;
     assert(addr.isPrecise());
     boost::tie(tag, index) = getTagAndIndex(addr.getAsInterval().lower());
     ret = cacheSets[index]->getPersistentScopes(tag);
+
+    boost::tie(tag2, index2) = l2getTagAndIndex(addr.getAsInterval().lower());
+    ret2 = L2cacheSets[index2]->getPersistentScopes(tag2);
+
+    std::set<PersistenceScope> intersection;
+    std::set_intersection(ret2.begin(), ret2.end(), ret.begin(), ret.end(),
+                          std::inserter(intersection, intersection.begin()));
+    ret = std::move(intersection);
   }
   DEBUG_WITH_TYPE(
       "persistence", if (ret.size() > 0) {

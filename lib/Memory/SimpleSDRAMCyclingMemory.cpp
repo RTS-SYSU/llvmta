@@ -158,7 +158,7 @@ SimpleSDRAMCyclingMemory::announceAccess(AbstractAddress addr, AccessType t,
   // Case: No refresh as we split later (delayed)
   SimpleSDRAMCyclingMemory *noref = this->clone();
   noref->accessPhase = DRAMPhase::ACCESS;
-  noref->timeBlocked = Latency + PerWordLatency * numWords;
+  noref->timeBlocked = Latency + ceil(PerWordLatency * numWords / 4.0);
   res.push_back(noref);
   // Return
   return res;

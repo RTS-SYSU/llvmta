@@ -537,15 +537,15 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   }
   // END LEGACY CODE
 
-  AnalysisResults::getInstance().registerResult("staticallyRefutedWritebacks",
-                                                0);
-  AnalysisResults::getInstance().registerResult("staticMisses", 0);
+  // AnalysisResults::getInstance().registerResult("staticallyRefutedWritebacks",
+  //                                               0);
+  // AnalysisResults::getInstance().registerResult("staticMisses", 0);
 
   // Build state graph
   sg->buildGraph();
 
-  AnalysisResults::getInstance().finalize("staticallyRefutedWritebacks");
-  AnalysisResults::getInstance().finalize("staticMisses");
+  // AnalysisResults::getInstance().finalize("staticallyRefutedWritebacks");
+  // AnalysisResults::getInstance().finalize("staticMisses");
 
   // Dump state graph without longest-path coloring to aid debugging of
   // path analysis problems
@@ -607,16 +607,21 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   // Add potential interference constraints for dram refreshes, crpd-cost, ...
   tpa.addAvailableInterferenceConstraints(constraints);
 
-  // Optimize for maximum time
+  //  Optimize for maximum time
   VarCoeffVector timeObjective = tpa.sgtp->getEdgeWeightTimesTakenVector();
+
+  std::vector<VarCoeffVector> VLIST;
+  VLIST.emplace_back(timeObjective);
+
+  // // MISS信息改动标记
   VarCoeffVector objInstMisses = tpa.l1sgnicmp->getEdgeWeightTimesTakenVector();
   VarCoeffVector objDataMisses = tpa.l1sgndcmp->getEdgeWeightTimesTakenVector();
   VarCoeffVector objL2Misses = tpa.l2sgncmp->getEdgeWeightTimesTakenVector();
-  std::vector<VarCoeffVector> VLIST;
-  VLIST.emplace_back(timeObjective);
+  // VarCoeffVector objSTBus = tpa.sgnsbap->getEdgeWeightTimesTakenVector();
   VLIST.emplace_back(objInstMisses);
   VLIST.emplace_back(objDataMisses);
   VLIST.emplace_back(objL2Misses);
+  // VLIST.emplace_back(objSTBus);
 
   // Extremal path
   LPAssignment Path;

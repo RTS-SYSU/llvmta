@@ -141,7 +141,7 @@ LruMinAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
     ASSO = T->L2ASSOCIATIVITY;
     tag = l2getTag<T>(addr);
     index = l2getindex<T>(addr);
-    if (conflicFunctions.front() == "ALL") {
+    if (conflicFunctions.empty()) {
       for (auto &i : StaticAddrProvider->Ins2addr) {
         if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
           CNN++;

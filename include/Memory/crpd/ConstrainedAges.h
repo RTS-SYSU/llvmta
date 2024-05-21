@@ -61,6 +61,7 @@ class ConstrainedAges : public progana::JoinSemiLattice {
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
+  bool isl2;
 
   using TagType = typename CacheTraits::TagType;
 
@@ -126,7 +127,8 @@ private:
 };
 
 template <CacheTraits *T>
-inline ConstrainedAges<T>::ConstrainedAges(bool, bool) : top(false) {}
+inline ConstrainedAges<T>::ConstrainedAges(bool, bool is2)
+    : top(false), isl2(is2) {}
 
 /**
  * \see  dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
@@ -160,7 +162,7 @@ UpdateReport *ConstrainedAges<T>::update(const AbstractAddress addr,
                                          AccessType load_store,
                                          AnaDeps *AddInfo, bool wantReport,
                                          const Classification) {
-  TagType tag = getTag<T>(addr);
+  TagType tag = isl2 ? l2getTag<T>(addr) : getTag<T>(addr);
   assert(AddInfo);
 
   /* this function does not use reports - if one is requested create an
@@ -219,7 +221,8 @@ UpdateReport *ConstrainedAges<T>::update(const AbstractAddress addr,
     }
 
     // update the age taking the unconstrained information into account
-    if (CAge >= UAge || CAge == ASSOCIATIVITY - 1) {
+    if (CAge >= UAge ||
+        CAge == (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY) - 1) {
       TempCAges[U] = CAge;
     } else {
       TempCAges[U] = CAge + 1;

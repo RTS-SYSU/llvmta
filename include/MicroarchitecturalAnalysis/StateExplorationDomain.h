@@ -306,10 +306,6 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::transfer(
   // Cycle until the given instruction is final
   cycleUntilFinal(workingSet, this->states, StaticAddrProvider->getAddr(MI),
                   currentCtx, anaInfo);
-  // for (auto &succ : this->states) {
-  //   std::cerr << succ;
-  // }
-  mcif.addaddress(AnalysisEntryPoint, StaticAddrProvider->getAddr(MI));
 
   // If the program ends, i.e. a state returned to the initial link register,
   // cycle until the following sync instruction is completed.

@@ -105,14 +105,16 @@ private:
   void checkInvariants() const {
     for (auto entry : dirtiness) {
       if (entry.second == DCL_DIRTY &&
-          must.getMaxAge(entry.first) == T->ASSOCIATIVITY) {
+          must.getMaxAge(entry.first) ==
+              (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY)) {
         std::cerr << *this << "\n";
         std::cerr << "The above dirtiness state contains a dirty block that is "
                      "not guaranteed to be cached! This is impossible\n";
         abort();
       }
       if (entry.second != DCL_CLEAN &&
-          may.getMinAge(entry.first) == T->ASSOCIATIVITY) {
+          may.getMinAge(entry.first) ==
+              (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY)) {
         std::cerr << *this << "\n";
         std::cerr << "The above dirtiness state contains a block that cannot "
                      "be cached but is not clean anyway. This is impossible\n";
@@ -166,7 +168,8 @@ bool DirtinessAnalysis<T, MustAna, MayAna>::existsDirtyVictim() const {
     }
     /* XXX in Daniel Grund's MUST implementation this is not
      * efficient. */
-    if (must.getMaxAge(entry.first) == T->ASSOCIATIVITY) {
+    if (must.getMaxAge(entry.first) ==
+        (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY)) {
       return true;
     }
   }
@@ -192,7 +195,8 @@ void DirtinessAnalysis<T, MustAna, MayAna>::incorporateMustMayUpdates(
         continue;
       }
 
-      if (may.getMinAge(it->first) == T->ASSOCIATIVITY) {
+      if (may.getMinAge(it->first) ==
+          (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY)) {
         /* If the dirtiness analysis's maxWorthwhileTags
          * value is higher than the May analysis's, we
          * have to handle the eviction of the unknown
@@ -228,7 +232,7 @@ template <CacheTraits *T, class MustAna, class MayAna>
 UpdateReport *DirtinessAnalysis<T, MustAna, MayAna>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *deps,
     bool wantReport, const Classification assumption) {
-  TagType tag = getTag<T>(addr);
+  TagType tag = isl2 ? l2getTag<T>(addr) : getTag<T>(addr);
 
   LLVM_DEBUG(checkInvariants());
   LLVM_DEBUG(std::cerr << load_store << " " << addr << "\n");
@@ -284,14 +288,16 @@ UpdateReport *DirtinessAnalysis<T, MustAna, MayAna>::potentialUpdate(
   bool dirtifyingStore = false;
 
   auto itv = addr.getAsInterval();
-  TagType lowTag = getTag<T>(itv.lower());
-  TagType highTag = getTag<T>(itv.upper());
+  TagType lowTag = isl2 ? l2getTag<T>(itv.lower()) : getTag<T>(itv.lower());
+  TagType highTag = isl2 ? l2getTag<T>(itv.upper()) : getTag<T>(itv.upper());
   unsigned numTags = highTag - lowTag + 1;
   /* arbitrary constant, might be tuned. */
   const unsigned maxWorthwhileTags = 4;
 
   if (numTags > maxWorthwhileTags) {
-    if (!may.getTagsWithMaxMinAge(T->ASSOCIATIVITY - 1).containsAll()) {
+    if (!may.getTagsWithMaxMinAge(
+                (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY) - 1)
+             .containsAll()) {
       std::cerr << "[WARNING] Dirtiness Analysis gave up on finding the target "
                    "of the store while MAY tracks it - this makes no sense "
                    "(it's gonna be really hard to recover from this)\n";

@@ -40,10 +40,14 @@
 #include "AnalysisFramework/CollectingContextsDomain.h"
 #include "AnalysisFramework/PartitioningDomain.h"
 #include "LLVMPasses/MachineFunctionCollector.h"
+#include "LLVMPasses/StaticAddressProvider.h"
+#include "LLVMPasses/TimingAnalysisMain.h"
 #include "PartitionUtil/DirectiveHeuristics.h"
 
+#include "PathAnalysis/LoopBoundInfo.h"
+#include "Util/GlobalVars.h"
+#include "Util/Options.h"
 #include "Util/Statistics.h"
-
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
 
@@ -222,6 +226,8 @@ private:
    */
   std::map<const MachineBasicBlock *, std::set<Context, ctxcomp>, mbbComp>
       worklist;
+  //改动标记 记录已经分析过执行次数的块
+  std::set<const MachineBasicBlock *> mylist;
 };
 
 template <class AnalysisDom>
@@ -308,6 +314,9 @@ void AnalysisDriverInstr<AnalysisDom>::initialize() {
 template <class AnalysisDom>
 void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
     const MachineBasicBlock *MBB, const Context &ctx) {
+  //多核地址信息收集 改动标记
+  std::vector<unsigned> addrIlist;
+
   // Clone input to get new output
   AnalysisDom newOut(mbb2anainfo->at(MBB).findAnalysisInfo(ctx));
   Context targetCtx(ctx);
@@ -319,8 +328,36 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
     }
     analyseInstruction(&currentInstr, targetCtx, newOut);
     handleBranchInstruction(&currentInstr, targetCtx, newOut);
+
+    if (SPersistenceA && BOUND && mylist.count(MBB) == 0) {
+      if (currentInstr.mayLoad() || currentInstr.mayStore()) {
+        AbstractAddress addrItv =
+            glAddrInfo->getDataAccessAddress(&currentInstr, &targetCtx, 0);
+        //未知的地址不管
+        if (!addrItv.isSameInterval(
+                TimingAnalysisPass::AbstractAddress::getUnknownAddress())) {
+          //数组的地址会转换为地址范围
+          unsigned lowAligned =
+              addrItv.getAsInterval().lower() & ~(Dlinesize - 1);
+          unsigned upAligned =
+              addrItv.getAsInterval().upper() & ~(Dlinesize - 1);
+          while (lowAligned <= upAligned) {
+            addrIlist.emplace_back(lowAligned);
+            lowAligned += Dlinesize;
+          }
+        }
+      }
+      //指令地址
+      unsigned iadd = StaticAddrProvider->getAddr(&currentInstr);
+      addrIlist.emplace_back(iadd & ~(Ilinesize - 1));
+    }
   }
 
+  if (SPersistenceA && BOUND && mylist.count(MBB) == 0) {
+    int time = getbound(MBB, ctx);
+    mylist.insert(MBB);
+    mcif.addaddress(AnalysisEntryPoint, addrIlist, time);
+  }
   // Handle fallthrough cases to layout successor
   for (auto succit = MBB->succ_begin(); succit != MBB->succ_end(); ++succit) {
     if (!MBB->isLayoutSuccessor(*succit))
@@ -338,8 +375,8 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
         targetCtx.update(direc);
       }
     }
-    // analysis info needs an "edge transfer" to adjust analysis information for
-    // loops
+    // analysis info needs an "edge transfer" to adjust analysis information
+    // for loops
     targetCtx.transfer(edge);
     // Directives when edge is left
     if (DirectiveHeuristicsPassInstance->hasDirectiveOnEdgeLeave(edge)) {
@@ -373,13 +410,6 @@ void AnalysisDriverInstr<AnalysisDom>::analyseInstruction(
                       << "Before:" << getMachineInstrIdentifier(currentInstr)
                       << " in context " << ctx << "\n"
                       << newOut.print() << "\n");
-
-  // fprintf(stderr, "Current Instr is :");
-  // currentInstr->dump();
-  // fprintf(stderr, "\n, Current Context: ");
-  // std::cerr << ctx;
-  // fprintf(stderr, "\n, current newOut is: ");
-  // std::cerr <<newOut.print();
 
   // Directives before the instruction
   if (DirectiveHeuristicsPassInstance->hasDirectiveBeforeInstr(currentInstr)) {
@@ -880,7 +910,6 @@ class AnalysisDriverInstrContextMapping
 public:
   // Making AnaDeps visible again
   using typename AnalysisDriver<AnalysisDom, MachineInstr>::AnaDeps;
-
   /**
    * Constructor, calls the superclass constructor
    */

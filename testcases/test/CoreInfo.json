@@ -3,20 +3,16 @@
         "core": 0,
         "tasks": [
             {
-                "function": "g723_enc"
+                "function": "st"
             }
         ]
     },
     {
         "core": 1,
-        "tasks": []
-    },
-    {
-        "core": 2,
-        "tasks": []
-    },
-    {
-        "core": 3,
-        "tasks": []
+        "tasks": [
+            {
+                "function": "ndes"
+            }
+        ]
     }
 ]

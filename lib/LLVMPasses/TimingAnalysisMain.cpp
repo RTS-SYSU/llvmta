@@ -213,9 +213,10 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     DirectiveHeuristicsPassInstance->dump(Myfile);
     Myfile.close();
 
-    Myfile.open("PersistenceScopes.txt", ios_base::trunc);
-    PersistenceScopeInfo::getInfo().dump(Myfile);
-    Myfile.close();
+    //持久分析改动标记
+    // Myfile.open("PersistenceScopes.txt", ios_base::trunc);
+    // PersistenceScopeInfo::getInfo().dump(Myfile);
+    // Myfile.close();
 
     Myfile.open("CallGraph.txt", ios_base::trunc);
     CallGraph::getGraph().dump(Myfile);
@@ -268,9 +269,10 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     myfile.open(fileName, std::ios_base::trunc);
     myfile << "IMISS : " << ::IMISS << '\n'
            << "DMISS : " << ::DMISS << '\n'
-           << "L2MISS : " << ::L2MISS << '\n';
+           << "L2MISS : " << ::L2MISS << '\n'
+           << "STBUS : " << ::L2MISS << '\n';
     myfile.close();
-    IMISS = DMISS = L2MISS = 0; // RESET
+    STBUS = IMISS = DMISS = L2MISS = 0; // RESET
   }
 
   // Dump the json array to file
@@ -311,8 +313,12 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   }
 
   if (!QuietMode) {
-    Myfile.open("LoopBounds.txt", ios_base::app);
+    Myfile.open("LoopBounds.txt", ios_base::trunc);
     LoopBoundInfo->dump(Myfile);
+    Myfile.close();
+    //持久分析改动标记
+    Myfile.open("PersistenceScopes.txt", ios_base::trunc);
+    PersistenceScopeInfo::getInfo().dump(Myfile);
     Myfile.close();
 
     Myfile.open("ConstantValueAnalysis.txt", ios_base::app);
@@ -321,6 +327,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   }
 
   AddressInformationImpl<ConstantValueDomain<ISA>> AddrInfo(*CvAnaInfo);
+  ::glAddrInfo = &AddrInfo;
 
   if (!QuietMode) {
     Myfile.open("AddressInformation.txt", ios_base::trunc);
@@ -334,8 +341,8 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   icacheConf.LINE_SIZE = Ilinesize;
   icacheConf.ASSOCIATIVITY = Iassoc;
   icacheConf.N_SETS = Insets;
-  // TODO
   icacheConf.L2N_SETS = NN_SET;
+  icacheConf.L2ASSOCIATIVITY = L2assoc;
   icacheConf.checkParams();
 
   dcacheConf.LINE_SIZE = Dlinesize;
@@ -343,8 +350,8 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.N_SETS = Dnsets;
   dcacheConf.WRITEBACK = DataCacheWriteBack;
   dcacheConf.WRITEALLOCATE = DataCacheWriteAllocate;
-  // TODO
   dcacheConf.L2N_SETS = NN_SET;
+  dcacheConf.L2ASSOCIATIVITY = L2assoc;
   dcacheConf.checkParams();
 
   // WCET
@@ -365,7 +372,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   Stats.dump(Myfile);
   Myfile.close();
 
-  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint + "B" +
+  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint +
                   "_TotalBound.xml",
               ios_base::app);
   Ar.dump(Myfile);
@@ -374,7 +381,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   ::isBCET = true;
   dispatchAnalysisType(AddrInfo);
   AnalysisResults &Ar1 = AnalysisResults::getInstance();
-  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint + "W" +
+  Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint +
                   "_TotalBound.xml",
               ios_base::app);
   Ar1.dump(Myfile);
@@ -382,6 +389,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   ::isBCET = false;
   // No need for constant value information
   delete CvAnaInfo;
+  PersistenceScopeInfo::deletper();
 }
 
 void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {

@@ -134,7 +134,8 @@ double getDataCacheMissPenaltyInOrder(double maxdmisses) {
 }
 
 boost::optional<BoundItv>
-dispatchInOrderTimingAnalysis(AddressInformation &addressInfo, unsigned coreNum = 0) {
+dispatchInOrderTimingAnalysis(AddressInformation &addressInfo,
+                              unsigned coreNum = 0) {
   std::tuple<AddressInformation &> addrInfoTuple(addressInfo);
 
   configureCyclingMemories();
@@ -232,5 +233,4 @@ dispatchInOrderTimingAnalysis(AddressInformation &addressInfo, unsigned coreNum 
     return boost::none;
   }
 }
-
 } // namespace TimingAnalysisPass

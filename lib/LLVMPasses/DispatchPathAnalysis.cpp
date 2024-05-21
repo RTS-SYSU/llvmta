@@ -137,7 +137,8 @@ doPathAnalysis2(const std::string identifier, const ExtremumType extremumType,
     if (extpath != nullptr) {
       pathAnalysis->getExtremalPath(*extpath);
     }
-    std::vector<std::string> name = {" ", "IMISS", "DMISS", "L2MISS"};
+    //输出miss信息改动标记
+    std::vector<std::string> name = {" ", "IMISS", "DMISS", "L2MISS", "STBUS"};
     for (int i = 1; i < objectivelist.size(); i++) {
       pathAnalysis->dumpinfp(outputFileName, objectivelist[i], name[i]);
     }
@@ -656,7 +657,7 @@ double computeWBCleanupCost(const LPAssignment &WCETpath) {
     /* costs can be smaller than 0 if we did not enforce the bound */
     return 0;
   }
-  costs *= (Latency + PerWordLatency * Dlinesize / 4);
+  costs *= (Latency + PerWordLatency * Dlinesize / 16);
   if (BackgroundMemoryType == BgMemType::SIMPLEDRAM) {
     /* TODO this is too simplistic. We should do a
      * fixed-point iteration here, since the refreshes might

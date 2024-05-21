@@ -75,8 +75,10 @@ protected:
 #endif
 
 public:
+  bool isl2;
   using AnaDeps = std::tuple<>;
-  explicit MultiScopePersistence(bool assumeAnEmptyCache = false, bool = false);
+  explicit MultiScopePersistence(bool assumeAnEmptyCache = false,
+                                 bool is2 = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
@@ -100,8 +102,8 @@ public:
 template <class P>
 inline MultiScopePersistence<P>::MultiScopePersistence(bool assumeAnEmptyCache
                                                        __attribute__((unused)),
-                                                       bool)
-    : scopes2info()
+                                                       bool is2)
+    : isl2(is2), scopes2info()
 #ifndef STRICT_SCOPE_CONSISTENCY
       ,
       scopes2entercount()
@@ -203,7 +205,7 @@ void MultiScopePersistence<P>::enterScope(const PersistenceScope &scope) {
   scopes2info.insert(std::make_pair(scope, P()));
 #else
   if (scopes2info.count(scope) == 0) {
-    scopes2info.insert(std::make_pair(scope, P()));
+    scopes2info.insert(std::make_pair(scope, P(false, isl2)));
     scopes2entercount.insert(std::make_pair(scope, 1));
   } else {
     ++scopes2entercount[scope];

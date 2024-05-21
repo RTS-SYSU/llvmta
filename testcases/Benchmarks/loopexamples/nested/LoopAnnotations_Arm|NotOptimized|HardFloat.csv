@@ -1,3 +1,7 @@
 # Type: Normal
-main|Loop in file nested.c near line 8|BB#3:for.cond1<header><exiting>_BB#4:for.body3_BB#5:for.inc<latch>|12
-main|Loop in file nested.c near line 6|BB#1:for.cond<header><exiting>_BB#2:for.body_BB#3:for.cond1_BB#4:for.body3_BB#5:for.inc_BB#6:for.end_BB#7:for.inc4<latch>|10
+ndes_cyfun|1|BB#1:for.cond<header><exiting>_BB#2:for.body_BB#3:for.inc<latch>|16
+ndes_cyfun|2|BB#5:for.cond40<header><exiting>_BB#6:for.body42_BB#7:for.inc50<latch>|4
+ndes_cyfun|3|BB#9:for.cond53<header><exiting>_BB#10:for.body56_BB#11:for.inc81<latch>|8
+ndes_cyfun|4|BB#13:for.cond84<header><exiting>_BB#14:for.body87_BB#15:for.inc89<latch>|32
+main|5|BB#3:for.cond1<header><exiting>_BB#4:for.body3_BB#5:for.inc<latch>|12
+main|6|BB#1:for.cond<header><exiting>_BB#2:for.body_BB#3:for.cond1_BB#6:for.end_BB#7:for.inc5<latch>_BB#4:for.body3_BB#5:for.inc|10

@@ -1,14 +1,14 @@
 #ifndef MUTICORE_INFORMATION
 #define MUTICORE_INFORMATION
 
+#include "Util/AbstractAddress.h"
+#include "Util/Options.h"
 #include <cstddef>
 #include <map>
 #include <set>
 #include <string>
 #include <utility>
 #include <vector>
-
-#include "Util/Options.h"
 
 // namespace {
 // #define CHECK_CORE_VALIE(CORE) \
@@ -31,7 +31,8 @@ private:
 
 public:
   bool change;
-  // CoreNum -> map<function, address of Instruction>
+  // // function->address of Instruction->地址的执行次数   //不用地址，用block
+  std::map<std::string, std::map<unsigned, unsigned>> addressinfowithtime;
   std::map<std::string, std::set<unsigned>> addressinfo;
   // CoreNum -> vector of function
   std::vector<std::vector<std::string>> coreinfo;
@@ -48,9 +49,39 @@ public:
     // addressinfo.resize(core);
     coreOrz.resize(core);
   }
-  void addaddress(std::string function, unsigned address) {
-    addressinfo.at(function).insert(address);
+
+  void addaddress(std::string function, unsigned addressLINE, int time) {
+    if (SPersistenceA) {
+      addressinfowithtime.at(function)[addressLINE] += time;
+    }
+    addaddress(function, addressLINE);
   }
+
+  void addaddress(std::string function, unsigned addressLINE) {
+    addressinfo.at(function).insert(addressLINE);
+  }
+
+  void addaddress(std::string function, std::vector<unsigned> &addrlist,
+                  int time) {
+    for (auto &addr : addrlist) {
+      addaddress(function, addr, time);
+    }
+  }
+  // void addaddress(std::string function,
+  //                 TimingAnalysisPass::AbstractAddress &addr, int time) {
+  //   //未知的地址不管
+  //   if (addr.isSameInterval(
+  //           TimingAnalysisPass::AbstractAddress::getUnknownAddress())) {
+  //     return;
+  //   }
+  //   //数组的地址会转换为地址范围
+  //   unsigned lowAligned = addr.getAsInterval().lower() & ~(Dlinesize - 1);
+  //   unsigned upAligned = addr.getAsInterval().upper() & ~(Dlinesize - 1);
+  //   while (lowAligned <= upAligned) {
+  //     addaddress(function, lowAligned, time);
+  //     lowAligned += Dlinesize;
+  //   }
+  // }
 
   void addTask(unsigned num, const std::string &function) {
     // if (num > CoreNums) {
@@ -62,7 +93,12 @@ public:
     // CHECK_CORE_VALIE(num)
 
     coreinfo[num].emplace_back(function);
-    addressinfo.insert(std::make_pair(function, std::set<unsigned>{}));
+    //对没有分析过的函数进行访存信息收集
+    if (addressinfo.find(function) == addressinfo.end()) {
+      addressinfowithtime.insert(
+          std::make_pair(function, std::map<unsigned, unsigned>{}));
+      addressinfo.insert(std::make_pair(function, std::set<unsigned>{}));
+    }
     coreOrz[num].insert(std::make_pair(function, coreinfo[num].size() - 1));
     schedule[num].emplace_back(std::make_pair(0, 0));
   }
@@ -117,25 +153,31 @@ public:
                                                const std::string &function) {
     std::vector<std::string> list;
     auto liftime = schedule[core][coreOrz[core][function]];
-    if (liftime.first == 0 || liftime.second == 0) {
-      list.emplace_back("ALL");
-      return list;
-    }
+    // if (liftime.first == 0 || liftime.second == 0) {
+    //   list.emplace_back("ALL");
+    //   return list;
+    // }
     for (int i = 0; i < schedule.size(); i++) {
       if (i == core) {
         continue;
       }
       for (int j = 0; j < schedule[i].size(); j++) {
         auto &tlifetime = schedule[i][j];
-        if (tlifetime.first < liftime.first &&
-                tlifetime.second > liftime.first ||
-            liftime.first < tlifetime.first &&
-                liftime.second > tlifetime.first) {
+        if (tlifetime.second > liftime.first &&
+                tlifetime.second < liftime.second ||
+            tlifetime.first >= liftime.first &&
+                tlifetime.first < liftime.second ||
+            liftime.first >= tlifetime.first &&
+                liftime.second <= tlifetime.second) {
           list.emplace_back(coreinfo[i][j]);
         }
       }
     }
     return list;
+  }
+  std::pair<unsigned, unsigned> getlifetime(unsigned core,
+                                            const std::string &function) {
+    return schedule[core][coreOrz[core][function]];
   }
 
   std::pair<unsigned, unsigned> getPreTask(unsigned core,

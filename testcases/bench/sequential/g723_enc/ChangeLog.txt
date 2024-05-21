@@ -1,0 +1,34 @@
+File: g723_enc.c
+Original provenience: SUN Microsystems
+
+2016-03-02:
+ - Renamed file to g723_enc and removed all g721 dead code
+ - Added TACLeBench header to line 1
+ - Moved SUN license to license.txt
+ - Deleted unused code that was commented out
+ - Renamed functions prepended g723_enc to all function names
+ - Renamed function main to g723_enc_main
+ - Created new function main, calling g723_enc_init, g723_enc_main and
+   returning g723_enc_return
+ - Reordered functions in source code: initialization- and
+   return-value-related functions first, followed by algorithm core
+   functions, followed by main functions
+ - Applied code formatting with astyle as in the example
+
+ 2016-03-09:
+ - Renamed global variables, prepended g723_enc_
+ - Removed static keyword from global variables
+ - Renamed datatype from g723_enc_g72x_state to g723_enc_state
+ - Renamed function g723_enc_g72x_init_state to g723_enc_init_state
+
+ 2016-05-23:
+ - Added initialization with volatile int
+ - Added check_sum and comparison with expected result
+
+2016-05-25
+ - Changed name of struct g723_enc_state to g723_enc_state_t
+ - Changed name of variable state to g723_enc_state
+
+2017-07-10
+ - Fixed undefined behaviour introduced by accessing the result of a pointer
+   type cast.

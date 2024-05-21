@@ -228,6 +228,7 @@ void FixedLatencyCyclingMemory<Config>::print(std::ostream &stream) const {
   stream << "needs " << timeBlocked << "cycles to finish.";
 }
 
+// #include <cmath>
 template <const FixedLatencyCyclingMemoryConfigType *Config>
 std::list<AbstractCyclingMemory *>
 FixedLatencyCyclingMemory<Config>::announceAccess(AbstractAddress addr,
@@ -237,12 +238,13 @@ FixedLatencyCyclingMemory<Config>::announceAccess(AbstractAddress addr,
   assert(!isBusy() && "Don't announce an access to a busy memory!");
   std::list<AbstractCyclingMemory *> res;
   FixedLatencyCyclingMemory *r = this->clone();
+  float temp = numWords * PerWordLatency / 4.0;
   if (accl2) {
-    // L2hit    numWords * PerWordLatency
-    r->timeBlocked = L2Latency; //  L2 access
+    // L2hit
+    r->timeBlocked = L2Latency + ceil(temp); //  L2 access
   } else {
     // l2miss
-    r->timeBlocked = Latency; // memory access
+    r->timeBlocked = Latency + ceil(temp); // memory access
   }
   res.push_back(r);
   return res;

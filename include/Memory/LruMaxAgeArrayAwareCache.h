@@ -123,13 +123,12 @@ inline LruMaxAgeArrayAwareCache<T>::LruMaxAgeArrayAwareCache(
 template <CacheTraits *T>
 Classification
 LruMaxAgeArrayAwareCache<T>::classify(const AbstractAddress addr) const {
-  unsigned ASSO;
+  TagType tag = getTag<T>(addr);
+  unsigned ASSO = T->ASSOCIATIVITY;
   if (this->isl2) {
     ASSO = T->L2ASSOCIATIVITY;
-  } else {
-    ASSO = T->ASSOCIATIVITY;
+    tag = l2getTag<T>(addr);
   }
-  TagType tag = getTag<T>(addr);
   unsigned size = ages.size();
   assert(size <= ASSO);
 
@@ -186,14 +185,11 @@ LruMaxAgeArrayAwareCache<T>::update(const AbstractAddress addr,
                                     bool wantReport,
                                     const Classification assumption) {
 
-  unsigned ASSO;
-  TagType tag;
+  unsigned ASSO = T->ASSOCIATIVITY;
+  TagType tag = getTag<T>(addr);
   if (this->isl2) {
     ASSO = T->L2ASSOCIATIVITY;
     tag = l2getTag<T>(addr);
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-    tag = getTag<T>(addr);
   }
 
   LruMaxAgeUpdateReport<TagType> *report = nullptr;
@@ -355,7 +351,7 @@ unsigned LruMaxAgeArrayAwareCache<T>::getMaxAge(const TagType tag) const {
     return it->second->getAge();
   }
   return this->isl2 ? T->L2ASSOCIATIVITY
-                    : ASSOCIATIVITY; // TODO Should this return \infty?
+                    : T->ASSOCIATIVITY; // TODO Should this return \infty?
 }
 
 } // namespace cache

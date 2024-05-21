@@ -126,7 +126,7 @@ LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
     tag = l2getTag<T>(addr);
     index = l2getindex<T>(addr);
     //计算冲突
-    if (conflicFunctions.front() == "ALL") {
+    if (conflicFunctions.empty()) {
       for (auto &i : StaticAddrProvider->Ins2addr) {
         if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
           CNN++;

@@ -33,6 +33,7 @@
 
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_os_ostream.h"
+#include <iostream>
 
 using namespace llvm;
 
@@ -42,6 +43,7 @@ PersistenceScopeInfo *PersistenceScopeInfo::persistenceScopeInfo = nullptr;
 
 PersistenceScopeInfo::PersistenceScopeInfo() {
   // If no persistence wanted, skip this part
+
   if (InstrCachePersType == PersistenceType::NONE &&
       DataCachePersType == PersistenceType::NONE) {
     return;
@@ -67,6 +69,7 @@ void PersistenceScopeInfo::walkMachineLoop(const MachineLoop *loop) {
   // TODO filter the loops with the conditionals!!!
   bool isLoopGoodScope = true;
 
+  //持久分析待改
   // If we have an (indirect) external function call in the loop, it is a bad
   // persistence scope
   CallGraph &cg = CallGraph::getGraph();
@@ -85,7 +88,10 @@ void PersistenceScopeInfo::walkMachineLoop(const MachineLoop *loop) {
       break;
     }
   }
-
+  // 输出改动
+  // auto *Func = loop->getHeader()->getParent();
+  // std::cerr << "# In function " << Func->getName().str();
+  // loop->dump();
   if (isLoopGoodScope) {
     // Fill in the scope information
     auto header = loop->getHeader();

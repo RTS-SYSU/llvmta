@@ -31,6 +31,7 @@
 #include "MicroarchitecturalAnalysis/ConvergenceType.h"
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
+#include "Util/GlobalVars.h"
 #include "Util/Util.h"
 
 #include "ARM.h"
@@ -661,6 +662,10 @@ void PretPipelineState<MemoryTopology>::accessDataFromMemoryTopology(
         dataAccessIds.insert(
             std::pair<unsigned, unsigned>(currMemoryAccess, *dataAccess));
         currMemoryAccess++;
+        //多核信息：执行时所有data地址信息
+        // if (CoreNums > 1) {
+        //   mcif.addaddress(AnalysisEntryPoint, addrItv, BOUND);
+        // }
       }
     }
   }

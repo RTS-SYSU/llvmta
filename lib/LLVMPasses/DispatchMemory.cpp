@@ -381,9 +381,11 @@ getUbAccesses(const AbstractCyclingMemory::LocalMetrics *pBaseMetrics) {
       return 0;
     }
   }
-  //	return static_cast<const
-  // MemoriesForIterative::AccessCounterMemory::LocalMetrics*>(pBaseMetrics)
-  //		->accessCounter.getUb();
+
+  // return static_cast<
+  //            const MemoriesForIterative::AccessCounterMemory::LocalMetrics
+  //            *>( pBaseMetrics)
+  //     ->accessCounter.getUb();
 }
 
 unsigned

@@ -49,7 +49,9 @@ doMuArchTimingAnalysis(Deps deps, unsigned coreNum = 0) {
   conflicFunctions = mcif.getConflictFunction(Core, AnalysisEntryPoint);
 
   AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(deps);
+  BOUND = 1;
   auto microArchAnaInfo = microArchAna.runAnalysis();
+  BOUND = 0;
 
   if (!QuietMode) {
     std::ofstream myfile;

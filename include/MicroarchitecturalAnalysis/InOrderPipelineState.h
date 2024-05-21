@@ -775,8 +775,6 @@ void InOrderPipelineState<MemoryTopology>::accessDataFromMemoryTopology(
         dataAccessIds.insert(
             std::pair<unsigned, unsigned>(currMemoryAccess, *dataAccess));
         currMemoryAccess++;
-        //全局信息
-        mcif.addaddress(AnalysisEntryPoint, dataAccess.get());
       }
     }
   }

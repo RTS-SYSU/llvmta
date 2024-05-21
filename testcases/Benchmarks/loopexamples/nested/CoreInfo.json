@@ -3,10 +3,8 @@
         "core": 0,
         "tasks": [
             {
+                "function": "stackarray",
                 "function": "main"
-            },
-            {
-                "function": "myloop"
             }
         ]
     },
@@ -14,8 +12,25 @@
         "core": 1,
         "tasks": [
             {
-                "function": "main"
+                "function": "switch1"
             }
         ]
     }
 ]
+//     {
+//         "core": 2,
+//         "tasks": [
+//             {
+//                 "function": "call1"
+//             }
+//         ]
+//     },
+//     {
+//         "core": 3,
+//         "tasks": [
+//             {
+//                 "function": "call2"
+//             }
+//         ]
+//     }
+// ]

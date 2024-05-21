@@ -63,10 +63,12 @@ protected:
   typedef typename CacheTraits::PosType PosType;
 
   std::map<TagType, unsigned> conflicts;
+  bool isl2;
 
 public:
   using AnaDeps = std::tuple<>;
-  explicit ConditionalMustPersistence(bool assumeAnEmptyCache = false);
+  explicit ConditionalMustPersistence(bool assumeAnEmptyCache = false,
+                                      bool is2 = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
@@ -85,11 +87,11 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-///assumeAnEmptyCache)
+/// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline ConditionalMustPersistence<T>::ConditionalMustPersistence(
-    bool assumeAnEmptyCache __attribute__((unused)))
-    : conflicts() {}
+    bool assumeAnEmptyCache __attribute__((unused)), bool is2)
+    : isl2(is2), conflicts() {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
@@ -106,20 +108,26 @@ template <CacheTraits *T>
 UpdateReport *ConditionalMustPersistence<T>::potentialUpdate(
     AbstractAddress addr, AccessType load_store, bool wantReport) {
   for (auto &block : conflicts) {
-    if (block.second > 0 && block.second <= ASSOCIATIVITY)
+    if (block.second > 0 &&
+        block.second <= (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY))
       block.second++;
   }
   return nullptr;
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T>
 UpdateReport *ConditionalMustPersistence<T>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *,
     bool wantReport, const Classification assumption __attribute__((unused))) {
 
   TagType tag = getTag<T>(addr);
+  unsigned ASSO = T->ASSOCIATIVITY;
+  if (isl2) {
+    tag = l2getTag<T>(addr);
+    ASSO = T->L2ASSOCIATIVITY;
+  }
   if (!conflicts.count(tag)) {
     conflicts[tag] = 1;
     return nullptr;
@@ -128,7 +136,7 @@ UpdateReport *ConditionalMustPersistence<T>::update(
   for (auto &block : conflicts) {
     if (block.first == tag)
       block.second = 1;
-    else if (block.second > 0 && block.second <= ASSOCIATIVITY)
+    else if (block.second > 0 && block.second <= ASSO)
       block.second++;
   }
   return nullptr;
@@ -159,7 +167,7 @@ ConditionalMustPersistence<T>::isPersistent(const TagType tag) const {
   // set for this tag is <= ASSOCIATIVITY
 
   if (conflicts.count(tag))
-    return conflicts.at(tag) <= ASSOCIATIVITY;
+    return conflicts.at(tag) <= (isl2 ? T->L2ASSOCIATIVITY : ASSOCIATIVITY);
 
   // In case when there is no entry for the tag in the conflict sets map, it
   // implies that the corresponding block has not been accessed yet and hence

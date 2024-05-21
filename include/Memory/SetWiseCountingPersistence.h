@@ -34,8 +34,8 @@
 #include "Memory/progana/Lattice.h"
 #include "Memory/util/CacheUtils.h"
 #include "Memory/util/ImplicitSet.h"
+#include "Util/GlobalVars.h"
 #include "Util/Options.h"
-
 namespace TimingAnalysisPass {
 
 namespace dom {
@@ -69,10 +69,13 @@ protected:
   struct Block {
     TagType tag;
     std::vector<const GlobalVariable *> surroundingArrays;
-    explicit Block(AbstractAddress addr) {
+    explicit Block(AbstractAddress addr, bool isl2 = false) {
       assert(addr.isPrecise());
       Address address = getCachelineAddress<T>(addr.getAsInterval().lower());
       this->tag = getTag<T>(address);
+      if (isl2) {
+        this->tag = l2getTag<T>(address);
+      }
       if (ArrayPersistenceAnalysis == ArrayPersistenceAnaType::NONE) {
         return;
       }
@@ -151,8 +154,10 @@ protected:
   }
 
 public:
+  bool isl2;
   using AnaDeps = std::tuple<>;
-  explicit SetWiseCountingPersistence(bool assumeAnEmptyCache = false);
+  explicit SetWiseCountingPersistence(bool assumeAnEmptyCache = false,
+                                      bool is2 = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
@@ -163,6 +168,7 @@ public:
   bool lessequal(const Self &y) const;
   void enterScope(const PersistenceScope &scope) {}
   void leaveScope(const PersistenceScope &scope) {}
+  bool isPersistent(const TagType tag, unsigned index) const;
   bool isPersistent(const TagType tag) const;
   bool isPersistent(const GlobalVariable *var) const;
   bool operator==(const Self &y) const;
@@ -171,11 +177,15 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-///assumeAnEmptyCache)
+/// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline SetWiseCountingPersistence<T>::SetWiseCountingPersistence(
-    bool assumeAnEmptyCache __attribute__((unused)))
-    : top(false), accessedBlocks(), accessedArrays() {}
+    bool assumeAnEmptyCache __attribute__((unused)), bool is2)
+    : top(false), isl2(is2), accessedBlocks(), accessedArrays() {
+  if (is2) {
+    ASSOCIATIVITY = T->L2ASSOCIATIVITY;
+  }
+}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
@@ -198,7 +208,7 @@ UpdateReport *SetWiseCountingPersistence<T>::potentialUpdate(
   if (ArrayPersistenceAnalysis == ArrayPersistenceAnaType::NONE ||
       !addr.isArray()) {
     /* give up */
-    this->gotoTop();
+    // this->gotoTop();
     return wantReport ? new UpdateReport : nullptr;
   }
 
@@ -216,7 +226,7 @@ UpdateReport *SetWiseCountingPersistence<T>::potentialUpdate(
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T>
 UpdateReport *SetWiseCountingPersistence<T>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *,
@@ -226,7 +236,7 @@ UpdateReport *SetWiseCountingPersistence<T>::update(
   }
 
   bool inserted;
-  std::tie(std::ignore, inserted) = accessedBlocks.insert(Block(addr));
+  std::tie(std::ignore, inserted) = accessedBlocks.insert(Block(addr, isl2));
 
   if (inserted) {
     if (accessedBlocks.size() + accessedArrays.size() > ASSOCIATIVITY) {
@@ -279,6 +289,35 @@ inline bool SetWiseCountingPersistence<T>::lessequal(const Self &y) const {
   SetWiseCountingPersistence<T> copy(*this);
   copy.join(y);
   return copy == y;
+}
+
+template <CacheTraits *T>
+inline bool SetWiseCountingPersistence<T>::isPersistent(const TagType tag,
+                                                        unsigned index) const {
+  if (isl2) {
+    if (top) {
+      return false;
+    }
+    unsigned CNN = 0;
+
+    for (std::string &funtion : conflicFunctions) {
+      for (unsigned address : mcif.addressinfo[funtion]) {
+        if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+          unsigned i = 1;
+          for (const Block &B : accessedBlocks) {
+            if (l2getTag<T>(address) == B.tag)
+              i = 0;
+          }
+          CNN += i;
+        }
+      }
+    }
+    return accessedBlocks.size() + accessedArrays.size() + CNN <=
+           T->L2ASSOCIATIVITY;
+
+  } else {
+    return !top;
+  }
 }
 
 template <CacheTraits *T>

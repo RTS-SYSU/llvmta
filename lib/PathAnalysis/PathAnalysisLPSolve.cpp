@@ -24,7 +24,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "PathAnalysis/PathAnalysisLPSolve.h"
+#include "Util/GlobalVars.h"
 #include "Util/Options.h"
+#include <string>
 
 namespace TimingAnalysisPass {
 
@@ -217,12 +219,14 @@ bool PathAnalysisLPSolve::calculateExtremalPath() {
   //     std::to_string(Core) + "_" + AnalysisEntryPoint + "_LongestPath.lp";
   // char*Lpfilename=new char[lpfilename.size()+1];
   // std::copy(lpfilename.begin(),lpfilename.end(),Lpfilename);
+  std::string T;
+  T = isBCET ? "BECT" : "WCET";
 
   static char LpFileName[4096];
   memset(LpFileName, sizeof(char) * 4096, 0);
 
-  snprintf(LpFileName, 4096, "%u_%s_Path.lp", Core.getValue(),
-           AnalysisEntryPoint.getValue().c_str());
+  snprintf(LpFileName, 4096, "%u_%s_%s_Path.lp", Core.getValue(),
+           AnalysisEntryPoint.getValue().c_str(), T.c_str());
 
   // Lpfilename[lpfilename.size()]='\0';
   write_lp(lp, LpFileName);

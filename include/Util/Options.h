@@ -244,8 +244,10 @@ enum class ArrivalCurveIlpObjectiveType { VARIANT1, VARIANT2, COMBINED };
 /**
  * TODO
  */
+//多核策略改动标记
 extern llvm::cl::opt<unsigned> CoreNums;
 extern llvm::cl::opt<unsigned> Core;
+extern llvm::cl::opt<bool> SPersistenceA;
 /**
  * File that record the running info.
  */
@@ -333,7 +335,7 @@ extern llvm::cl::opt<unsigned> Ilinesize;
  * Associativity of the instruction cache
  */
 extern llvm::cl::opt<unsigned> Iassoc;
-
+extern llvm::cl::opt<unsigned> L2assoc;
 /**
  * Number of cache sets of the instruction cache
  */
