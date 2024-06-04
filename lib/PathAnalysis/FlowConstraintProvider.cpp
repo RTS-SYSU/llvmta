@@ -26,6 +26,7 @@
 #include "PathAnalysis/FlowConstraintProvider.h"
 
 #include "PathAnalysis/LoopBoundInfo.h"
+#include <iostream>
 
 namespace TimingAnalysisPass {
 
@@ -188,7 +189,6 @@ void FlowConstraintProvider::buildLoopConstraints(bool upper) {
 
   // for each loop, add loop constraint
   for (const MachineLoop *loop : LoopBoundInfo->getAllLoops()) {
-
     auto entryBB = loop->getHeader();
     // If the loop (i.e. the header) is not reachable at all, we do not need any
     // constraints here

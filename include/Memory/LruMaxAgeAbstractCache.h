@@ -66,12 +66,12 @@ protected:
   std::vector<TagType> tags;
   std::vector<WayType> ages;
   PosType size;
-  bool isl2;
+  // bool isl2;
 
 public:
   using AnaDeps = std::tuple<>;
 
-  LruMaxAgeAbstractCache(bool assumeAnEmptyCache = false, bool is2 = false);
+  explicit LruMaxAgeAbstractCache(bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
   LruMaxAgeUpdateReport<TagType> *
   update(AbstractAddress addr, AccessType load_store, AnaDeps *,
@@ -105,66 +105,34 @@ public:
 /// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMaxAgeAbstractCache<T>::LruMaxAgeAbstractCache(
-    bool assumeAnEmptyCache, bool is2)
-    : tags(T->ASSOCIATIVITY), ages(T->ASSOCIATIVITY), size(0), isl2(is2) {
-  if (is2) {
-    tags.resize((T->L2ASSOCIATIVITY));
-    ages.resize((T->L2ASSOCIATIVITY));
-  }
-}
+    bool assumeAnEmptyCache __attribute__((unused)))
+    : tags(T->ASSOCIATIVITY), ages(T->ASSOCIATIVITY), size(0) {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
 Classification
 LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
-  unsigned ASSO;
-  TagType tag;
-  unsigned index;
   unsigned CNN = 0;
-  if (this->isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-    tag = l2getTag<T>(addr);
-    index = l2getindex<T>(addr);
-    //计算冲突
-    if (conflicFunctions.empty()) {
-      for (auto &i : StaticAddrProvider->Ins2addr) {
-        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
+  TagType tag = getTag<T>(addr);
+  unsigned index = getindex<T>(addr);
+  if (T->LEVEL > 1) {
+    for (std::string &funtion : conflicFunctions) {
+      for (unsigned address : mcif.addressinfo[funtion]) {
+        if (getindex<T>(address) == index && getTag<T>(address) != tag) {
           CNN++;
-        }
-      }
-      for (auto &i : StaticAddrProvider->Cpe2addr) {
-        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
-          CNN++;
-        }
-      }
-      for (auto &i : StaticAddrProvider->Glvar2addr) {
-        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
-          CNN++;
-        }
-      }
-    } else {
-      for (std::string &funtion : conflicFunctions) {
-        for (unsigned address : mcif.addressinfo[funtion]) {
-          if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
-            CNN++;
-          }
         }
       }
     }
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-    tag = getTag<T>(addr);
   }
 
   for (unsigned i = 0; i < size; ++i)
     if (tags[i] == tag) {
-      if (ages[i] + CNN >= ASSO) {
-        // ages[i]+=CNN;
+      if (ages[i] + CNN >= T->ASSOCIATIVITY) {
         return CL_MISS;
       }
       return CL_HIT;
     }
-  if (size == ASSO)
+  if (size == T->ASSOCIATIVITY)
     return CL_MISS;
   return CL_UNKNOWN;
 }
@@ -179,19 +147,13 @@ LruMaxAgeAbstractCache<T>::potentialUpdate(AbstractAddress addr,
                                            AccessType load_store,
                                            bool wantReport) {
   unsigned pos = size;
-  unsigned ASSO;
-  if (this->isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-  }
   LruMaxAgeUpdateReport<TagType> *report = nullptr;
   if (wantReport) {
     report = new LruMaxAgeUpdateReport<TagType>;
   }
 
   // Evict all elements with age A-1
-  while (pos > 0 && ages[pos - 1] == ASSO - 1) {
+  while (pos > 0 && ages[pos - 1] == T->ASSOCIATIVITY - 1) {
     if (wantReport) {
       report->evictedElements.insert(tags[pos - 1]);
     }
@@ -213,16 +175,8 @@ LruMaxAgeUpdateReport<typename CacheTraits::TagType> *
 LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
                                   AnaDeps *, bool wantReport,
                                   const Classification assumption) {
-  WayType accessedAge;
-  TagType tag;
-  unsigned ASSO;
-  if (this->isl2) {
-    ASSO = accessedAge = T->L2ASSOCIATIVITY;
-    tag = l2getTag<T>(addr);
-  } else {
-    ASSO = accessedAge = T->ASSOCIATIVITY;
-    tag = getTag<T>(addr);
-  }
+  WayType accessedAge = T->ASSOCIATIVITY;
+  TagType tag = getTag<T>(addr);
 
   LruMaxAgeUpdateReport<TagType> *report = nullptr;
   if (wantReport) {
@@ -238,19 +192,19 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
     }
 
   // In case of a cache miss
-  if (accessedAge == ASSO) {
+  if (accessedAge == T->ASSOCIATIVITY) {
     // an element will be added
     ++size;
     // But we actually assumed a hit
-    if (assumption == CL_HIT || (this->isl2 && assumption == CL2_HIT)) {
+    if (assumption == CL_HIT || (T->LEVEL > 1 && assumption == CL2_HIT)) {
       // No evictions, age at most k-1
-      assert(size <= ASSO &&
+      assert(size <= T->ASSOCIATIVITY &&
              "Full cache and addr not in there, cannot assume a hit (illegal "
              "classification)");
-      accessedAge = ASSO - 1;
+      accessedAge = T->ASSOCIATIVITY - 1;
     } else {
       // elements with age A-1 get evicted
-      while (pos > 0 && ages[pos - 1] == ASSO - 1) {
+      while (pos > 0 && ages[pos - 1] == T->ASSOCIATIVITY - 1) {
         if (wantReport) {
           report->evictedElements.insert(tags[pos - 1]);
         }
@@ -261,7 +215,7 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
   }
 
   // Only if not direct-mapped
-  if (ASSO > 1) {
+  if (T->ASSOCIATIVITY > 1) {
     // Go backwards and shift all entries to the right and update ages
     for (; pos > 0; --pos) {
       tags[pos] = tags[pos - 1];
@@ -288,21 +242,16 @@ LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,
   tags[0] = tag;
   ages[0] = 0;
 
-  assert(size >= 0 && size <= ASSO && "Illegal must cache set size");
+  assert(size >= 0 && size <= T->ASSOCIATIVITY &&
+         "Illegal must cache set size");
   return report;
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::join(const Self& y)
 template <CacheTraits *T> void LruMaxAgeAbstractCache<T>::join(const Self &y) {
-  unsigned ASSO = 0;
-  if (isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-  }
-  std::vector<TagType> outTags(ASSO);
-  std::vector<WayType> outAges(ASSO);
-  int out = ASSO - 1;
+  std::vector<TagType> outTags(T->ASSOCIATIVITY);
+  std::vector<WayType> outAges(T->ASSOCIATIVITY);
+  int out = T->ASSOCIATIVITY - 1;
   int xIn = size - 1;
   int yIn = y.size - 1;
 
@@ -344,7 +293,7 @@ template <CacheTraits *T> void LruMaxAgeAbstractCache<T>::join(const Self &y) {
 
   // Move elements to member variables.
   ++out;
-  size = ASSO - out;
+  size = T->ASSOCIATIVITY - out;
   for (unsigned i = 0; i < size; ++i) {
     tags[i] = outTags[out + i];
     ages[i] = outAges[out + i];
@@ -398,16 +347,10 @@ inline bool LruMaxAgeAbstractCache<T>::operator<(const Self &y) const {
 ///\see dom::cache::CacheSetAnalysis<T>::dump(std::ostream& os) const
 template <CacheTraits *T>
 std::ostream &LruMaxAgeAbstractCache<T>::dump(std::ostream &os) const {
-  unsigned ASSO = 0;
-  if (isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-  }
   WayType pos = 0;
 
   os << "[";
-  for (unsigned age = 0; age < ASSO; ++age) {
+  for (unsigned age = 0; age < T->ASSOCIATIVITY; ++age) {
     if (age != 0)
       os << ", ";
 
@@ -439,16 +382,10 @@ inline std::ostream &operator<<(std::ostream &os,
  */
 template <CacheTraits *T>
 unsigned LruMaxAgeAbstractCache<T>::getMaxAge(const TagType tag) const {
-  unsigned ASSO = 0;
-  if (isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-  }
   for (unsigned i = 0; i < size; ++i)
     if (tags[i] == tag)
       return ages[i];
-  return ASSO; // TODO Should this return \infty?
+  return T->ASSOCIATIVITY; // TODO Should this return \infty?
 }
 
 template <CacheTraits *T>

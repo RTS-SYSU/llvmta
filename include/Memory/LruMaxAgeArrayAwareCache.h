@@ -68,10 +68,9 @@ protected:
 
 public:
   using AnaDeps = std::tuple<>;
-  bool isl2;
+  // bool isl2;
 
-  explicit LruMaxAgeArrayAwareCache(bool assumeAnEmptyCache = false,
-                                    bool is2 = false);
+  explicit LruMaxAgeArrayAwareCache(bool assumeAnEmptyCache = false);
   LruMaxAgeArrayAwareCache(const Self &other) {
     for (const auto &entry : other.ages) {
       this->ages.emplace(entry.first, entry.second->clone());
@@ -116,27 +115,22 @@ public:
 /// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMaxAgeArrayAwareCache<T>::LruMaxAgeArrayAwareCache(
-    bool assumeAnEmptyCache __attribute__((unused)), bool is2)
-    : isl2(is2) {}
+    bool assumeAnEmptyCache __attribute__((unused))) {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
 Classification
 LruMaxAgeArrayAwareCache<T>::classify(const AbstractAddress addr) const {
   TagType tag = getTag<T>(addr);
-  unsigned ASSO = T->ASSOCIATIVITY;
-  if (this->isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-    tag = l2getTag<T>(addr);
-  }
+
   unsigned size = ages.size();
-  assert(size <= ASSO);
+  assert(size <= T->ASSOCIATIVITY);
 
   if (ages.count(tag)) {
     return CL_HIT;
   }
   /* if the MUST cache is full we can prove misses */
-  return size == ASSO ? CL_MISS : CL_UNKNOWN;
+  return size == T->ASSOCIATIVITY ? CL_MISS : CL_UNKNOWN;
 }
 
 template <CacheTraits *T>
@@ -185,13 +179,7 @@ LruMaxAgeArrayAwareCache<T>::update(const AbstractAddress addr,
                                     bool wantReport,
                                     const Classification assumption) {
 
-  unsigned ASSO = T->ASSOCIATIVITY;
   TagType tag = getTag<T>(addr);
-  if (this->isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-    tag = l2getTag<T>(addr);
-  }
-
   LruMaxAgeUpdateReport<TagType> *report = nullptr;
   if (wantReport)
     report = new LruMaxAgeUpdateReport<TagType>;
@@ -201,9 +189,9 @@ LruMaxAgeArrayAwareCache<T>::update(const AbstractAddress addr,
   if (entry != ages.end()) {
     accessedAge = entry->second->getAge();
   } else if (assumption == CL_HIT || assumption == CL2_HIT) {
-    accessedAge = ASSO - 1;
+    accessedAge = T->ASSOCIATIVITY - 1;
   } else {
-    accessedAge = ASSO;
+    accessedAge = T->ASSOCIATIVITY;
   }
 
   /* Now age all entries that are younger than accessedAge */
@@ -350,8 +338,7 @@ unsigned LruMaxAgeArrayAwareCache<T>::getMaxAge(const TagType tag) const {
   if (it != ages.end()) {
     return it->second->getAge();
   }
-  return this->isl2 ? T->L2ASSOCIATIVITY
-                    : T->ASSOCIATIVITY; // TODO Should this return \infty?
+  return T->ASSOCIATIVITY; // TODO Should this return \infty?
 }
 
 } // namespace cache

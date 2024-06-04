@@ -61,7 +61,7 @@ class ConstrainedAges : public progana::JoinSemiLattice {
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
-  bool isl2;
+  // bool isl2;
 
   using TagType = typename CacheTraits::TagType;
 
@@ -81,7 +81,7 @@ public:
   using AnaDeps = std::tuple<const UCBsSet &, const UnconstrainedInfo &>;
 
   /* Implement the interface */
-  explicit ConstrainedAges(bool assumeAnEmptyCache = false, bool = false);
+  explicit ConstrainedAges(bool assumeAnEmptyCache = false);
   auto classify(const AbstractAddress addr) const -> Classification;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *deps = nullptr, bool wantReport = false,
@@ -127,8 +127,7 @@ private:
 };
 
 template <CacheTraits *T>
-inline ConstrainedAges<T>::ConstrainedAges(bool, bool is2)
-    : top(false), isl2(is2) {}
+inline ConstrainedAges<T>::ConstrainedAges(bool) : top(false) {}
 
 /**
  * \see  dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
@@ -162,7 +161,7 @@ UpdateReport *ConstrainedAges<T>::update(const AbstractAddress addr,
                                          AccessType load_store,
                                          AnaDeps *AddInfo, bool wantReport,
                                          const Classification) {
-  TagType tag = isl2 ? l2getTag<T>(addr) : getTag<T>(addr);
+  TagType tag = getTag<T>(addr);
   assert(AddInfo);
 
   /* this function does not use reports - if one is requested create an
@@ -221,8 +220,7 @@ UpdateReport *ConstrainedAges<T>::update(const AbstractAddress addr,
     }
 
     // update the age taking the unconstrained information into account
-    if (CAge >= UAge ||
-        CAge == (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY) - 1) {
+    if (CAge >= UAge || CAge == (T->ASSOCIATIVITY) - 1) {
       TempCAges[U] = CAge;
     } else {
       TempCAges[U] = CAge + 1;

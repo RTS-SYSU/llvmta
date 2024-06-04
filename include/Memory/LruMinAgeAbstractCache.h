@@ -84,10 +84,9 @@ protected:
 
 public:
   using AnaDeps = std::tuple<>;
-  bool isl2;
+  // bool isl2;
 
-  explicit LruMinAgeAbstractCache(bool assumeAnEmptyCache = false,
-                                  bool is2 = false);
+  explicit LruMinAgeAbstractCache(bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
 
   LruMinAgeUpdateReport<TagType> *
@@ -121,62 +120,33 @@ public:
 /// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMinAgeAbstractCache<T>::LruMinAgeAbstractCache(
-    bool assumeAnEmptyCache, bool is2)
+    bool assumeAnEmptyCache)
     : explicitTags(),
-      ageOfImplicitTags(assumeAnEmptyCache ? T->ASSOCIATIVITY : 0), isl2(is2) {
-  if (is2) {
-    ageOfImplicitTags = assumeAnEmptyCache ? T->L2ASSOCIATIVITY : 0;
-  }
-}
+      ageOfImplicitTags(assumeAnEmptyCache ? T->ASSOCIATIVITY : 0) {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
 Classification
 LruMinAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
-  unsigned ASSO;
-  TagType tag;
-  unsigned index;
-  int CNN = 0;
-  if (this->isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-    tag = l2getTag<T>(addr);
-    index = l2getindex<T>(addr);
-    if (conflicFunctions.empty()) {
-      for (auto &i : StaticAddrProvider->Ins2addr) {
-        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
+  unsigned CNN = 0;
+  TagType tag = getTag<T>(addr);
+  unsigned index = getindex<T>(addr);
+  if (T->LEVEL > 1) {
+    for (std::string &funtion : conflicFunctions) {
+      for (unsigned address : mcif.addressinfo[funtion]) {
+        if (getindex<T>(address) == index && getTag<T>(address) != tag) {
           CNN++;
-        }
-      }
-      for (auto &i : StaticAddrProvider->Cpe2addr) {
-        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
-          CNN++;
-        }
-      }
-      for (auto &i : StaticAddrProvider->Glvar2addr) {
-        if (l2getindex<T>(i.second) == index && l2getTag<T>(i.second) != tag) {
-          CNN++;
-        }
-      }
-    } else {
-      for (std::string &funtion : conflicFunctions) {
-        for (unsigned address : mcif.addressinfo[funtion]) {
-          if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
-            CNN++;
-          }
         }
       }
     }
-
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-    tag = getTag<T>(addr);
   }
+
   if (ageOfImplicitTags + CNN < T->ASSOCIATIVITY)
     return CL_UNKNOWN;
 
   for (unsigned i = 0; i < explicitTags.size(); ++i) {
     if (explicitTags[i].tag == tag) {
-      if (explicitTags[i].age + CNN >= ASSO) {
+      if (explicitTags[i].age + CNN >= T->ASSOCIATIVITY) {
         return CL_MISS;
       }
       return CL_UNKNOWN;
@@ -203,15 +173,7 @@ LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
                                   const Classification assumption
                                   __attribute__((unused))) {
 
-  TagType tag;
-  unsigned ASSO;
-  if (this->isl2) {
-    tag = l2getTag<T>(addr);
-    ASSO = T->L2ASSOCIATIVITY;
-  } else {
-    tag = getTag<T>(addr);
-    ASSO = T->ASSOCIATIVITY;
-  }
+  TagType tag = getTag<T>(addr);
 
   int size = explicitTags.size();
   LruMinAgeUpdateReport<TagType> *report = nullptr;
@@ -233,20 +195,23 @@ LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
       found ? explicitTags[pos].age : ageOfImplicitTags; // 初始为0
 
   // 1. Update implicitly modelled elements
-  if (ageOfImplicitTags <= accessedAge && ageOfImplicitTags < ASSO) {
+  if (ageOfImplicitTags <= accessedAge &&
+      ageOfImplicitTags < T->ASSOCIATIVITY) {
     ++ageOfImplicitTags;
     if (wantReport)
-      report->justEvictedUnknowns = ageOfImplicitTags == ASSO;
+      report->justEvictedUnknowns = ageOfImplicitTags == T->ASSOCIATIVITY;
   }
 
   // 2. Update explicitly modelled elements
   int simpleUpdatePos;
 
   // a1) Not found in explicitTags or found at age ASSOC-1
-  if (!found || (found && accessedAge == ASSO - 1)) {
+  if (!found || (found && accessedAge == T->ASSOCIATIVITY - 1)) {
     // Determine new size
-    while (size - 1 >= 0 && explicitTags[size - 1].age == ASSO - 1) {
-      if (wantReport && pos != size - 1 && ageOfImplicitTags == ASSO) {
+    while (size - 1 >= 0 &&
+           explicitTags[size - 1].age == T->ASSOCIATIVITY - 1) {
+      if (wantReport && pos != size - 1 &&
+          ageOfImplicitTags == T->ASSOCIATIVITY) {
         report->evictedElements.insert(explicitTags[size - 1].tag);
       }
       --size;
@@ -326,16 +291,8 @@ LruMinAgeAbstractCache<T>::potentialUpdate(AbstractAddress addr,
   const unsigned maxWorthwhileTags = 4;
 
   auto itv = addr.getAsInterval();
-  TagType lowTag;
-  TagType highTag;
-  if (this->isl2) {
-    lowTag = l2getTag<T>(itv.lower());
-    highTag = l2getTag<T>(itv.upper());
-  } else {
-    lowTag = getTag<T>(itv.lower());
-    highTag = getTag<T>(itv.upper());
-  }
-
+  TagType lowTag = getTag<T>(itv.lower());
+  TagType highTag = getTag<T>(itv.upper());
   unsigned numTags = highTag - lowTag + 1;
 
   if (numTags > maxWorthwhileTags) {
@@ -494,16 +451,10 @@ inline bool LruMinAgeAbstractCache<T>::operator<(const Self &y) const {
 ///\see dom::cache::CacheSetAnalysis<T>::dump(std::ostream& os) const
 template <CacheTraits *T>
 std::ostream &LruMinAgeAbstractCache<T>::dump(std::ostream &os) const {
-  unsigned ASSO = 0;
-  if (isl2) {
-    ASSO = T->L2ASSOCIATIVITY;
-  } else {
-    ASSO = T->ASSOCIATIVITY;
-  }
   unsigned pos = 0;
 
   os << "[";
-  for (unsigned age = 0; age < ASSO; ++age) {
+  for (unsigned age = 0; age < T->ASSOCIATIVITY; ++age) {
     if (age != 0)
       os << ", ";
 

@@ -49,10 +49,10 @@ namespace cache {
  */
 struct CacheTraits {
 
-  CacheTraits(unsigned L = 16, unsigned A = 4, unsigned A2 = 8, unsigned S = 32,
-              unsigned S2 = 128, bool WB = false, bool WA = false)
-      : LINE_SIZE(L), ASSOCIATIVITY(A), L2ASSOCIATIVITY(A2), N_SETS(S),
-        L2N_SETS(S2), WRITEBACK(WB), WRITEALLOCATE(WA) {}
+  CacheTraits(unsigned L = 16, unsigned A = 4, unsigned S = 32, bool WB = false,
+              bool WA = false)
+      : LINE_SIZE(L), ASSOCIATIVITY(A), N_SETS(S), WRITEBACK(WB),
+        WRITEALLOCATE(WA) {}
 
   void checkParams() {
     // If larger values are desired, you just need to adjust the bit width
@@ -61,24 +61,21 @@ struct CacheTraits {
            "Line size must be a power of 2 and smaller than 256");
     //     assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
     //            "Associativity must be a power of 2 and smaller than 128");
-    assert(IsPwr2(L2ASSOCIATIVITY) && L2ASSOCIATIVITY <= 128 &&
-           "Associativity must be a power of 2 and smaller than 128");
     assert(IsPwr2(N_SETS) && N_SETS <= 256 &&
            "Number of sets must be a power of 2 and smaller than 256");
-    assert(IsPwr2(L2N_SETS) && L2N_SETS <= 1024 &&
-           "Number of sets must be a power of 2 and smaller than 1024");
     assert((!WRITEBACK || WRITEALLOCATE) &&
            "Cannot have write-back cache without write-allocate");
   }
 
   unsigned LINE_SIZE;
-  unsigned ASSOCIATIVITY, L2ASSOCIATIVITY;
+  unsigned ASSOCIATIVITY;
   unsigned N_SETS;
-  unsigned L2N_SETS;
   bool WRITEBACK;
   bool WRITEALLOCATE;
+  int LEVEL;
 
-  static const unsigned LATENCY = 4; // l1 access
+  //jjy: 把 satic const去掉了
+  unsigned LATENCY = 4; // l1 access
 
   static const unsigned ADDRESS_BITS = 32;
   static const unsigned OFFSET_BITS_DECL = 8;

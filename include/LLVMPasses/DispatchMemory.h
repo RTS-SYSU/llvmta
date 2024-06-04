@@ -45,7 +45,7 @@ public:
   static dom::cache::AbstractCache *
   makeOptionsInstrCache(bool assumeEmptyCache);
   static dom::cache::AbstractCache *makeOptionsDataCache(bool assumeEmptyCache);
-
+  static dom::cache::AbstractCache *makeOptionsL2Cache(bool assumeEmptyCache);
   /// Ignore the compositional flags set
   static dom::cache::AbstractCache *
   makeOptionsInstrCacheIgnComp(bool assumeEmptyCache);

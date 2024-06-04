@@ -146,21 +146,6 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
   }
 }
 
-// boost::optional<std::string>
-// TimingAnalysisMain::getFunctionname(unsigned int core) {
-//   auto it = mp.find(core);
-
-//   if (it == mp.end()) {
-//     return boost::none;
-//   }
-
-//   if (it->second.empty())
-//     return boost::none;
-
-//   auto ret = it->second.front();
-
-//   return ret;
-// }
 
 boost::optional<std::string>
 TimingAnalysisMain::getNextFunction(unsigned int core) {
@@ -213,7 +198,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     DirectiveHeuristicsPassInstance->dump(Myfile);
     Myfile.close();
 
-    //持久分析改动标记
+    // jjy: I put this back, after we know the function name that we ananysis
     // Myfile.open("PersistenceScopes.txt", ios_base::trunc);
     // PersistenceScopeInfo::getInfo().dump(Myfile);
     // Myfile.close();
@@ -227,28 +212,41 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   // Create a json array
   llvm::json::Array arr;
   std::map<std::string, size_t> vec;
-  while (mcif.change) {
+  bool ETchage = true;
+  int ET = 0;
+  while (ETchage) {
+    ET++;
+    ETchage = false;
     for (unsigned i = 0; i < CoreNums; ++i) {
       outs() << "Timing Analysis for core: " << i;
-      // auto functionName = this->getNextFunction(i);
       Core = i;
       for (std::string &functionName : mcif.coreinfo[i]) {
         outs() << " entry point: " << functionName << '\n';
         AnalysisEntryPoint = functionName;
+        if (!QuietMode) {
+          // 持久域收集
+          Myfile.open("PersistenceScopes.txt", ios_base::trunc);
+          PersistenceScopeInfo::getInfo().dump(Myfile);
+          Myfile.close();
+        }
         // Dispatch the value analysis
         auto Arch = getTargetMachine().getTargetTriple().getArch();
         if (Arch == Triple::ArchType::arm) {
           dispatchValueAnalysis<Triple::ArchType::arm>();
           // pair of 2 u
-          mcif.updateTaskTime(Core, AnalysisEntryPoint, this->BCETtime,
-                              this->WCETtime);
+          ETchage =
+              ETchage || mcif.updateTaskTime(Core, AnalysisEntryPoint,
+                                             this->BCETtime, this->WCETtime);
         } else if (Arch == Triple::ArchType::riscv32) {
           dispatchValueAnalysis<Triple::ArchType::riscv32>();
-          mcif.updateTaskTime(Core, AnalysisEntryPoint, this->BCETtime,
-                              this->WCETtime);
+          ETchage =
+              ETchage || mcif.updateTaskTime(Core, AnalysisEntryPoint,
+                                             this->BCETtime, this->WCETtime);
         } else {
           assert(0 && "Unsupported ISA for LLVMTA");
         }
+
+        // jjy:收集各个任务的WCET信息
         if (vec.count(functionName) == 0) {
           llvm::json::Object obj{{"function", std::string(functionName)},
                                  {"WCET", this->WCETtime},
@@ -260,21 +258,22 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
           (*ptr)["WCET"] = this->WCETtime;
           (*ptr)["BCET"] = this->BCETtime;
         }
-        // functionName = this->getNextFunction(i);
       }
       outs() << " No next analyse point for this core.\n";
     }
+    outs() << "---------------------------------The "<< ET <<" iteration is over----------------------------------\n";
     std::ofstream myfile;
     std::string fileName = "MISSC.txt";
     myfile.open(fileName, std::ios_base::trunc);
     myfile << "IMISS : " << ::IMISS << '\n'
            << "DMISS : " << ::DMISS << '\n'
-           << "L2MISS : " << ::L2MISS << '\n'
-           << "STBUS : " << ::L2MISS << '\n';
+           << "L2MISS : " << ::L2MISS << '\n';
     myfile.close();
-    STBUS = IMISS = DMISS = L2MISS = 0; // RESET
-  }
+    IMISS = DMISS = L2MISS = 0; // RESET
 
+  }
+  // Release the call graph instance
+  CallGraph::getGraph().releaseInstance();
   // Dump the json array to file
   std::error_code EC;
   llvm::raw_fd_ostream OS("WCET.json", EC);
@@ -313,12 +312,13 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   }
 
   if (!QuietMode) {
+    //持久分析改动标记
+    // Myfile.open("PersistenceScopes.txt", ios_base::trunc);
+    // PersistenceScopeInfo::getInfo().dump(Myfile);
+    // Myfile.close();
+
     Myfile.open("LoopBounds.txt", ios_base::trunc);
     LoopBoundInfo->dump(Myfile);
-    Myfile.close();
-    //持久分析改动标记
-    Myfile.open("PersistenceScopes.txt", ios_base::trunc);
-    PersistenceScopeInfo::getInfo().dump(Myfile);
     Myfile.close();
 
     Myfile.open("ConstantValueAnalysis.txt", ios_base::app);
@@ -341,8 +341,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   icacheConf.LINE_SIZE = Ilinesize;
   icacheConf.ASSOCIATIVITY = Iassoc;
   icacheConf.N_SETS = Insets;
-  icacheConf.L2N_SETS = NN_SET;
-  icacheConf.L2ASSOCIATIVITY = L2assoc;
+  icacheConf.LEVEL = 1;
   icacheConf.checkParams();
 
   dcacheConf.LINE_SIZE = Dlinesize;
@@ -350,10 +349,16 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.N_SETS = Dnsets;
   dcacheConf.WRITEBACK = DataCacheWriteBack;
   dcacheConf.WRITEALLOCATE = DataCacheWriteAllocate;
-  dcacheConf.L2N_SETS = NN_SET;
-  dcacheConf.L2ASSOCIATIVITY = L2assoc;
+  dcacheConf.LEVEL = 1;
   dcacheConf.checkParams();
 
+  dcacheConf.LINE_SIZE = L2linesize;
+  l2cacheConf.LINE_SIZE = Dlinesize;
+  l2cacheConf.N_SETS = NN_SET;
+  l2cacheConf.ASSOCIATIVITY = L2assoc;
+  l2cacheConf.LATENCY = L2Latency;
+  l2cacheConf.LEVEL = 2;
+  l2cacheConf.checkParams();
   // WCET
   // Select the analysis to execute
   dispatchAnalysisType(AddrInfo);
@@ -380,6 +385,8 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   // BCET
   ::isBCET = true;
   dispatchAnalysisType(AddrInfo);
+  // Write results and statistics
+  Statistics &Stats1 = Statistics::getInstance();
   AnalysisResults &Ar1 = AnalysisResults::getInstance();
   Myfile.open(std::to_string(this->coreNum) + "_" + AnalysisEntryPoint +
                   "_TotalBound.xml",
@@ -416,7 +423,7 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
     } else {
       outs() << std::to_string(Core)
              << "-Core:   " + AnalysisEntryPoint +
-                    "Calculated Timing Bound: infinite\n";
+                    "_Calculated Timing Bound: infinite\n";
     }
   }
   if (AnaType.isSet(AnalysisType::L1ICACHE)) {
@@ -465,8 +472,7 @@ TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
     return dispatchPretTimingAnalysis(AddressInfo, Core);
   case MicroArchitecturalType::INORDER:
   case MicroArchitecturalType::STRICTINORDER:
-    return dispatchInOrderTimingAnalysis(AddressInfo,
-                                         Core); //严格顺序执行
+    return dispatchInOrderTimingAnalysis(AddressInfo, Core);
   case MicroArchitecturalType::OUTOFORDER:
     return dispatchOutOfOrderTimingAnalysis(AddressInfo, Core);
   default:

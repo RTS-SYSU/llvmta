@@ -662,10 +662,6 @@ void PretPipelineState<MemoryTopology>::accessDataFromMemoryTopology(
         dataAccessIds.insert(
             std::pair<unsigned, unsigned>(currMemoryAccess, *dataAccess));
         currMemoryAccess++;
-        //多核信息：执行时所有data地址信息
-        // if (CoreNums > 1) {
-        //   mcif.addaddress(AnalysisEntryPoint, addrItv, BOUND);
-        // }
       }
     }
   }

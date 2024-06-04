@@ -355,14 +355,6 @@ struct LLCDiagnosticHandler : public DiagnosticHandler {
 int main(int argc, char **argv) {
   InitLLVM X(argc, argv);
 
-  // //全局的层2cache
-  // TimingAnalysisPass::dom::cache::CompositionalAbstractCache
-  //     l2initialCacheSetState(false, true);
-  // TimingAnalysisPass::util::_SharedStorage<
-  //     TimingAnalysisPass::dom::cache::CompositionalAbstractCache>::SharedPtr
-  //     l2inserted = l2cacheSetStorage.insert(l2initialCacheSetState);
-  // L2cacheSets.assign(NN_SET, l2inserted);
-
   // Enable debug stream buffering.
   EnableDebugBuffering = true;
 

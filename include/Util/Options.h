@@ -116,6 +116,8 @@ enum class CompositionalAnalysisType {
           /// cache. This Cache is not analysed.
   DCACHE, /// Timing Analysis uses an always hit cache for the data cache. This
           /// Cache is not analysed.
+// jjy: 层2cache
+  L2CACHE,
   DRAMREFRESH,      /// Timing Analysis should analyse DRAM refreshes in a
                     /// compositional way.
   SHAREDBUSBLOCKING /// Timing Analysis should analysis the blocking on the
@@ -345,17 +347,17 @@ extern llvm::cl::opt<unsigned> Insets;
  * Which cache replacement policy type for the data cache
  */
 extern llvm::cl::opt<CacheReplPolicyType> DataCacheReplPolType;
-
+extern llvm::cl::opt<CacheReplPolicyType> L2CacheReplPolType;
 /**
  * Which persistence analysis to use for the data cache
  */
 extern llvm::cl::opt<PersistenceType> DataCachePersType;
-
+extern llvm::cl::opt<PersistenceType> L2CachePersType;
 /**
  * Linesize of the data cache
  */
 extern llvm::cl::opt<unsigned> Dlinesize;
-
+extern llvm::cl::opt<unsigned> L2linesize;
 /**
  * Associativity of the data cache
  */
@@ -600,7 +602,8 @@ extern llvm::cl::opt<double> ArrivalCurveIlpTimeLimit;
  */
 inline bool needPersistenceScopes() {
   return DataCachePersType != PersistenceType::NONE ||
-         InstrCachePersType != PersistenceType::NONE;
+         InstrCachePersType != PersistenceType::NONE ||
+         L2CachePersType != PersistenceType::NONE;
 }
 
 /**

@@ -93,5 +93,6 @@
         "cstdbool": "cpp",
         "version": "cpp",
         "foodir": "cpp"
-    }
+    },
+    "cmake.configureOnOpen": true
 }

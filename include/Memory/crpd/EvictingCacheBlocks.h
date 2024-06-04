@@ -54,7 +54,7 @@ class EvictingCacheBlocks : public progana::JoinSemiLattice {
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
-  bool isl2;
+  // bool isl2;
 
   typedef typename CacheTraits::WayType WayType;
   typedef typename CacheTraits::TagType TagType;
@@ -71,8 +71,7 @@ protected:
 
 public:
   /* Implement the interface */
-  explicit EvictingCacheBlocks(bool assumeAnEmptyCache = false,
-                               bool is2 = false);
+  explicit EvictingCacheBlocks(bool assumeAnEmptyCache = false);
 
   using AnaDeps = std::tuple<>;
 
@@ -114,8 +113,8 @@ public:
  * assumeAnEmptyCache)
  */
 template <CacheTraits *T>
-inline EvictingCacheBlocks<T>::EvictingCacheBlocks(bool, bool is2)
-    : isl2(is2), top(false), accessedTags() {}
+inline EvictingCacheBlocks<T>::EvictingCacheBlocks(bool)
+    : top(false), accessedTags() {}
 /**
  * \see  dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
  */
@@ -148,7 +147,7 @@ UpdateReport *EvictingCacheBlocks<T>::update(const AbstractAddress addr,
                                              AccessType load_store, AnaDeps *,
                                              bool wantReport,
                                              const Classification) {
-  TagType tag = isl2 ? l2getTag<T>(addr) : getTag<T>(addr);
+  TagType tag = getTag<T>(addr);
 
   DEBUG_WITH_TYPE("ecb", dbgs() << "Update with Address " << tag << "\n";);
 
@@ -157,7 +156,7 @@ UpdateReport *EvictingCacheBlocks<T>::update(const AbstractAddress addr,
   if (top)
     return report;
   accessedTags.insert(tag);
-  if (accessedTags.size() > (isl2 ? T->L2ASSOCIATIVITY : T->ASSOCIATIVITY)) {
+  if (accessedTags.size() > (T->ASSOCIATIVITY)) {
     top = true;
     accessedTags.clear();
   }

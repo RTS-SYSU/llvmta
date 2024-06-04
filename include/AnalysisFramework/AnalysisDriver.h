@@ -328,8 +328,9 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
     }
     analyseInstruction(&currentInstr, targetCtx, newOut);
     handleBranchInstruction(&currentInstr, targetCtx, newOut);
-
-    if (SPersistenceA && BOUND && mylist.count(MBB) == 0) {
+    //jjy：争用分析地址收集
+    if (CoreNums>0 && BOUND && mylist.count(MBB) == 0) {
+      //jjy:这里似乎有问题所以先不管data的访存
       if (currentInstr.mayLoad() || currentInstr.mayStore()) {
         AbstractAddress addrItv =
             glAddrInfo->getDataAccessAddress(&currentInstr, &targetCtx, 0);
@@ -353,11 +354,23 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
     }
   }
 
-  if (SPersistenceA && BOUND && mylist.count(MBB) == 0) {
-    int time = getbound(MBB, ctx);
+  if ( BOUND && mylist.count(MBB) == 0) {
+    if (SPersistenceA &&L2CachePersType == PersistenceType::ELEWISE)
+    {
+      //jjy：持久性内存块争用分析
+      int time = getbound(MBB, ctx);
+      // int time = 1;
+      mcif.addaddress(AnalysisEntryPoint, addrIlist, time);
+    }
+    else{
+      //jjy：普通争用分析
+      for(auto&al:addrIlist){
+        mcif.addaddress(AnalysisEntryPoint,al);
+      }
+    }
     mylist.insert(MBB);
-    mcif.addaddress(AnalysisEntryPoint, addrIlist, time);
   }
+
   // Handle fallthrough cases to layout successor
   for (auto succit = MBB->succ_begin(); succit != MBB->succ_end(); ++succit) {
     if (!MBB->isLayoutSuccessor(*succit))

@@ -55,6 +55,8 @@ class SetWiseCountingPersistence : public progana::JoinSemiLattice {
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
   const CacheTraits *CacheConfig = T;
+  // jjy: 在进行争用集分析时我们需要知道引用所在set的index
+  unsigned r;
 
   typedef typename CacheTraits::WayType WayType;
   typedef typename CacheTraits::TagType TagType;
@@ -69,13 +71,10 @@ protected:
   struct Block {
     TagType tag;
     std::vector<const GlobalVariable *> surroundingArrays;
-    explicit Block(AbstractAddress addr, bool isl2 = false) {
+    explicit Block(AbstractAddress addr) {
       assert(addr.isPrecise());
       Address address = getCachelineAddress<T>(addr.getAsInterval().lower());
       this->tag = getTag<T>(address);
-      if (isl2) {
-        this->tag = l2getTag<T>(address);
-      }
       if (ArrayPersistenceAnalysis == ArrayPersistenceAnaType::NONE) {
         return;
       }
@@ -154,10 +153,10 @@ protected:
   }
 
 public:
-  bool isl2;
+  // bool isl2;
   using AnaDeps = std::tuple<>;
-  explicit SetWiseCountingPersistence(bool assumeAnEmptyCache = false,
-                                      bool is2 = false);
+  explicit SetWiseCountingPersistence(unsigned addr = 0,
+                                      bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
@@ -168,7 +167,6 @@ public:
   bool lessequal(const Self &y) const;
   void enterScope(const PersistenceScope &scope) {}
   void leaveScope(const PersistenceScope &scope) {}
-  bool isPersistent(const TagType tag, unsigned index) const;
   bool isPersistent(const TagType tag) const;
   bool isPersistent(const GlobalVariable *var) const;
   bool operator==(const Self &y) const;
@@ -180,12 +178,8 @@ public:
 /// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline SetWiseCountingPersistence<T>::SetWiseCountingPersistence(
-    bool assumeAnEmptyCache __attribute__((unused)), bool is2)
-    : top(false), isl2(is2), accessedBlocks(), accessedArrays() {
-  if (is2) {
-    ASSOCIATIVITY = T->L2ASSOCIATIVITY;
-  }
-}
+    unsigned addr, bool assumeAnEmptyCache __attribute__((unused)))
+    : top(false), r(addr), accessedBlocks(), accessedArrays() {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
@@ -234,9 +228,13 @@ UpdateReport *SetWiseCountingPersistence<T>::update(
   if (top) {
     return wantReport ? new UpdateReport : nullptr;
   }
+  if (r != 0) {
+    assert(getindex<T>(r) == getindex<T>(addr) &&
+           "冲突的内存引用应该映射到同一个缓存集");
+  }
 
   bool inserted;
-  std::tie(std::ignore, inserted) = accessedBlocks.insert(Block(addr, isl2));
+  std::tie(std::ignore, inserted) = accessedBlocks.insert(Block(addr));
 
   if (inserted) {
     if (accessedBlocks.size() + accessedArrays.size() > ASSOCIATIVITY) {
@@ -292,39 +290,44 @@ inline bool SetWiseCountingPersistence<T>::lessequal(const Self &y) const {
 }
 
 template <CacheTraits *T>
-inline bool SetWiseCountingPersistence<T>::isPersistent(const TagType tag,
-                                                        unsigned index) const {
-  if (isl2) {
+inline bool
+SetWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
+  // jjy: 我们考虑除了层一cache其他都是共享cache
+  if (SPersistenceA && CoreNums > 0 && T->LEVEL > 1) {
+    unsigned index = getindex<T>(r);
     if (top) {
       return false;
     }
     unsigned CNN = 0;
-
     for (std::string &funtion : conflicFunctions) {
       for (unsigned address : mcif.addressinfo[funtion]) {
-        if (l2getindex<T>(address) == index && l2getTag<T>(address) != tag) {
+        if (getindex<T>(address) == index && getTag<T>(address) != tag) {
           unsigned i = 1;
           for (const Block &B : accessedBlocks) {
-            if (l2getTag<T>(address) == B.tag)
+            if (getTag<T>(address) == B.tag) {
               i = 0;
+              break;
+            }
           }
           CNN += i;
         }
       }
     }
-    return accessedBlocks.size() + accessedArrays.size() + CNN <=
-           T->L2ASSOCIATIVITY;
-
+    if (accessedBlocks.size() + accessedArrays.size() + CNN <=
+        T->ASSOCIATIVITY) {
+      return true;
+    }
+    return false;
   } else {
     return !top;
   }
 }
 
-template <CacheTraits *T>
-inline bool
-SetWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
-  return !top;
-}
+// template <CacheTraits *T>
+// inline bool
+// SetWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
+//   return !top;
+// }
 
 template <CacheTraits *T>
 inline bool
@@ -335,6 +338,10 @@ SetWiseCountingPersistence<T>::isPersistent(const GlobalVariable *var) const {
 ///\see dom::cache::CacheSetAnalysis<T>::operator==(const Self& y) const
 template <CacheTraits *T>
 inline bool SetWiseCountingPersistence<T>::operator==(const Self &y) const {
+  // jjy:持久性分析需要知道针对的是哪一个内存引用
+  if (this->r != y.r) {
+    return false;
+  }
   if (this->top || y.top) {
     return this->top == y.top;
   }
@@ -345,6 +352,9 @@ inline bool SetWiseCountingPersistence<T>::operator==(const Self &y) const {
 ///\see dom::cache::CacheSetAnalysis<T>::operator<(const Self& y) const
 template <CacheTraits *T>
 inline bool SetWiseCountingPersistence<T>::operator<(const Self &y) const {
+  if (this->r != y.r) {
+    return this->r < y.r;
+  }
   if (this->top || y.top)
     return !this->top;
 

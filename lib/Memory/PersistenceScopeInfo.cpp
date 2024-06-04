@@ -45,7 +45,8 @@ PersistenceScopeInfo::PersistenceScopeInfo() {
   // If no persistence wanted, skip this part
 
   if (InstrCachePersType == PersistenceType::NONE &&
-      DataCachePersType == PersistenceType::NONE) {
+      DataCachePersType == PersistenceType::NONE &&
+      L2CachePersType == PersistenceType::NONE) {
     return;
   }
   CallGraph &cg = CallGraph::getGraph();
@@ -69,7 +70,6 @@ void PersistenceScopeInfo::walkMachineLoop(const MachineLoop *loop) {
   // TODO filter the loops with the conditionals!!!
   bool isLoopGoodScope = true;
 
-  //持久分析待改
   // If we have an (indirect) external function call in the loop, it is a bad
   // persistence scope
   CallGraph &cg = CallGraph::getGraph();

@@ -24,8 +24,8 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef SEPARATECACHESMEMORYTOPOLOGY_H
-#define SEPARATECACHESMEMORYTOPOLOGY_H
+#ifndef JJYSEPARATECACHESMEMORYTOPOLOGY_H
+#define JJYSEPARATECACHESMEMORYTOPOLOGY_H
 
 #include "llvm/Support/Debug.h"
 
@@ -48,31 +48,32 @@ using namespace dom::cache;
  * background memory has to be another memory topology.
  */
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-class SeparateCachesMemoryTopology
-    : public MemoryTopologyInterface<
-          SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>> {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+class JJYSeparateCachesMemoryTopology
+    : public MemoryTopologyInterface<JJYSeparateCachesMemoryTopology<
+          makeInstrCache, makeDataCache, makeL2Cache, BgMem>> {
 public:
   /**
    * Public Default Contructor
    */
-  SeparateCachesMemoryTopology();
+  JJYSeparateCachesMemoryTopology();
 
   /**
    * Copy Constructor
    */
-  SeparateCachesMemoryTopology(const SeparateCachesMemoryTopology &scmt);
+  JJYSeparateCachesMemoryTopology(const JJYSeparateCachesMemoryTopology &scmt);
 
   /**
    * Assignment operator
    */
-  SeparateCachesMemoryTopology &
-  operator=(const SeparateCachesMemoryTopology &scmt);
+  JJYSeparateCachesMemoryTopology &
+  operator=(const JJYSeparateCachesMemoryTopology &scmt);
 
   /**
    * Destructor
    */
-  ~SeparateCachesMemoryTopology() {}
+  ~JJYSeparateCachesMemoryTopology() {}
 
   /**
    * Container used to make the local metrics of this class
@@ -84,6 +85,7 @@ public:
     boost::optional<AbstractAddress> justMissedInstrCache;
     // The access to the address - if any - just missed the cache
     boost::optional<AbstractAddress> justMissedDataCache;
+    boost::optional<AbstractAddress> justMissedL2Cache;
     // The persistence scope just entered
     boost::optional<std::set<PersistenceScope>> justEntered;
     // The access - if any - that updates the I-cache repl policy state
@@ -102,6 +104,7 @@ public:
     AbstractCache *instrCache;
     // Reference to the data cache
     AbstractCache *dataCache;
+    AbstractCache *l2Cache;
     // Local Metrics of the internally wrapped memory topology
     typename BgMem::LocalMetrics backgroundMemory;
 
@@ -109,10 +112,11 @@ public:
      * Creates the local metrics based on the
      * outer class' content.
      */
-    LocalMetrics(const SeparateCachesMemoryTopology &outerClassInstance)
+    LocalMetrics(const JJYSeparateCachesMemoryTopology &outerClassInstance)
         : justMissedInstrCache(
               outerClassInstance.instructionComponent.justMissedCache),
           justMissedDataCache(outerClassInstance.dataComponent.justMissedCache),
+          justMissedL2Cache(outerClassInstance.L2Component.justMissedCache),
           justEntered(outerClassInstance.justEntered),
           justUpdatedInstrCache(
               outerClassInstance.instructionComponent.justUpdatedCache),
@@ -127,11 +131,13 @@ public:
           storesToBus(outerClassInstance.dataComponent.numStoreBusAccess),
           instrCache(outerClassInstance.instructionComponent.cache->clone()),
           dataCache(outerClassInstance.dataComponent.cache->clone()),
+          l2Cache(outerClassInstance.L2Component.cache->clone()),
           backgroundMemory(outerClassInstance.memory) {}
 
     ~LocalMetrics() {
       delete instrCache;
       delete dataCache;
+      delete l2Cache;
     }
 
     /**
@@ -140,6 +146,7 @@ public:
     bool operator==(const LocalMetrics &anotherInstance) {
       return justMissedInstrCache == anotherInstance.justMissedInstrCache &&
              justMissedDataCache == anotherInstance.justMissedDataCache &&
+             justMissedL2Cache == anotherInstance.justMissedL2Cache &&
              justEntered == anotherInstance.justEntered &&
              justUpdatedInstrCache == anotherInstance.justUpdatedInstrCache &&
              justUpdatedDataCache == anotherInstance.justUpdatedDataCache &&
@@ -153,6 +160,7 @@ public:
              storesToBus == anotherInstance.storesToBus &&
              instrCache->equals(*anotherInstance.instrCache) &&
              dataCache->equals(*anotherInstance.dataCache) &&
+             l2Cache->equals(*anotherInstance.l2Cache) &&
              backgroundMemory == anotherInstance.backgroundMemory;
     }
   };
@@ -174,6 +182,14 @@ public:
     dataComponent.l1nmisses = 0;
     dataComponent.l2nmisses = 0;
     dataComponent.numStoreBusAccess = 0;
+
+    L2Component.justMissedCache = boost::none;
+    L2Component.justUpdatedCache = boost::none;
+    L2Component.justDirtifiedLine = boost::none;
+    L2Component.justWroteBackLine = false;
+    L2Component.l1nmisses = 0;
+    L2Component.l2nmisses = 0;
+    L2Component.numStoreBusAccess = 0;
     memory.resetLocalMetrics();
   }
 
@@ -199,7 +215,7 @@ public:
    * between the fetch and memory phase. A strictly in-order pipeline requires
    * stalling fetch misses. It is passed to the underlying topology.
    */
-  virtual std::list<SeparateCachesMemoryTopology>
+  virtual std::list<JJYSeparateCachesMemoryTopology>
   cycle(bool potentialDataMissesPending) const;
 
   /**
@@ -226,7 +242,7 @@ public:
   /**
    * Checks whether this topology is the same as the given one.
    */
-  virtual bool operator==(const SeparateCachesMemoryTopology &scmt) const;
+  virtual bool operator==(const JJYSeparateCachesMemoryTopology &scmt) const;
 
   /**
    * Hashes the topology.
@@ -238,9 +254,9 @@ public:
    */
   virtual bool isWaitingForJoin() const;
 
-  virtual bool isJoinable(const SeparateCachesMemoryTopology &scmt) const;
+  virtual bool isJoinable(const JJYSeparateCachesMemoryTopology &scmt) const;
 
-  virtual void join(const SeparateCachesMemoryTopology &scmt);
+  virtual void join(const JJYSeparateCachesMemoryTopology &scmt);
 
   /**
    * Is the memory topology currently performing an instruction access?
@@ -255,20 +271,21 @@ public:
   /**
    * Fast-forwarding of the memory topology.
    */
-  virtual std::list<SeparateCachesMemoryTopology> fastForward() const;
+  virtual std::list<JJYSeparateCachesMemoryTopology> fastForward() const;
 
   /**
    * Outputs the data content of this topology.
    */
   template <AbstractCache *(*makeInstrCachef)(bool),
-            AbstractCache *(*makeDataCachef)(bool), class BgMemf>
-  friend std::ostream &
-  operator<<(std::ostream &stream,
-             const SeparateCachesMemoryTopology<makeInstrCachef, makeDataCachef,
-                                                BgMemf> &scmt);
+            AbstractCache *(*makeDataCachef)(bool),
+            AbstractCache *(*makeL2Cachef)(bool), class BgMemf>
+  friend std::ostream &operator<<(
+      std::ostream &stream,
+      const JJYSeparateCachesMemoryTopology<makeInstrCachef, makeDataCachef,
+                                            makeL2Cachef, BgMemf> &scmt);
 
 private:
-  typedef MemoryTopologyInterface<SeparateCachesMemoryTopology> Super;
+  typedef MemoryTopologyInterface<JJYSeparateCachesMemoryTopology> Super;
 
   typedef typename Super::Access Access;
 
@@ -282,10 +299,10 @@ private:
   /**
    * Trigger an access if currently no access is ongoing
    */
-  std::list<SeparateCachesMemoryTopology> startInstructionAccess();
-  std::list<SeparateCachesMemoryTopology> mystartInstructionAccess();
-  std::list<SeparateCachesMemoryTopology> startDataAccess();
-  std::list<SeparateCachesMemoryTopology> mystartDataAccess();
+  std::list<JJYSeparateCachesMemoryTopology> startInstructionAccess();
+  std::list<JJYSeparateCachesMemoryTopology> mystartInstructionAccess();
+  std::list<JJYSeparateCachesMemoryTopology> startDataAccess();
+  std::list<JJYSeparateCachesMemoryTopology> mystartDataAccess();
 
   /**
    * According to the given classification perform action in the memory topology
@@ -296,8 +313,8 @@ private:
   /**
    * Check whether accesses to cache or background memory are finished
    */
-  std::list<SeparateCachesMemoryTopology> checkInstructionPart();
-  std::list<SeparateCachesMemoryTopology> checkDataPart();
+  std::list<JJYSeparateCachesMemoryTopology> checkInstructionPart();
+  std::list<JJYSeparateCachesMemoryTopology> checkDataPart();
 
   // Reference to the memory topology that is accessed whenever a cache miss
   // occurs. Has to be derived by MemoryTopology.
@@ -437,8 +454,6 @@ private:
                  mc.ongoingAccess.get().bgl2AccessId == 0)) &&
                ongoingAccess.get().l1timeBlocked ==
                    mc.ongoingAccess.get().l1timeBlocked &&
-               ongoingAccess.get().l2timeBlocked ==
-                   mc.ongoingAccess.get().l2timeBlocked &&
                ongoingAccess.get().phase == mc.ongoingAccess.get().phase &&
                ongoingAccess.get().bgmemStall ==
                    mc.ongoingAccess.get().bgmemStall &&
@@ -474,6 +489,9 @@ private:
    */
   MemoryComponent dataComponent;
 
+  // jjy: 层2缓存
+  MemoryComponent L2Component;
+
   /**
    * The persistence scope just entered
    */
@@ -481,28 +499,37 @@ private:
 };
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::SeparateCachesMemoryTopology()
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::JJYSeparateCachesMemoryTopology()
     : memory(BgMem()), currentId(1),
       instructionComponent(makeInstrCache(false)),
-      dataComponent(makeDataCache(false)), justEntered(boost::none) {}
+      dataComponent(makeDataCache(false)), L2Component(makeL2Cache(false)),
+      justEntered(boost::none) {}
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
-    SeparateCachesMemoryTopology(const SeparateCachesMemoryTopology &scmt)
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::
+    JJYSeparateCachesMemoryTopology(const JJYSeparateCachesMemoryTopology &scmt)
     : memory(scmt.memory), currentId(scmt.currentId),
       instructionComponent(scmt.instructionComponent),
-      dataComponent(scmt.dataComponent), justEntered(scmt.justEntered) {}
+      dataComponent(scmt.dataComponent), L2Component(scmt.L2Component),
+      justEntered(scmt.justEntered) {}
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem> &
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::operator=(
-    const SeparateCachesMemoryTopology &scmt) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem> &
+JJYSeparateCachesMemoryTopology<
+    makeInstrCache, makeDataCache, makeL2Cache,
+    BgMem>::operator=(const JJYSeparateCachesMemoryTopology &scmt) {
   instructionComponent = scmt.instructionComponent;
   dataComponent = scmt.dataComponent;
+  L2Component = scmt.L2Component;
   memory = scmt.memory;
   currentId = scmt.currentId;
   justEntered = scmt.justEntered;
@@ -510,10 +537,12 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::operator=(
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
 boost::optional<unsigned>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::accessInstr(
-    unsigned addr, unsigned numWords) {
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::accessInstr(unsigned addr,
+                                                    unsigned numWords) {
   // override (delete) previous access
   if (instructionComponent.waitingQueue.size() > 0) {
     instructionComponent.waitingQueue.pop_front();
@@ -526,10 +555,13 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::accessInstr(
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
 boost::optional<unsigned>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::accessData(
-    AbstractAddress addr, AccessType load_store, unsigned numWords) {
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::accessData(AbstractAddress addr,
+                                                   AccessType load_store,
+                                                   unsigned numWords) {
   unsigned resId;
   if (dataComponent.waitingQueue.size() == 0) {
     resId = currentId;
@@ -543,9 +575,10 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::accessData(
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::finishedInstrAccess(unsigned id) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::finishedInstrAccess(unsigned id) {
   bool res = instructionComponent.finishedId == id;
   if (res) {
     instructionComponent.finishedId = 0;
@@ -554,9 +587,10 @@ bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::finishedDataAccess(unsigned id) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::finishedDataAccess(unsigned id) {
   bool res = dataComponent.finishedId == id;
   if (res) {
     dataComponent.finishedId = 0;
@@ -565,11 +599,14 @@ bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
-    enterScope(const PersistenceScope &scope) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+void JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::enterScope(const PersistenceScope
+                                                            &scope) {
   instructionComponent.cache->enterScope(scope);
   dataComponent.cache->enterScope(scope);
+  L2Component.cache->enterScope(scope);
   if (!justEntered) {
     justEntered = std::set<PersistenceScope>();
   }
@@ -577,17 +614,21 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
-    leaveScope(const PersistenceScope &scope) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+void JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::leaveScope(const PersistenceScope
+                                                            &scope) {
   instructionComponent.cache->leaveScope(scope);
   dataComponent.cache->leaveScope(scope);
+  L2Component.cache->leaveScope(scope);
 }
-
+// jjy:可能需要改
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::hasUnfinishedAccesses() const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::hasUnfinishedAccesses() const {
   bool result = instructionComponent.ongoingAccess ||
                 !instructionComponent.waitingQueue.empty() ||
                 dataComponent.ongoingAccess ||
@@ -597,9 +638,10 @@ bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::incrementCurrentId() {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+void JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::incrementCurrentId() {
   currentId++;
   if (currentId == 0) { // prevent zero from begin used!
     currentId++;
@@ -608,17 +650,21 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
 
 // cycle is called from the pipeline
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
-    bool potentialDataMissesPending) const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+std::list<JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                          makeL2Cache, BgMem>>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::cycle(bool potentialDataMissesPending)
+    const {
   // Overall result list
-  std::list<SeparateCachesMemoryTopology> resultList;
+  std::list<JJYSeparateCachesMemoryTopology> resultList;
 
-  SeparateCachesMemoryTopology succ(*this);
+  JJYSeparateCachesMemoryTopology succ(*this);
   // We delete our just-missed events in all our successors
   succ.instructionComponent.justMissedCache = boost::none;
   succ.dataComponent.justMissedCache = boost::none;
+  succ.L2Component.justMissedCache = boost::none;
   // We delete our just-accessed events in all our successors
   succ.instructionComponent.justUpdatedCache = boost::none;
   succ.dataComponent.justUpdatedCache = boost::none;
@@ -633,7 +679,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
       // Cycle background memory
       for (auto &memory :
            startdataTopology.memory.cycle(potentialDataMissesPending)) {
-        SeparateCachesMemoryTopology afterbgmemcycle(startdataTopology);
+        JJYSeparateCachesMemoryTopology afterbgmemcycle(startdataTopology);
         afterbgmemcycle.memory = memory; // memorytopology
 
         // If we should have stalled the pipeline in this cycle, we should also
@@ -654,59 +700,16 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::cycle(
 
   return resultList;
 }
+
+// JJY: 改变split
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::startInstructionAccess() {
-  std::list<SeparateCachesMemoryTopology> resultList;
-
-  // We do not have any ongoing instruction access, so start one if there is one
-  // waiting
-  if (!instructionComponent.ongoingAccess) {
-    // nothing accessed yet
-    if (instructionComponent.waitingQueue.size() > 0) {
-      instructionComponent.ongoingAccess =
-          OngoingAccess(instructionComponent.waitingQueue.front());
-      instructionComponent.waitingQueue.pop_front();
-
-      // check cache for hit/miss/unknown
-      Classification res = instructionComponent.cache->classify(
-          instructionComponent.ongoingAccess.get().access.addr);
-      if (res == CL_UNKNOWN) {
-        if (FollowLocalWorstType.isSet(LocalWorstCaseType::ICMISS)) {
-          processInstrCacheAccess(CL_UNKNOWN);
-        } else {
-          // split here - this is hit state, need another state for miss
-          SeparateCachesMemoryTopology scmtMiss(*this);
-          scmtMiss.processInstrCacheAccess(CL_MISS);
-          resultList.push_back(scmtMiss);
-          processInstrCacheAccess(CL_HIT);
-        }
-      } else {
-        // If definite cache hit but in preemption mode, we consider also the
-        // instruction cache miss case (if not always hit)
-        if (res == CL_HIT && PreemptiveExecution &&
-            InstrCacheReplPolType != CacheReplPolicyType::ALHIT) {
-          SeparateCachesMemoryTopology scmtMiss(*this);
-          scmtMiss.processInstrCacheAccess(CL_MISS);
-          resultList.push_back(scmtMiss);
-        }
-        // process with the given result
-        processInstrCacheAccess(res);
-      }
-    }
-  }
-  resultList.push_back(*this);
-  return resultList;
-}
-
-template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::mystartInstructionAccess() {
-  std::list<SeparateCachesMemoryTopology> resultList;
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+std::list<JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                          makeL2Cache, BgMem>>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::mystartInstructionAccess() {
+  std::list<JJYSeparateCachesMemoryTopology> resultList;
 
   // We do not have any ongoing instruction access, so start one if there is one
   // waiting
@@ -718,17 +721,17 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
       instructionComponent.waitingQueue.pop_front();
 
       // check cache for hit/l2hit/l2miss/l2unknown
-      Classification res = instructionComponent.cache->classify(
+      Classification L1 = instructionComponent.cache->classify(
           instructionComponent.ongoingAccess.get().access.addr);
-      Classification CL = instructionComponent.cache->classifyL2(
+      Classification L2 = L2Component.cache->classify(
           instructionComponent.ongoingAccess.get().access.addr);
-      if (res == CL_HIT || (res == CL_UNKNOWN && ::isBCET)) {
+      if (L1 == CL_HIT || (L1 == CL_UNKNOWN && ::isBCET)) {
         this->processInstrCacheAccess(CL_HIT);
       } else {
-        if (CL == CL2_HIT || (CL == CL2_UNKNOWN && ::isBCET)) {
-          if (res == CL_UNKNOWN) {
+        if (L2 == CL_HIT || (L2 == CL_UNKNOWN && ::isBCET)) {
+          if (L1 == CL_UNKNOWN) {
             //时序异常
-            SeparateCachesMemoryTopology l1hit(*this);
+            JJYSeparateCachesMemoryTopology l1hit(*this);
             l1hit.processInstrCacheAccess(CL_HIT);
             resultList.push_back(l1hit);
           }
@@ -744,11 +747,13 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::startDataAccess() {
-  std::list<SeparateCachesMemoryTopology> resultList;
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+std::list<JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                          makeL2Cache, BgMem>>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::mystartDataAccess() {
+  std::list<JJYSeparateCachesMemoryTopology> resultList;
 
   // We do not have any ongoing data access, so start one if there is one
   // waiting
@@ -759,107 +764,17 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
       dataComponent.waitingQueue.pop_front();
 
       // check cache for hit/miss/unknown
-      Classification res = dataComponent.cache->classify(
+      Classification L1 = dataComponent.cache->classify(
           dataComponent.ongoingAccess.get().access.addr);
-      if (res == CL_UNKNOWN) {
-        if (isBCET) {
-          // BCET情况下会将UNKNOWN变成HIT
-          this->processDataCacheAccess(CL_HIT);
-          resultList.emplace_back(*this);
-        } else if (FollowLocalWorstType.isSet(LocalWorstCaseType::DCMISS)) {
-          this->processDataCacheAccess(CL2_MISS);
-          resultList.emplace_back(*this);
-        } else {
-          // split here - this is hit state, need another state for miss
-          //层1miss分析层2
-          Classification CL = dataComponent.cache->classifyL2(
-              dataComponent.ongoingAccess.get().access.addr);
-          if (CL == CL2_UNKNOWN) {
-            // Just another split here
-            SeparateCachesMemoryTopology l2Miss(*this), l2Hit(*this);
-            l2Miss.processDataCacheAccess(CL2_MISS);
-            l2Hit.processDataCacheAccess(CL2_HIT);
-            resultList.emplace_back(l2Miss);
-            resultList.emplace_back(l2Hit);
-          } else {
-            SeparateCachesMemoryTopology scmt(*this);
-            scmt.processDataCacheAccess(CL);
-            resultList.push_back(scmt);
-          }
-          this->processDataCacheAccess(CL_HIT);
-          resultList.emplace_back(*this);
-        }
-      } else if (res == CL_MISS) {
-        // L1 miss 分析层2
-        Classification CL = dataComponent.cache->classifyL2(
-            dataComponent.ongoingAccess.get().access.addr);
-        SeparateCachesMemoryTopology scmtMiss(*this);
-        if (CL == CL2_UNKNOWN) {
-          if (isBCET) {
-            // BCET情况下会将UNKNOWN变成HIT
-            this->processDataCacheAccess(CL2_HIT);
-            resultList.emplace_back(*this);
-          } else {
-            // Just another split here
-            SeparateCachesMemoryTopology l2Hit(*this);
-            l2Hit.processDataCacheAccess(CL2_HIT);
-            resultList.emplace_back(l2Hit);
-            this->processDataCacheAccess(CL2_MISS);
-            resultList.emplace_back(*this);
-          }
-        } else {
-          this->processDataCacheAccess(CL);
-          resultList.emplace_back(*this);
-        }
-      } else {
-        // L1 Hit
-        //  If definite cache hit but in preemption mode, we consider also the
-        //  data cache miss case (if not always hit)
-        if (res == CL_HIT && PreemptiveExecution &&
-            DataCacheReplPolType != CacheReplPolicyType::ALHIT) {
-          SeparateCachesMemoryTopology scmtMiss(*this);
-          scmtMiss.processDataCacheAccess(CL_MISS);
-          resultList.push_back(scmtMiss);
-        }
-        this->processDataCacheAccess(CL_HIT);
-        resultList.push_back(*this);
-      }
-    } else {
-      resultList.push_back(*this);
-    }
-  } else {
-    resultList.push_back(*this);
-  }
-  return resultList;
-}
-
-template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::mystartDataAccess() {
-  std::list<SeparateCachesMemoryTopology> resultList;
-
-  // We do not have any ongoing data access, so start one if there is one
-  // waiting
-  if (!dataComponent.ongoingAccess) {
-    if (dataComponent.waitingQueue.size() > 0) {
-      dataComponent.ongoingAccess =
-          OngoingAccess(dataComponent.waitingQueue.front());
-      dataComponent.waitingQueue.pop_front();
-
-      // check cache for hit/miss/unknown
-      Classification res = dataComponent.cache->classify(
+      Classification L2 = L2Component.cache->classify(
           dataComponent.ongoingAccess.get().access.addr);
-      Classification CL = dataComponent.cache->classifyL2(
-          dataComponent.ongoingAccess.get().access.addr);
-      if (res == CL_HIT || (res == CL_UNKNOWN && ::isBCET)) {
+      if (L1 == CL_HIT || (L1 == CL_UNKNOWN && ::isBCET)) {
         this->processDataCacheAccess(CL_HIT);
       } else {
-        if (CL == CL2_HIT || (CL == CL2_UNKNOWN && ::isBCET)) {
-          if (res == CL_UNKNOWN) {
+        if (L2 == CL_HIT || (L2 == CL_UNKNOWN && ::isBCET)) {
+          if (L1 == CL_UNKNOWN) {
             //时序异常
-            SeparateCachesMemoryTopology l1hit(*this);
+            JJYSeparateCachesMemoryTopology l1hit(*this);
             l1hit.processDataCacheAccess(CL_HIT);
             resultList.push_back(l1hit);
           }
@@ -875,11 +790,13 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::checkInstructionPart() {
-  std::list<SeparateCachesMemoryTopology> resultList;
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+std::list<JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                          makeL2Cache, BgMem>>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::checkInstructionPart() {
+  std::list<JJYSeparateCachesMemoryTopology> resultList;
 
   if (instructionComponent.ongoingAccess) // We are accessing something
   {
@@ -895,7 +812,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         ongoingAcc.l2timeBlocked = 1;
       }
     } else if (ongoingAcc.bgl2AccessId != 0) {
-      if (memory.l2finishedInstrAccess(ongoingAcc.bgl2AccessId)) {
+      if (memory.l2finishedInstrAccess(ongoingAcc.bgl2AccessId) ||
+          ongoingAcc.l2timeBlocked == 1) {
         // Not waiting for l2 any more
         ongoingAcc.bgl2AccessId = 0;
         // Blocked for cache update
@@ -903,14 +821,9 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         if (needAccessedInstructionAddresses()) {
           instructionComponent.justUpdatedCache = ongoingAcc.access.addr;
         }
-        instructionComponent.cache->l2update(ongoingAcc.access.addr,
-                                             ongoingAcc.access.load_store,
-                                             false, ongoingAcc.cl);
-        // data和instr共用一个L2 cache
-        dataComponent.cache->l2update(ongoingAcc.access.addr,
-                                      ongoingAcc.access.load_store, false,
-                                      ongoingAcc.cl);
-        // instructionComponent.finishedId = ongoingAcc.access.id;
+        L2Component.cache->update(ongoingAcc.access.addr,
+                                  ongoingAcc.access.load_store, false,
+                                  ongoingAcc.cl);
       }
     } else {
       if (ongoingAcc.l1timeBlocked > 0) {
@@ -928,87 +841,19 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
         instructionComponent.ongoingAccess = boost::none;
       }
     }
-
-    // // check whether something was accessed in the l2 cache
-    // if (ongoingAcc.bgl2AccessId != 0) {
-    //   if (memory.l2finishedInstrAccess(ongoingAcc.bgl2AccessId)) {
-    //     // Not waiting for memory any more
-    //     ongoingAcc.bgl2AccessId = 0;
-    //     // Blocked for cache update
-    //     ongoingAcc.l1timeBlocked = 1;
-    //   }
-    // } else if (ongoingAcc.bgMemAccessId == 0 &&
-    //            ongoingAcc.bgl2AccessId == 0) { // ongoingAcc.bgl2AccessId ==
-    //            0
-    //   // something was accessed in L1cache and a hit
-
-    //   /* decrement remaining blocking time.
-    //    * the if guards against underflow */
-
-    //   if (ongoingAcc.l1timeBlocked > 0) {
-    //     ongoingAcc.l1timeBlocked--;
-    //   }
-
-    //   if (ongoingAcc.l1timeBlocked == 0) {
-    //     instructionComponent.finishedId = ongoingAcc.access.id;
-    //     if (needAccessedInstructionAddresses()) {
-    //       instructionComponent.justUpdatedCache = ongoingAcc.access.addr;
-    //     }
-    //     instructionComponent.cache->update(ongoingAcc.access.addr,
-    //                                        ongoingAcc.access.load_store,
-    //                                        false, ongoingAcc.cl);
-    //     instructionComponent.ongoingAccess = boost::none;
-    //   }
-    // }
-    // // check whether something was accessed in the background memory
-    // if (ongoingAcc.bgMemAccessId != 0) {
-    //   if (memory.finishedInstrAccess(ongoingAcc.bgMemAccessId)) {
-    //     // Not waiting for memory any more
-    //     ongoingAcc.bgMemAccessId = 0;
-    //     // Blocked for cache update
-    //     ongoingAcc.l2timeBlocked = 1;
-    //   }
-    // } else if (ongoingAcc.bgMemAccessId == 0 &&
-    //            (ongoingAcc.bgl2AccessId != 0 || ongoingAcc.l2timeBlocked >
-    //            0)) {
-    //   // ongoingAcc.bgMemAccessId == 0
-    //   // something was accessed in L2cache and a hit
-
-    //   /* decrement remaining blocking time.
-    //    * the if guards against underflow */
-    //   // if (ongoingAcc.l2timeBlocked > 0) {
-    //   //   ongoingAcc.l2timeBlocked--;
-    //   // }
-
-    //   if (memory.l2finishedInstrAccess(ongoingAcc.bgl2AccessId)) {
-    //     if (needAccessedInstructionAddresses()) {
-    //       instructionComponent.justUpdatedCache = ongoingAcc.access.addr;
-    //     }
-    //     instructionComponent.cache->l2update(ongoingAcc.access.addr,
-    //                                          ongoingAcc.access.load_store,
-    //                                          false, ongoingAcc.cl);
-    //     // data和instr共用一个L2 cache
-    //     dataComponent.cache->l2update(ongoingAcc.access.addr,
-    //                                   ongoingAcc.access.load_store, false,
-    //                                   ongoingAcc.cl);
-    //     instructionComponent.finishedId = ongoingAcc.access.id;
-    //     // instructionComponent.cache->update(ongoingAcc.access.addr,
-    //     //                                    ongoingAcc.access.load_store,
-    //     //                                    false, ongoingAcc.cl);
-    //     // instructionComponent.ongoingAccess = boost::none;
-    //   }
-    // }
   }
   resultList.push_back(*this);
   return resultList;
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::checkDataPart() {
-  std::list<SeparateCachesMemoryTopology> resultList;
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+std::list<JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                          makeL2Cache, BgMem>>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::checkDataPart() {
+  std::list<JJYSeparateCachesMemoryTopology> resultList;
 
   if (dataComponent.ongoingAccess) // We are accessing something
   {
@@ -1054,23 +899,16 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
             ongoingAcc.l2timeBlocked = 0;
             ongoingAcc.l1timeBlocked = 1;
             // ongoingAcc.phase = AccessPhase::WaitForl1CACHE;
-            dataComponent.cache->l2update(ongoingAcc.access.addr,
-                                          ongoingAcc.access.load_store, false,
-                                          ongoingAcc.cl);
-            instructionComponent.cache->l2update(ongoingAcc.access.addr,
-                                                 ongoingAcc.access.load_store,
-                                                 false, ongoingAcc.cl);
+            L2Component.cache->update(ongoingAcc.access.addr,
+                                      ongoingAcc.access.load_store, false,
+                                      ongoingAcc.cl);
           }
         } else {
           //访问主存后
-          if (ongoingAcc.l2timeBlocked > 0) {
-
-            dataComponent.cache->l2update(ongoingAcc.access.addr,
-                                          ongoingAcc.access.load_store, false,
-                                          ongoingAcc.cl);
-            instructionComponent.cache->l2update(ongoingAcc.access.addr,
-                                                 ongoingAcc.access.load_store,
-                                                 false, ongoingAcc.cl);
+          if (ongoingAcc.l2timeBlocked == 1) {
+            L2Component.cache->update(ongoingAcc.access.addr,
+                                      ongoingAcc.access.load_store, false,
+                                      ongoingAcc.cl);
             ongoingAcc.l2timeBlocked = 0;
           }
           if (ongoingAcc.l1timeBlocked > 0) {
@@ -1145,7 +983,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
    storebuffers, since it might draw writeback budget away from more
    critical points */
             else if (isWBCache && mightMiss && WBVictimItv) {
-              SeparateCachesMemoryTopology scmtNoWriteback(*this);
+              JJYSeparateCachesMemoryTopology scmtNoWriteback(*this);
               scmtNoWriteback.dataComponent.finishedId =
                   scmtNoWriteback.dataComponent.ongoingAccess.get().access.id;
               scmtNoWriteback.dataComponent.ongoingAccess = boost::none;
@@ -1169,7 +1007,7 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
             if (isWBCache && dataComponent.justDirtifiedLine) {
               /* split the states to allow restricting the
                * dfs by persistence constraints */
-              SeparateCachesMemoryTopology noDFSsplit(*this);
+              JJYSeparateCachesMemoryTopology noDFSsplit(*this);
               noDFSsplit.dataComponent.justDirtifiedLine = boost::none;
               resultList.push_back(noDFSsplit);
             }
@@ -1177,9 +1015,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           }
         }
       } else if (ongoingAcc.phase == AccessPhase::WaitForSTORE) {
-        assert(
-            (ongoingAcc.bgMemAccessId != 0 || ongoingAcc.bgl2AccessId != 0) &&
-            "Waiting for store but not accessing anything");
+        assert((ongoingAcc.bgMemAccessId != 0) &&
+               "Waiting for store but not accessing anything");
         if (UnblockStores) { // If option for unblocking stores is set, finish
                              // access directly
           dataComponent.finishedId = ongoingAcc.access.id;
@@ -1189,8 +1026,6 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
           // outside
           if (ongoingAcc.bgMemAccessId > 0
                   ? memory.finishedDataAccess(ongoingAcc.bgMemAccessId)
-              : false || ongoingAcc.bgl2AccessId > 0
-                  ? memory.l2finishedDataAccess(ongoingAcc.bgl2AccessId)
                   : false) {
             dataComponent.finishedId = ongoingAcc.access.id;
             dataComponent.ongoingAccess = boost::none;
@@ -1205,21 +1040,15 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
-    processInstrCacheAccess(Classification cl) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+void JJYSeparateCachesMemoryTopology<
+    makeInstrCache, makeDataCache, makeL2Cache,
+    BgMem>::processInstrCacheAccess(Classification cl) {
   // Remember Classification
   auto &ongoingAcc = instructionComponent.ongoingAccess.get();
   ongoingAcc.cl = cl; // hit/l2hit/l2miss/
   // We do not think this code do actual work, so just ignore them.
-
-  // Assert part
-  // Classification actualcl =
-  //     instructionComponent.cache->classify(ongoingAcc.access.addr);
-  // Classification copycl(actualcl);
-  // copycl.join(cl);
-  // assert((actualcl == copycl || PreemptiveExecution) &&
-  //        "Incompatible classifications detected");
 
   if (cl == CL_HIT) {
     ongoingAcc.l1timeBlocked = instructionComponent.cache->getHitLatency();
@@ -1229,8 +1058,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
   } else if (cl == CL2_HIT) {
     ++instructionComponent.l1nmisses;
     Access acc = ongoingAcc.access;
-    ongoingAcc.l2timeBlocked = L2Latency; //这是层2cache更新的timeblock
-    //改动标记
+    ongoingAcc.l2timeBlocked = L2Latency;
     if (InstrCachePersType != PersistenceType::NONE || PreemptiveExecution) {
       // We just missed the instr cache (only needed for persistence analysis
       // and integrated preemptive execution mode)
@@ -1251,30 +1079,30 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
     }
 
   } else {
-    // this part is the same reason as above
-    // assert((cl == CL2_MISS ||
-    //         (FollowLocalWorstType.isSet(LocalWorstCaseType::ICMISS) &&
-    //          cl == CL_UNKNOWN)) &&
-    //        "Classification was neither HIT nor MISS.");
-
     ++instructionComponent.l1nmisses;
     ++instructionComponent.l2nmisses;
     Access acc = ongoingAcc.access;
 
-    //持久分析改动标记
-    if (InstrCachePersType != PersistenceType::NONE || PreemptiveExecution) {
-      // We just missed the instr cache (only needed for persistence analysis
-      // and integrated preemptive execution mode)
+    // if (InstrCachePersType != PersistenceType::NONE || PreemptiveExecution) {
+    //   // We just missed the instr cache (only needed for persistence analysis
+    //   // and integrated preemptive execution mode)
+    //   assert(acc.addr.isPrecise());
+    //   instructionComponent.justMissedCache =
+    //       AbstractAddress(instructionComponent.cache->alignToCacheline(
+    //           acc.addr.getAsInterval().lower()));
+    // }
+
+    // jjy:we add l2Cache persistence analysis
+    if (L2CachePersType != PersistenceType::NONE || PreemptiveExecution) {
       assert(acc.addr.isPrecise());
-      instructionComponent.justMissedCache =
-          AbstractAddress(instructionComponent.cache->alignToCacheline(
+      L2Component.justMissedCache =
+          AbstractAddress(L2Component.cache->alignToCacheline(
               acc.addr.getAsInterval().lower()));
     }
     boost::optional<unsigned> res = memory.accessInstr(
         acc.addr.getAsInterval().lower(), Ilinesize / 4); //指令取的字节数固定
     if (res) {
       ongoingAcc.bgMemAccessId = *res;
-      // ongoingAcc.bgl2AccessId = *res;
     } else {
       assert(false &&
              "Background memory topology rejected instruction access.");
@@ -1283,19 +1111,13 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
-    processDataCacheAccess(Classification cl) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+void JJYSeparateCachesMemoryTopology<
+    makeInstrCache, makeDataCache, makeL2Cache,
+    BgMem>::processDataCacheAccess(Classification cl) {
   auto &ongoingAcc = dataComponent.ongoingAccess.get();
   ongoingAcc.cl = cl;
-
-  // // Assert part
-  // Classification actualcl =
-  //     dataComponent.cache->classify(ongoingAcc.access.addr);
-  // Classification copycl(actualcl);
-  // copycl.join(cl);
-  // assert((actualcl == copycl || PreemptiveExecution) &&
-  //        "Incompatible classifications detected");
 
   if (cl == CL_HIT) { // We hit the cache (in case we load and in case we store)
     ongoingAcc.l1timeBlocked = dataComponent.cache->getHitLatency();
@@ -1330,13 +1152,7 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
     }
 
   } else {
-    // assert((cl == CL_MISS ||
-    //         (FollowLocalWorstType.isSet(LocalWorstCaseType::DCMISS) &&
-    //          cl == CL_UNKNOWN)) &&
-    //        "Classification was neither HIT nor MISS.");
     Access acc = dataComponent.ongoingAccess.get().access;
-    //改动标记
-
     // What shall we do?
     if (acc.load_store == AccessType::STORE &&
         !dataComponent.cache->getWritePolicy().WriteAllocate) {
@@ -1353,21 +1169,17 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
       ongoingAcc.phase = AccessPhase::WaitForSTORE;
       ++dataComponent.numStoreBusAccess;
     } else {
-      if (DataCachePersType != PersistenceType::NONE || PreemptiveExecution) {
-        // We just missed the data cache (only needed for persistence analysis
-        // and integrated preemptive execution mode)
-        if (dataComponent.cache->alignToCacheline(
+      // jjy:we add l2Cache persistence analysis
+      if (L2CachePersType != PersistenceType::NONE || PreemptiveExecution) {
+        if (L2Component.cache->alignToCacheline(
                 acc.addr.getAsInterval().lower()) ==
-            dataComponent.cache->alignToCacheline(
+            L2Component.cache->alignToCacheline(
                 acc.addr.getAsInterval().upper())) {
-          dataComponent.justMissedCache =
-              AbstractAddress(dataComponent.cache->alignToCacheline(
+          L2Component.justMissedCache =
+              AbstractAddress(L2Component.cache->alignToCacheline(
                   acc.addr.getAsInterval().lower()));
         } else if (acc.addr.isArray()) {
-          /* TODO we should have a way to tell addr about alignment, such that
-           * getAsInterval() returns correctly aligned bounds. For now just
-           * don't call getAsInterval on the justMissedCache member */
-          dataComponent.justMissedCache = acc.addr;
+          L2Component.justMissedCache = acc.addr;
         }
       }
       // Only in these cases, we account for misses
@@ -1385,30 +1197,35 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::shouldPipelineStall() const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::shouldPipelineStall() const {
   return memory.shouldPipelineStall();
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
-operator==(const SeparateCachesMemoryTopology &scmt) const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<
+    makeInstrCache, makeDataCache, makeL2Cache,
+    BgMem>::operator==(const JJYSeparateCachesMemoryTopology &scmt) const {
   bool result =
       memory == scmt.memory &&
       instructionComponent.equals(scmt.instructionComponent, currentId,
                                   scmt.currentId) &&
       dataComponent.equals(scmt.dataComponent, currentId, scmt.currentId) &&
+      L2Component.equals(scmt.L2Component, currentId, scmt.currentId) &&
       justEntered == scmt.justEntered;
   return result;
 }
 
+// jjy：看情况改
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-size_t
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::hashcode()
-    const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+size_t JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                       makeL2Cache, BgMem>::hashcode() const {
   size_t res = 0;
   // hash_combine(res, this->instructionComponent.cache);
   // hash_combine(res, this->dataComponent.cache);
@@ -1437,35 +1254,43 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::hashcode()
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::isWaitingForJoin() const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::isWaitingForJoin() const {
   return memory.isWaitingForJoin();
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::
-    isJoinable(const SeparateCachesMemoryTopology &scmt) const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<
+    makeInstrCache, makeDataCache, makeL2Cache,
+    BgMem>::isJoinable(const JJYSeparateCachesMemoryTopology &scmt) const {
   return memory.isJoinable(scmt.memory) &&
          // caches are assumed to be joinable, so are justMissed
          instructionComponent.equalsWithoutCache(scmt.instructionComponent,
                                                  currentId, scmt.currentId) &&
          dataComponent.equalsWithoutCache(scmt.dataComponent, currentId,
                                           scmt.currentId) &&
+         L2Component.equalsWithoutCache(scmt.L2Component, currentId,
+                                        scmt.currentId) &&
          justEntered == scmt.justEntered;
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::join(
-    const SeparateCachesMemoryTopology &scmt) {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+void JJYSeparateCachesMemoryTopology<
+    makeInstrCache, makeDataCache, makeL2Cache,
+    BgMem>::join(const JJYSeparateCachesMemoryTopology &scmt) {
   assert(isJoinable(scmt) && "Cannot join non-joinable states.");
 
   // Join sub-components
   memory.join(scmt.memory);
   instructionComponent.joinCache(scmt.instructionComponent);
   dataComponent.joinCache(scmt.dataComponent);
+  L2Component.joinCache(scmt.L2Component);
 
   // Everything id related is just kept, as it is equal (relative to the
   // absolute id) anyway. Not that this makes the join non-symmetric w.r.t.
@@ -1473,26 +1298,30 @@ void SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>::join(
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::isBusyAccessingInstr() const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::isBusyAccessingInstr() const {
   return !instructionComponent.waitingQueue.empty() ||
          instructionComponent.ongoingAccess;
 }
 
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-bool SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                  BgMem>::isBusyAccessingData() const {
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+bool JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                     BgMem>::isBusyAccessingData() const {
   return !dataComponent.waitingQueue.empty() || dataComponent.ongoingAccess;
 }
-
+// jjy：待改
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
-std::list<SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>
-SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                             BgMem>::fastForward() const {
-  std::list<SeparateCachesMemoryTopology> res;
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
+std::list<JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                          makeL2Cache, BgMem>>
+JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache, makeL2Cache,
+                                BgMem>::fastForward() const {
+  std::list<JJYSeparateCachesMemoryTopology> res;
 
   bool instrCompIdle = !isBusyAccessingInstr();
   bool dataCompIdle = !isBusyAccessingData();
@@ -1504,7 +1333,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
          instructionComponent.ongoingAccess.get().bgl2AccessId != 0))) &&
       instructionComponent.justMissedCache ==
           boost::none // Do not forget any events
-      && instructionComponent.justUpdatedCache == boost::none;
+      && L2Component.justMissedCache == boost::none &&
+      instructionComponent.justUpdatedCache == boost::none;
 
   bool dataCompAllowsFastForward =
       (dataCompIdle ||
@@ -1513,7 +1343,8 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
          dataComponent.ongoingAccess.get().bgl2AccessId != 0 ||
          ((!UnblockStores || dataComponent.ongoingAccess->bgmemStall) &&
           dataComponent.ongoingAccess->phase == AccessPhase::WaitForSTORE)))) &&
-      dataComponent.justMissedCache == boost::none // Do not forget any events
+      dataComponent.justMissedCache == boost::none &&
+      L2Component.justMissedCache == boost::none // Do not forget any events
       && dataComponent.justUpdatedCache == boost::none;
 
   if (instrCompAllowsFastForward && dataCompAllowsFastForward &&
@@ -1530,13 +1361,14 @@ SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
   res.emplace(res.end(), *this);
   return res;
 }
-
+// jjy：待改
 template <AbstractCache *(*makeInstrCache)(bool),
-          AbstractCache *(*makeDataCache)(bool), class BgMem>
+          AbstractCache *(*makeDataCache)(bool),
+          AbstractCache *(*makeL2Cache)(bool), class BgMem>
 std::ostream &
 operator<<(std::ostream &stream,
-           const SeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
-                                              BgMem> &scmt) {
+           const JJYSeparateCachesMemoryTopology<makeInstrCache, makeDataCache,
+                                                 makeL2Cache, BgMem> &scmt) {
   if (scmt.justEntered) {
     stream << "Just entered Scopes ";
     bool comma = false;
@@ -1552,8 +1384,8 @@ operator<<(std::ostream &stream,
 
   if (scmt.instructionComponent.waitingQueue.size() > 0) {
     stream << " Instruction element in cache queue: ";
-    MemoryTopologyInterface<
-        SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>::
+    MemoryTopologyInterface<JJYSeparateCachesMemoryTopology<
+        makeInstrCache, makeDataCache, makeL2Cache, BgMem>>::
         outputAccess(stream, scmt.instructionComponent.waitingQueue.front(),
                      true, scmt.currentId);
   } else {
@@ -1573,8 +1405,8 @@ operator<<(std::ostream &stream,
 
   stream << "Currently accessed in Instruction Cache: ";
   if (scmt.instructionComponent.ongoingAccess) {
-    MemoryTopologyInterface<
-        SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>::
+    MemoryTopologyInterface<JJYSeparateCachesMemoryTopology<
+        makeInstrCache, makeDataCache, makeL2Cache, BgMem>>::
         outputAccess(stream,
                      scmt.instructionComponent.ongoingAccess.get().access, true,
                      scmt.currentId);
@@ -1585,9 +1417,9 @@ operator<<(std::ostream &stream,
     stream << "l1Cache TimeBlocked: "
            << scmt.instructionComponent.ongoingAccess.get().l1timeBlocked
            << "\n";
-    stream << "l2Cache TimeBlocked: "
-           << scmt.instructionComponent.ongoingAccess.get().l2timeBlocked
-           << "\n";
+    // stream << "l2Cache TimeBlocked: "
+    //        << scmt.instructionComponent.ongoingAccess.get().l2timeBlocked
+    //        << "\n";
     stream << "Classification: "
            << scmt.instructionComponent.ongoingAccess.get().cl << "\n";
   } else {
@@ -1604,10 +1436,10 @@ operator<<(std::ostream &stream,
 
   if (scmt.dataComponent.waitingQueue.size() > 0) {
     stream << "Data element in cache queue: ";
-    MemoryTopologyInterface<
-        SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>::
-        outputAccess(stream, scmt.dataComponent.waitingQueue.front(), false,
-                     scmt.currentId);
+    MemoryTopologyInterface<JJYSeparateCachesMemoryTopology<
+        makeInstrCache, makeDataCache, makeL2Cache,
+        BgMem>>::outputAccess(stream, scmt.dataComponent.waitingQueue.front(),
+                              false, scmt.currentId);
   } else {
     stream << "Data cache queue empty.\n";
   }
@@ -1616,7 +1448,7 @@ operator<<(std::ostream &stream,
   stream << "L2Misses up to now: " << scmt.dataComponent.l2nmisses << "\n";
   stream << "L1Misses up to now: " << scmt.dataComponent.l1nmisses << "\n";
   stream << "L2 Cache:\n ";
-  scmt.instructionComponent.cache->l2dump(stream);
+  scmt.L2Component.cache->dump(stream);
   stream << "Stores to bus up to now: " << scmt.dataComponent.numStoreBusAccess
          << "\n";
   if (scmt.dataComponent.justUpdatedCache) {
@@ -1632,8 +1464,8 @@ operator<<(std::ostream &stream,
 
   stream << "Currently accessed in Data Cache: ";
   if (scmt.dataComponent.ongoingAccess) {
-    MemoryTopologyInterface<
-        SeparateCachesMemoryTopology<makeInstrCache, makeDataCache, BgMem>>::
+    MemoryTopologyInterface<JJYSeparateCachesMemoryTopology<
+        makeInstrCache, makeDataCache, makeL2Cache, BgMem>>::
         outputAccess(stream, scmt.dataComponent.ongoingAccess.get().access,
                      false, scmt.currentId);
     stream << "Access Phase: "
@@ -1642,8 +1474,8 @@ operator<<(std::ostream &stream,
            << scmt.dataComponent.ongoingAccess.get().bgmemStall << "\n";
     stream << "l1Cache TimeBlocked: "
            << scmt.dataComponent.ongoingAccess.get().l1timeBlocked << "\n";
-    stream << "l2Cache TimeBlocked: "
-           << scmt.dataComponent.ongoingAccess.get().l2timeBlocked << "\n";
+    // stream << "l2Cache TimeBlocked: "
+    //        << scmt.dataComponent.ongoingAccess.get().l2timeBlocked << "\n";
     stream << "Classification: " << scmt.dataComponent.ongoingAccess.get().cl
            << "\n";
   } else {

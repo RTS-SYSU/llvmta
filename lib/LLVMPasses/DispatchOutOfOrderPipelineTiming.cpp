@@ -28,7 +28,7 @@
 
 #include "LLVMPasses/DispatchMemory.h"
 #include "LLVMPasses/DispatchMuArchAnalysis.h"
-#include "Memory/SeparateCachesMemoryTopology.h"
+#include "Memory/JJYSeparateCachesMemoryTopology.h"
 #include "Memory/SeparateMemoriesTopology.h"
 #include "Memory/SingleMemoryTopology.h"
 #include "MicroarchitecturalAnalysis/OutOfOrderPipelineState.h"
@@ -96,9 +96,9 @@ dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo, unsigned int c
   }
   case MemoryTopologyType::SEPARATECACHES: {
     typedef SingleMemoryTopology<makeOptionsBackgroundMem> BgMem;
-    typedef SeparateCachesMemoryTopology<CacheFactory::makeOptionsInstrCache,
-                                         CacheFactory::makeOptionsDataCache,
-                                         BgMem>
+    typedef JJYSeparateCachesMemoryTopology<
+        CacheFactory::makeOptionsInstrCache, CacheFactory::makeOptionsDataCache,
+        CacheFactory::makeOptionsL2Cache, BgMem>
         MemTop;
     auto timebound =
         dispatchTimingAnalysisJoin<OutOfOrderPipelineState<MemTop>>(

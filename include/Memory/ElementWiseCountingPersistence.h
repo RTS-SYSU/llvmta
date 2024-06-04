@@ -50,12 +50,11 @@ namespace cache {
 template <CacheTraits *T>
 class ElementWiseCountingPersistence : public progana::JoinSemiLattice {
   typedef ElementWiseCountingPersistence<T> Self;
-  bool isl2;
+  // bool isl2;
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
   const CacheTraits *CacheConfig = T;
-  unsigned index;
 
   typedef typename CacheTraits::WayType WayType;
   typedef typename CacheTraits::TagType TagType;
@@ -69,8 +68,7 @@ protected:
 
 public:
   using AnaDeps = std::tuple<>;
-  explicit ElementWiseCountingPersistence(bool assumeAnEmptyCache = false,
-                                          bool is2 = false);
+  explicit ElementWiseCountingPersistence(bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
@@ -92,11 +90,8 @@ public:
 /// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline ElementWiseCountingPersistence<T>::ElementWiseCountingPersistence(
-    bool assumeAnEmptyCache __attribute__((unused)), bool is2)
-    : isl2(is2), ele2conflicts(), index(0) {
-  if (is2)
-    ASSOCIATIVITY = T->L2ASSOCIATIVITY;
-}
+    bool assumeAnEmptyCache __attribute__((unused)))
+    : ele2conflicts(){}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
@@ -125,19 +120,9 @@ UpdateReport *ElementWiseCountingPersistence<T>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,
     bool wantReport, const Classification assumption __attribute__((unused))) {
   TagType tag;
-  if (isl2) {
-    tag = l2getTag<T>(addr);
-    if (index == 0) {
-      index = l2getindex<T>(addr);
-    } else {
-      if (index != l2getindex<T>(addr)) {
-      }
-    }
-  } else {
-    index = getindex<T>(addr);
-    tag = getTag<T>(addr);
-  }
-  ele2conflicts[tag] = SetWiseCountingPersistence<T>(false, isl2);
+  tag = getTag<T>(addr);
+  ele2conflicts[tag] =
+      SetWiseCountingPersistence<T>(addr.getAsInterval().lower(), false);
   for (auto &e2c : ele2conflicts) {
     e2c.second.update(addr, load_store, Deps);
   }
@@ -181,7 +166,7 @@ ElementWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
    * do see it again and our conflict set is small enough we want to mark
    * this access as persistent since it corresponds to the initial load */
   return ele2conflicts.count(tag) == 0 ||
-         ele2conflicts.at(tag).isPersistent(tag, index);
+         ele2conflicts.at(tag).isPersistent(tag);
 }
 
 template <CacheTraits *T>

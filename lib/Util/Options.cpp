@@ -55,7 +55,7 @@ cl::opt<unsigned>
              cl::desc("The number of core for the analysis (default '1')"),
              cl::cat(MultiCoreCat));
 
-cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis", cl::init(true),
+cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis", cl::init(false),
                             cl::desc("(default 'F')"), cl::cat(MultiCoreCat));
 
 cl::opt<unsigned> Core("core", cl::init(0),
@@ -180,7 +180,7 @@ cl::bits<LocalWorstCaseType> StallOnLocalWorstType(
     cl::cat(HardwareDescrCat));
 
 cl::opt<bool> CompAnaJointILP(
-    "ta-compana-joint-ilp", cl::init(true), //改动标记
+    "ta-compana-joint-ilp", cl::init(false), //改动标记
     cl::desc("Enables the joint ILP mode for compositional analyses where "
              "applicable. Default is off (false)"),
     cl::cat(LLVMTACat));
@@ -205,7 +205,7 @@ cl::opt<PersistenceType> InstrCachePersType(
     "ta-icache-persistence",
     cl::desc("Choose the type of persistence analysis for the instruction "
              "cache (default 'none')"),
-    cl::init(PersistenceType::NONE),
+    cl::init(PersistenceType::ELEWISE),
     cl::values(
         clEnumValN(PersistenceType::NONE, "none", "No persistence analysis"),
         clEnumValN(PersistenceType::SETWISE, "setwise",
@@ -223,20 +223,55 @@ cl::opt<unsigned> Ilinesize(
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Iassoc(
-    "ta-icache-assoc", cl::init(2),
+    "ta-icache-assoc", cl::init(3),
     cl::desc("The associativity of the instruction cache. The default is 2"),
     cl::cat(CacheConfigCat));
-
-cl::opt<unsigned>
-    L2assoc("ta-l2cache-assoc", cl::init(4),
-            cl::desc("The associativity of the L2 cache. The default is 2"),
-            cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Insets(
     "ta-icache-nsets", cl::init(32), // 256
     cl::desc(
         "The number of cache sets of the instruction cache. The default is 32"),
     cl::cat(CacheConfigCat));
+
+cl::opt<CacheReplPolicyType> L2CacheReplPolType(
+    "ta-l2cache-replpol",
+    cl::desc("Choose which replacement policy should be used for the data "
+             "cache. (Default: LRU)"),
+    cl::init(CacheReplPolicyType::LRU),
+    cl::values(clEnumValN(CacheReplPolicyType::LRU, "lru",
+                          "Least-recently-used policy"),
+               clEnumValN(CacheReplPolicyType::FIFO, "fifo",
+                          "First-in First-out policy"),
+               clEnumValN(CacheReplPolicyType::ALHIT, "alwayshit",
+                          "Always Hit cache (i.e. preloaded scratchpad)"),
+               clEnumValN(CacheReplPolicyType::ALMISS, "alwaysmiss",
+                          "Always Miss cache (i.e. no cache)")),
+    cl::cat(CacheConfigCat));
+
+cl::opt<PersistenceType> L2CachePersType(
+    "ta-l2cache-persistence",
+    cl::desc("Choose the type of persistence analysis for the data cache "
+             "(default 'none')"),
+    cl::init(PersistenceType::NONE),
+    cl::values(
+        clEnumValN(PersistenceType::NONE, "none", "No persistence analysis"),
+        clEnumValN(PersistenceType::SETWISE, "setwise",
+                   "Set-wise conflict counting persistence analysis"),
+        clEnumValN(PersistenceType::ELEWISE, "elementwise",
+                   "Element-wise conflict counting persistence analysis"),
+        clEnumValN(PersistenceType::CONDMUST, "conditionalmust",
+                   "Conditional must persistence analysis")),
+    cl::cat(LLVMTACat));
+
+cl::opt<unsigned> L2linesize(
+    "ta-l2cache-linesize", cl::init(16),
+    cl::desc("The linesize of the data cache in bytes. The default is 16"),
+    cl::cat(CacheConfigCat));
+
+cl::opt<unsigned>
+    L2assoc("ta-l2cache-assoc", cl::init(4),
+            cl::desc("The associativity of the L2 cache. The default is 2"),
+            cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
     NN_SET("ta-l2cache-nsets", cl::init(64), // 1024
@@ -262,7 +297,7 @@ cl::opt<PersistenceType> DataCachePersType(
     "ta-dcache-persistence",
     cl::desc("Choose the type of persistence analysis for the data cache "
              "(default 'none')"),
-    cl::init(PersistenceType::NONE),
+    cl::init(PersistenceType::ELEWISE),
     cl::values(
         clEnumValN(PersistenceType::NONE, "none", "No persistence analysis"),
         clEnumValN(PersistenceType::SETWISE, "setwise",
@@ -289,13 +324,13 @@ cl::opt<unsigned> Dnsets(
     cl::cat(CacheConfigCat));
 
 cl::opt<bool>
-    DataCacheWriteBack("ta-dcache-write-back", cl::init(false),
+    DataCacheWriteBack("ta-dcache-write-back", cl::init(true),
                        cl::desc("Enables write-back mode of the cache. The "
                                 "default is write-through (false)"),
                        cl::cat(CacheConfigCat));
 
 cl::opt<bool> DataCacheWriteAllocate(
-    "ta-dcache-write-allocate", cl::init(false),
+    "ta-dcache-write-allocate", cl::init(true),
     cl::desc("Enables write-allocate mode of the cache. The default is =false "
              "to use write-non-allocate mode"),
     cl::cat(CacheConfigCat));

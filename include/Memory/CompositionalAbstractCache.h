@@ -81,9 +81,8 @@ protected:
 
 public:
   using AnaDeps = std::pair<typename A1::AnaDeps *, typename A2::AnaDeps *>;
-  bool isl2;
-  explicit CompositionalAbstractCache(bool assumeAnEmptyCache = false,
-                                      bool is2 = false);
+  // bool isl2;
+  explicit CompositionalAbstractCache(bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
@@ -116,9 +115,8 @@ public:
 /// assumeAnEmptyCache)
 template <class A1, class A2>
 inline CompositionalAbstractCache<A1, A2>::CompositionalAbstractCache(
-    bool assumeAnEmptyCache, bool is2)
-    : analysis1(assumeAnEmptyCache, is2), analysis2(assumeAnEmptyCache, is2),
-      isl2(is2) {}
+    bool assumeAnEmptyCache)
+    : analysis1(assumeAnEmptyCache), analysis2(assumeAnEmptyCache){}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <class A1, class A2>

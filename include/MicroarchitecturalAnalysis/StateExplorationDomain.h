@@ -726,12 +726,9 @@ public:
         // Found join partner
         if (st.isJoinable(mas)) {
           MicroArchState stCopy(st);
-          // std::cerr << stCopy;
-          // std::cerr << mas;
           states.erase(st);
           stCopy.join(mas);
           states.insert(stCopy);
-          // std::cerr << stCopy;
           // There is only one element we can join, as states is minimal and
           // isJoinable is transitive
           return;

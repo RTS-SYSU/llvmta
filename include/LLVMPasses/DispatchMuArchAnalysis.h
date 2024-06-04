@@ -56,7 +56,8 @@ doMuArchTimingAnalysis(Deps deps, unsigned coreNum = 0) {
   if (!QuietMode) {
     std::ofstream myfile;
     std::string fileName = std::to_string(coreNum) + "_core" +
-                           AnalysisEntryPoint + "_MicroArchAnalysis.txt";
+                           (isBCET ? "_bect" : "_wcet") + AnalysisEntryPoint +
+                           "_MicroArchAnalysis.txt";
     myfile.open(fileName, std::ios_base::trunc);
     microArchAnaInfo->dump(myfile);
     myfile.close();

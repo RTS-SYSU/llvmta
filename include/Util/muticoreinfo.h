@@ -10,27 +10,18 @@
 #include <utility>
 #include <vector>
 
-// namespace {
-// #define CHECK_CORE_VALIE(CORE) \
-//   if () {                                                     \
-//     fprintf(stderr, "Error: CoreNum(%u) is out of range(%u)\n", (CORE), \
-//             CoreNums.getValue()); \
-//     return NULL; \
-//   }
-//   assert((CORE)<=CoreNums,"Error: CoreNum is out of range\n")
-// } // namespace
-
 class Multicoreinfo {
 private:
-  // CoreNum -> <Earlest Start, Latest Stop>
+  // CoreNum -> <Earlest Start, Latest Stop>list
   std::vector<std::vector<std::pair<unsigned, unsigned>>> schedule;
+  // CoreNum -> <BCET, WCET>list
+  std::vector<std::vector<std::pair<unsigned, unsigned>>> BWtime;
 
   // CoreNum -> map<function, index>
   // BTW, this is actually core order (orz)
   std::vector<std::map<std::string, unsigned>> coreOrz;
 
 public:
-  bool change;
   // // function->address of Instruction->地址的执行次数   //不用地址，用block
   std::map<std::string, std::map<unsigned, unsigned>> addressinfowithtime;
   std::map<std::string, std::set<unsigned>> addressinfo;
@@ -39,22 +30,17 @@ public:
   Multicoreinfo();
   // Make all constructor and destructor to be default
   Multicoreinfo(unsigned coreNum)
-      : schedule(coreNum), coreinfo(coreNum), coreOrz(coreNum), change(true){};
+      : schedule(coreNum), BWtime(coreNum), coreinfo(coreNum),
+        coreOrz(coreNum){};
   ~Multicoreinfo() = default;
   Multicoreinfo(const Multicoreinfo &) = default;
 
   void setSize(unsigned core) {
     schedule.resize(core);
+    BWtime.resize(core);
     coreinfo.resize(core);
     // addressinfo.resize(core);
     coreOrz.resize(core);
-  }
-
-  void addaddress(std::string function, unsigned addressLINE, int time) {
-    if (SPersistenceA) {
-      addressinfowithtime.at(function)[addressLINE] += time;
-    }
-    addaddress(function, addressLINE);
   }
 
   void addaddress(std::string function, unsigned addressLINE) {
@@ -63,8 +49,9 @@ public:
 
   void addaddress(std::string function, std::vector<unsigned> &addrlist,
                   int time) {
-    for (auto &addr : addrlist) {
-      addaddress(function, addr, time);
+    for (auto &addressLINE : addrlist) {
+      addressinfowithtime.at(function)[addressLINE] += time;
+      addressinfo.at(function).insert(addressLINE);
     }
   }
   // void addaddress(std::string function,
@@ -84,14 +71,6 @@ public:
   // }
 
   void addTask(unsigned num, const std::string &function) {
-    // if (num > CoreNums) {
-    //   fprintf(stderr, "Error: CoreNum(%u) is out of range(%u)", num,
-    //           CoreNums.getValue());
-    //   return;
-    // }
-    // Don't you think this is cool?
-    // CHECK_CORE_VALIE(num)
-
     coreinfo[num].emplace_back(function);
     //对没有分析过的函数进行访存信息收集
     if (addressinfo.find(function) == addressinfo.end()) {
@@ -101,6 +80,7 @@ public:
     }
     coreOrz[num].insert(std::make_pair(function, coreinfo[num].size() - 1));
     schedule[num].emplace_back(std::make_pair(0, 0));
+    BWtime[num].emplace_back(std::make_pair(0, 0));
   }
 
   void setTaskTime(unsigned core, const std::string &function,
@@ -112,41 +92,37 @@ public:
               function.c_str(), core);
       return;
     }
-
     schedule[core][coreOrz[core][function]].first = early;
     schedule[core][coreOrz[core][function]].second = latest;
   }
 
-  void updateTaskTime(unsigned core, const std::string &function,
+  bool updateTaskTime(unsigned core, const std::string &function,
                       unsigned early = 0, unsigned latest = 0) {
-    // CHECK_CORE_VALIE(core)
-
     if (coreOrz[core].count(function) == 0) {
       fprintf(stderr, "Function %s can not found on core %u\n",
               function.c_str(), core);
-      return;
+      return false;
     }
-
-    unsigned taskNum = coreOrz[core][function];
-    unsigned preLend = schedule[core][taskNum].second;
     bool changed = false;
+    unsigned taskNum = coreOrz[core][function];
+    if (BWtime[core][taskNum].first != early ||
+        BWtime[core][taskNum].second != latest) {
+      changed = true;
+      //更新 执行时间
+      BWtime[core][taskNum].first = early;
+      BWtime[core][taskNum].second =latest;
+    }
+    //更新生命周期
     if (taskNum == 0) {
       schedule[core][taskNum].second = 0u + latest;
     } else {
       schedule[core][taskNum].second =
           schedule[core][taskNum - 1].second + latest;
     }
-    if (preLend != schedule[core][taskNum].second) {
-      changed = true;
-    }
     if (taskNum != schedule[core].size() - 1) {
-      unsigned pre = schedule[core][taskNum + 1].first;
       schedule[core][taskNum + 1].first = schedule[core][taskNum].first + early;
-      if (pre != schedule[core][taskNum + 1].first) {
-        changed = true;
-      }
     }
-    this->change = changed;
+    return changed;
   }
 
   std::vector<std::string> getConflictFunction(unsigned core,

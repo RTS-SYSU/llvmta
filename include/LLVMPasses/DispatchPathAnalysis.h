@@ -132,7 +132,8 @@ boost::optional<BoundItv> doCoRunnerSensitivePathAnalysis(
     MuStateGraph<MuState> *pSg, MuStateGraph<MuState> *pArrivalCurveSg,
     StateGraphNumericWeightProvider<MuState> &sgtp,
     StateGraphCacheMissProvider<MuState, CacheType::DATA> *sgdcpers,
-    StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *sgicpers);
+    StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *sgicpers,
+    StateGraphCacheMissProvider<MuState, CacheType::UNIFIED> *sgl2cpers);
 
 boost::optional<BoundItv>
 doPathAnalysis(const std::string identifier, const ExtremumType extremumType,
@@ -533,7 +534,7 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
     // in a way that unifies iterative and non-iterative parts and avoids
     // the current degree of code duplication
     return doCoRunnerSensitivePathAnalysis(sg, arrivalCurveSg, *tpa.sgtp,
-                                           tpa.sgdcpers, tpa.sgicpers);
+                                           tpa.sgdcpers, tpa.sgicpers,tpa.sgl2cpers);
   }
   // END LEGACY CODE
 
@@ -603,7 +604,12 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   std::list<GraphConstraint> constraints;
   // Get Basic constraints such as flow, loop bound, and persistence constraints
 
-  tpa.getBasicConstraints(constraints);
+  // tpa.getBasicConstraints(constraints);
+  if(isBCET){
+    tpa.getLowerConstraints(constraints);
+  }else{
+    tpa.getUpperConstraints(constraints);
+  }
   // Add potential interference constraints for dram refreshes, crpd-cost, ...
   tpa.addAvailableInterferenceConstraints(constraints);
 
@@ -613,15 +619,15 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   std::vector<VarCoeffVector> VLIST;
   VLIST.emplace_back(timeObjective);
 
-  // // MISS信息改动标记
+  // jjy：输出MISS信息
   VarCoeffVector objInstMisses = tpa.l1sgnicmp->getEdgeWeightTimesTakenVector();
   VarCoeffVector objDataMisses = tpa.l1sgndcmp->getEdgeWeightTimesTakenVector();
   VarCoeffVector objL2Misses = tpa.l2sgncmp->getEdgeWeightTimesTakenVector();
-  // VarCoeffVector objSTBus = tpa.sgnsbap->getEdgeWeightTimesTakenVector();
+
   VLIST.emplace_back(objInstMisses);
   VLIST.emplace_back(objDataMisses);
   VLIST.emplace_back(objL2Misses);
-  // VLIST.emplace_back(objSTBus);
+
 
   // Extremal path
   LPAssignment Path;
@@ -895,7 +901,8 @@ boost::optional<BoundItv> doCoRunnerSensitivePathAnalysis(
     MuStateGraph<MuState> *pSg, MuStateGraph<MuState> *pArrivalCurveSg,
     StateGraphNumericWeightProvider<MuState, int> &sgtp,
     StateGraphCacheMissProvider<MuState, CacheType::DATA> *sgdcpers,
-    StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *sgicpers) {
+    StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *sgicpers,
+    StateGraphCacheMissProvider<MuState, CacheType::UNIFIED> *sgl2cpers) {
   /* ==============================================
    * Initialization phase
    * ==============================================
@@ -1091,6 +1098,11 @@ boost::optional<BoundItv> doCoRunnerSensitivePathAnalysis(
       const auto &instrPersConstr = sgicpers->getPersistenceConstraints();
       flowConstr.insert(flowConstr.end(), instrPersConstr.begin(),
                         instrPersConstr.end());
+    }
+    if (sgl2cpers) {
+      const auto &l2PersConstr = sgl2cpers->getPersistenceConstraints();
+      flowConstr.insert(flowConstr.end(), l2PersConstr.begin(),
+                        l2PersConstr.end());
     }
 
     // constraint the blocked cycle loop
