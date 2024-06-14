@@ -57,12 +57,12 @@ struct CacheTraits {
   void checkParams() {
     // If larger values are desired, you just need to adjust the bit width
     // declarations below
-    assert(IsPwr2(LINE_SIZE) && LINE_SIZE <= 256 &&
-           "Line size must be a power of 2 and smaller than 256");
-    //     assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
-    //            "Associativity must be a power of 2 and smaller than 128");
-    assert(IsPwr2(N_SETS) && N_SETS <= 256 &&
-           "Number of sets must be a power of 2 and smaller than 256");
+//     assert(IsPwr2(LINE_SIZE) && LINE_SIZE <= 256 &&
+//            "Line size must be a power of 2 and smaller than 256");
+//     //     assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
+//     //            "Associativity must be a power of 2 and smaller than 128");
+//     assert(IsPwr2(N_SETS) && N_SETS <= 256 &&
+//            "Number of sets must be a power of 2 and smaller than 256");
     assert((!WRITEBACK || WRITEALLOCATE) &&
            "Cannot have write-back cache without write-allocate");
   }

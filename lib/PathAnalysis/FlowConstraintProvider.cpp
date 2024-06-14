@@ -122,8 +122,8 @@ void FlowConstraintProvider::buildInFlowEqualsOutFlowConstraints() {
         // assert(vertex.second.getPredecessors().size() > 0 &&
         //        "Vertex has no predecessors!");
       }
-      // assert(vertex.second.getSuccessors().size() > 0 &&
-      //        "Vertex has no successors!");
+      assert(vertex.second.getSuccessors().size() > 0 &&
+             "Vertex has no successors!");
     }
 
     VarCoeffVector variables;

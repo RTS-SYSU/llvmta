@@ -1393,7 +1393,8 @@ operator<<(std::ostream &stream,
   }
   // dot图不输出cache改动
 
-  stream << "Instruction Cache:\n " << *scmt.instructionComponent.cache << "\n";
+  // stream << "Instruction Cache:\n " << *scmt.instructionComponent.cache <<
+  // "\n";
   stream << "L2Misses up to now: " << scmt.instructionComponent.l2nmisses
          << "\n";
   stream << "L1Misses up to now: " << scmt.instructionComponent.l1nmisses
@@ -1444,11 +1445,11 @@ operator<<(std::ostream &stream,
     stream << "Data cache queue empty.\n";
   }
 
-  stream << "Data Cache:\n " << *scmt.dataComponent.cache;
+  // stream << "Data Cache:\n " << *scmt.dataComponent.cache;
   stream << "L2Misses up to now: " << scmt.dataComponent.l2nmisses << "\n";
   stream << "L1Misses up to now: " << scmt.dataComponent.l1nmisses << "\n";
   stream << "L2 Cache:\n ";
-  scmt.L2Component.cache->dump(stream);
+  // scmt.L2Component.cache->dump(stream);
   stream << "Stores to bus up to now: " << scmt.dataComponent.numStoreBusAccess
          << "\n";
   if (scmt.dataComponent.justUpdatedCache) {

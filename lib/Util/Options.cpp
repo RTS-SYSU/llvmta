@@ -217,7 +217,7 @@ cl::opt<PersistenceType> InstrCachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> Ilinesize(
-    "ta-icache-linesize", cl::init(16),
+    "ta-icache-linesize", cl::init(64),
     cl::desc(
         "The linesize of the instruction cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
@@ -228,7 +228,7 @@ cl::opt<unsigned> Iassoc(
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Insets(
-    "ta-icache-nsets", cl::init(32), // 256
+    "ta-icache-nsets", cl::init(256), // 256
     cl::desc(
         "The number of cache sets of the instruction cache. The default is 32"),
     cl::cat(CacheConfigCat));
@@ -252,7 +252,7 @@ cl::opt<PersistenceType> L2CachePersType(
     "ta-l2cache-persistence",
     cl::desc("Choose the type of persistence analysis for the data cache "
              "(default 'none')"),
-    cl::init(PersistenceType::NONE),
+    cl::init(PersistenceType::ELEWISE),
     cl::values(
         clEnumValN(PersistenceType::NONE, "none", "No persistence analysis"),
         clEnumValN(PersistenceType::SETWISE, "setwise",
@@ -264,17 +264,17 @@ cl::opt<PersistenceType> L2CachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> L2linesize(
-    "ta-l2cache-linesize", cl::init(16),
+    "ta-l2cache-linesize", cl::init(64),
     cl::desc("The linesize of the data cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    L2assoc("ta-l2cache-assoc", cl::init(4),
+    L2assoc("ta-l2cache-assoc", cl::init(16),
             cl::desc("The associativity of the L2 cache. The default is 2"),
             cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    NN_SET("ta-l2cache-nsets", cl::init(64), // 1024
+    NN_SET("ta-l2cache-nsets", cl::init(1024), // 1024
            cl::desc("The number of cache sets of L2 cache. The default is 128"),
            cl::cat(MultiCoreCat));
 
@@ -309,7 +309,7 @@ cl::opt<PersistenceType> DataCachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> Dlinesize(
-    "ta-dcache-linesize", cl::init(16),
+    "ta-dcache-linesize", cl::init(64),
     cl::desc("The linesize of the data cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
 
@@ -319,7 +319,7 @@ cl::opt<unsigned>
            cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Dnsets(
-    "ta-dcache-nsets", cl::init(32), // 256
+    "ta-dcache-nsets", cl::init(256), // 256
     cl::desc("The number of cache sets of the data cache. The default is 32"),
     cl::cat(CacheConfigCat));
 
@@ -355,7 +355,7 @@ cl::opt<BgMemType> BackgroundMemoryType(
     cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
-    Latency("ta-mem-latency", cl::init(151),
+    Latency("ta-mem-latency", cl::init(150),
             cl::desc("The latency of the background memory. (default '9', i.e. "
                      "transferring a single word takes 14 cycles)"),
             cl::cat(HardwareDescrCat));

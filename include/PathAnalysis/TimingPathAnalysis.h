@@ -382,7 +382,7 @@ void TimingPathAnalysis<MuState>::getUpperConstraints(
   // Add flow constraints
   FlowConstraintProvider fcprov(sg);
   fcprov.buildUpperConstraints();
-  auto flowConstr = fcprov.getConstraints();
+  auto flowConstr = fcprov.getUpperConstraints();
   constraints.insert(constraints.end(), flowConstr.begin(), flowConstr.end());
 
   // Add persistence constraints for data and instruction cache
@@ -408,7 +408,7 @@ void TimingPathAnalysis<MuState>::getLowerConstraints(
   // Add flow constraints
   FlowConstraintProvider fcprov(sg);
   fcprov.buildLowerConstraints();
-  auto flowConstr = fcprov.getConstraints();
+  auto flowConstr = fcprov.getLowerConstraints();
   constraints.insert(constraints.end(), flowConstr.begin(), flowConstr.end());
 
   // Add persistence constraints for data and instruction cache

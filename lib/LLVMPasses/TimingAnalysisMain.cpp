@@ -214,7 +214,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   std::map<std::string, size_t> vec;
   bool ETchage = true;
   int ET = 0;
-  while (ETchage) {
+  while (ET<1) {
     ET++;
     ETchage = false;
     for (unsigned i = 0; i < CoreNums; ++i) {
