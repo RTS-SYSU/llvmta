@@ -112,3 +112,4 @@ testcases/regressions/
 testcases/evaluations*/
 testcases/out.log
 testcases/dirforgdb
+thirdParty/*
