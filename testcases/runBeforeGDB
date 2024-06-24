@@ -8,14 +8,18 @@
 #     testcases=$1
 # fi
 
-pushd "/workspaces/llvmta/build" || echo "Unable to compile"
+pushd ..
+source setup_env.sh
+popd
+
+pushd "../build" || echo "Unable to compile"
     echo "compiling..."
     ninja -j4 llvmta
 popd || exit
 
 testcases=test
 
-WORKDIR=$(mktemp -d -p /workspaces/llvmta/testcases)
+WORKDIR=$(mktemp -d -p .)
 
 rm -rf "./dirforgdb"
 
@@ -23,20 +27,19 @@ mv "$WORKDIR" "dirforgdb"
 
 WORKDIR=dirforgdb
 
-chown vscode:vscode -R "$WORKDIR"
 cd "$WORKDIR" || exit
 # chmod 0744 "$WORKDIR" || exit
-
 
 clang -w -S -gline-tables-only -O0 -Xclang \
         -disable-O0-optnone -fno-builtin \
         -target arm -march=armv4t \
         -mfloat-abi=hard \
-        -emit-llvm /workspaces/llvmta/testcases/"$testcases"/*.c 
+        -emit-llvm ../${testcases}/*.c
 
-llvm-link *.ll /workspaces/llvmta/testcases/libraries/arm/builtininteger.ll \
-                   /workspaces/llvmta/testcases/libraries/arm/builtinstd.ll \
+llvm-link *.ll ../libraries/arm/builtininteger.ll \
+                   ../libraries/arm/builtinstd.ll \
                    -o unoptimized.ll
+
 opt -S unoptimized.ll \
     -mem2reg -indvars -loop-simplify -instcombine -globaldce -dce \
     -o optimized.ll
