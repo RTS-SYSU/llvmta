@@ -68,3 +68,13 @@ ninja -j $(nproc)
 对使用 Ubuntu 22.04 的用户，本项目提供了一个[脚本](./compile.sh)，可以使用该脚本进行快速的环境配置，运行完成后，使用 `source setup_env.sh` 来设定对应的环境变量，需要注意的是 `source setup_env.sh` 在每次重新打开终端后都需要重新执行
 
 之后类似使用 Docker 的方法，进入 `build` 目录，使用 `ninja` 进行编译即可
+
+## 方法三：手动进行编译
+
+如果你不想使用 Docker，也不想使用脚本，那么你可以手动进行编译，具体步骤可以参考[脚本](./compile.sh)中的内容，这里对编译和运行过程需要的环境变量进行些许说明：
+
+- `GUROBI_HOME`：Gurobi 的安装路径，需要确保路径下有 `lib`，`bin` 和 `include` 三个文件夹
+- `LD_LIBRARY_PATH`：需要将 Gurobi 的 `lib` 文件夹路径添加到该环境变量中，同时对于使用 `LP_SOLVE` 的用户，也需要将 `lpsolve` 的 `lib` 文件夹路径添加到该环境变量中，或者可以创建一个软链接到 `/usr/lib` 中
+- `PATH`：需要将 Gurobi 的 `bin` 文件夹路径添加到该环境变量中，同时，请将项目编译后的 `build/bin` 文件夹路径添加到该环境变量中
+- `CPLUS_INCLUDE_PATH`：需要将 Gurobi 的 `bin` 文件夹路径添加到该环境变量中
+- `GRB_LICENSE_FILE`：请将 Gurobi 的许可文件路径添加到该环境变量中

@@ -1,20 +1,12 @@
 #!/usr/bin/env bash
 
-# if [ $# -le 0 ];
-# then
-#     echo "Test case is not set, using default: \"loopexamples/nested\""
-#     testcases=loopexamples/nested
-# else
-#     testcases=$1
-# fi
-
 pushd ..
 source setup_env.sh
 popd
 
 pushd "../build" || echo "Unable to compile"
     echo "compiling..."
-    ninja -j4 llvmta
+    ninja -j$(nproc) || exit
 popd || exit
 
 testcases=test
@@ -43,14 +35,3 @@ llvm-link *.ll ../libraries/arm/builtininteger.ll \
 opt -S unoptimized.ll \
     -mem2reg -indvars -loop-simplify -instcombine -globaldce -dce \
     -o optimized.ll
-
-# gdb -tui --args llvmta -disable-tail-calls -float-abi=hard -mattr=-neon,+vfp2 -O0 \
-# --ta-analysis-entry-point=main --ta-muarch-type=inorder \
-# --ta-memory-type=separatecaches --ta-strict=false \
-# --ta-loop-bounds-file=\
-# "/workspaces/llvmta/testcases/Benchmarks/$testcases/LoopAnnotations_Arm|NotOptimized|HardFloat.csv" \
-# --ta-num-callsite-tokens=1 optimized.ll
-
-# echo "Doing post cleaning: rm -rf $WORKDIR"
-# rm -rf "$WORKDIR"
-# exit 0

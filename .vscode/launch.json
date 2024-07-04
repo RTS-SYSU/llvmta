@@ -21,7 +21,7 @@
                 "--ta-loop-lowerbounds-file='${workspaceRoot}/testcases/test/LLoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
                 "--ta-num-callsite-tokens=1",
                 "--core-info=${workspaceRoot}/testcases/test/CoreInfo.json",
-                "--core-numbers=1",
+                "--core-numbers=2",
                 "--shared-cache-Persistence-Analysis=false",
                 "--ta-l2cache-persistence=elementwise",
                 "-debug-only=",
