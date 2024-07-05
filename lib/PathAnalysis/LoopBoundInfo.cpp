@@ -146,25 +146,26 @@ bool LoopBoundInfoPass::isMachineLoopPartialMatch(const MachineLoop *Maloop,
   return FoundAllmaloopBb;
 }
 SCEV *LoopBoundInfoPass::copySCEV(const SCEV *N) {
-  SCEV *C = NULL;
+  SCEV *C = nullptr;
   switch (N->getSCEVType()) {
-  case scConstant: {
+  case scConstant:
     // SCEVConstant d = std::move(dyn_cast<SCEVConstant>(N));
     // std::unique_ptr<SCEV> ptr(&d);
-    C = new SCEVConstant(*dyn_cast<SCEVConstant>(N));
-  } break;
+    C = new SCEVConstant(*cast<SCEVConstant>(N));
+    break;
   case scAddExpr:
   case scMulExpr:
   case scUMaxExpr:
-  case scSMaxExpr: {
-    C = new SCEVNAryExpr(*dyn_cast<SCEVNAryExpr>(N));
-  } break;
-  case scUDivExpr: {
-    C = new SCEVUDivExpr(*dyn_cast<SCEVUDivExpr>(N));
-  } break;
-  case scUnknown: {
-    C = new SCEVUnknown(*dyn_cast<SCEVUnknown>(N));
-  } break;
+  case scSMaxExpr:
+    C = new SCEVNAryExpr(*cast<SCEVNAryExpr>(N));
+    break;
+  case scUDivExpr:
+    C = new SCEVUDivExpr(*cast<SCEVUDivExpr>(N));
+    break;
+  case scUnknown:
+    C = new SCEVUnknown(*cast<SCEVUnknown>(N));
+    cast<SCEVUnknown>(C)->is_copied = true;
+    break;
   // Cases that we don't handle
   case scTruncate:
   case scZeroExtend:
@@ -190,10 +191,12 @@ void LoopBoundInfoPass::addSCEVMapping(const MachineLoop *ML,
     const SCEV *T = SEInfo.getBackedgeTakenCount(Loop);
     const SCEV *TakenCount = copySCEV(T);
 
-    //jjy:这里的打印会报错，因为SCEV有些信息并没有被保留下来
-    // DEBUG_WITH_TYPE("loopbound", dbgs()
-    //                                  << "Loop SCEV: " << *TakenCount << "\n");
-    // DEBUG_WITH_TYPE("loopbound", dbgs() << "Loop SCEV: " << TakenCount << "\n");
+    // jjy:这里的打印会报错，因为SCEV有些信息并没有被保留下来
+    //  DEBUG_WITH_TYPE("loopbound", dbgs()
+    //                                   << "Loop SCEV: " << *TakenCount <<
+    //                                   "\n");
+    //  DEBUG_WITH_TYPE("loopbound", dbgs() << "Loop SCEV: " << TakenCount <<
+    //  "\n");
     UpperLoopBoundsSCEV.insert(std::make_pair(ML, TakenCount));
     LowerLoopBoundsSCEV.insert(std::make_pair(ML, TakenCount));
   } else {
@@ -598,9 +601,9 @@ void LoopBoundInfoPass::computeLoopBounds(
   for (auto Loop : LoopMapping) {
     DEBUG_WITH_TYPE("loopbound", dbgs() << "Trying to compute bounds for: "
                                         << *Loop.first << "\n");
-    //jjy：这里打印会报错，因为SCEV有些信息没有被保留下
-    // DEBUG_WITH_TYPE("loopbound",
-    //                 dbgs() << "Equation is: " << *Loop.second << "\n");
+    // jjy：这里打印会报错，因为SCEV有些信息没有被保留下
+    //  DEBUG_WITH_TYPE("loopbound",
+    //                  dbgs() << "Equation is: " << *Loop.second << "\n");
     auto *ParentFunction = Loop.first->getHeader()->getParent();
     std::list<MBBedge> Initialedgelist;
     const MachineInstr *FirstInstr =

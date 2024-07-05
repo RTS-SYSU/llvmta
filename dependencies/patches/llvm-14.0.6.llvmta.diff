@@ -1,7 +1,7 @@
-diff -ur llvm-14.0.6.src/CMakeLists.txt llvm-14.0.6.src.patched/CMakeLists.txt
+diff --color -uprN llvm-14.0.6.src/CMakeLists.txt llvm-14.0.6.src.patched/CMakeLists.txt
 --- llvm-14.0.6.src/CMakeLists.txt	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/CMakeLists.txt	2023-09-04 16:33:57.196869349 +0800
-@@ -1241,22 +1241,6 @@
++++ llvm-14.0.6.src.patched/CMakeLists.txt	2024-07-04 15:24:55.527947755 +0800
+@@ -1241,22 +1241,6 @@ if (MSVC AND CMAKE_HOST_SYSTEM_NAME STRE
    include(InstallRequiredSystemLibraries)
  endif()
  
@@ -24,10 +24,10 @@ diff -ur llvm-14.0.6.src/CMakeLists.txt llvm-14.0.6.src.patched/CMakeLists.txt
  
  if (LLVM_INCLUDE_UTILS AND LLVM_INCLUDE_TOOLS)
    add_subdirectory(utils/llvm-locstats)
-diff -ur llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h llvm-14.0.6.src.patched/include/llvm/Analysis/LoopInfo.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h llvm-14.0.6.src.patched/include/llvm/Analysis/LoopInfo.h
 --- llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/Analysis/LoopInfo.h	2023-12-07 21:32:22.822614815 +0800
-@@ -925,13 +925,13 @@
++++ llvm-14.0.6.src.patched/include/llvm/Analysis/LoopInfo.h	2024-07-04 15:24:55.527947755 +0800
+@@ -925,13 +925,13 @@ public:
    void releaseMemory() {
      BBMap.clear();
  
@@ -45,7 +45,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h llvm-14.0.6.src.patche
      LoopT *Storage = LoopAllocator.Allocate<LoopT>();
      return new (Storage) LoopT(std::forward<ArgsTy>(Args)...);
    }
-@@ -1213,7 +1213,6 @@
+@@ -1213,7 +1213,6 @@ public:
    // IR is assumed to be in LCSSA form before the planned insertion.
    bool wouldBeOutOfLoopUseRequiringLCSSA(const Value *V,
                                           const BasicBlock *ExitBB) const;
@@ -53,7 +53,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h llvm-14.0.6.src.patche
  };
  
  /// Enable verification of loop info.
-@@ -1307,13 +1306,13 @@
+@@ -1307,13 +1306,13 @@ MDNode *findOptionMDForLoop(const Loop *
  
  Optional<bool> getOptionalBoolLoopAttribute(const Loop *TheLoop,
                                              StringRef Name);
@@ -70,7 +70,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h llvm-14.0.6.src.patche
  
  /// Find named metadata for a loop with an integer value. Return \p Default if
  /// not set.
-@@ -1369,6 +1368,6 @@
+@@ -1369,6 +1368,6 @@ makePostTransformationMetadata(llvm::LLV
                                 llvm::ArrayRef<llvm::StringRef> RemovePrefixes,
                                 llvm::ArrayRef<llvm::MDNode *> AddAttrs);
  
@@ -78,10 +78,10 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/LoopInfo.h llvm-14.0.6.src.patche
 +} // namespace llvm
  
  #endif
-diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolution.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolution.h
 --- llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolution.h	2023-12-07 20:42:05.439688978 +0800
-@@ -140,7 +140,14 @@
++++ llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolution.h	2024-07-04 15:24:55.527947755 +0800
+@@ -140,7 +140,14 @@ public:
    explicit SCEV(const FoldingSetNodeIDRef ID, SCEVTypes SCEVTy,
                  unsigned short ExpressionSize)
        : FastID(ID), SCEVType(SCEVTy), ExpressionSize(ExpressionSize) {}
@@ -97,7 +97,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
    SCEV &operator=(const SCEV &) = delete;
  
    SCEVTypes getSCEVType() const { return SCEVType; }
-@@ -169,9 +176,7 @@
+@@ -169,9 +176,7 @@ public:
    // SCEV and all its operands recursively. We may use it to avoid performing
    // heavy transformations on SCEVs of excessive size for sake of saving the
    // compilation time.
@@ -108,7 +108,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
    /// Print out the internal representation of this scalar to the specified
    /// stream.  This should really only be used for debugging purposes.
-@@ -402,9 +407,7 @@
+@@ -402,9 +407,7 @@ public:
    bool isAlwaysTrue() const override;
  
    /// Methods for support type inquiry through isa, cast, and dyn_cast:
@@ -119,7 +119,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  };
  
  /// This class represents a composition of other SCEV predicates, and is the
-@@ -412,7 +415,8 @@
+@@ -412,7 +415,8 @@ public:
  /// logical "AND" of all the predicates in the union.
  ///
  /// NB! Unlike other SCEVPredicate sub-classes this class does not live in the
@@ -129,7 +129,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  class SCEVUnionPredicate final : public SCEVPredicate {
  private:
    using PredicateMap =
-@@ -829,8 +833,7 @@
+@@ -829,8 +833,7 @@ public:
    /// unknown or not guaranteed to be the multiple of a constant., Will also
    /// return 1 if the trip count is very large (>= 2^32).
    /// Note that the argument is an exit count for loop L, NOT a trip count.
@@ -139,7 +139,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
    /// Returns the largest constant divisor of the trip count of the
    /// loop.  Will return 1 if no trip count could be computed, or if a
-@@ -847,7 +850,7 @@
+@@ -847,7 +850,7 @@ public:
                                          const BasicBlock *ExitingBlock);
  
    /// The terms "backedge taken count" and "exit count" are used
@@ -148,7 +148,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
    /// has executed before the loop is exited.
    enum ExitCountKind {
      /// An expression exactly describing the number of times the backedge has
-@@ -860,7 +863,7 @@
+@@ -860,7 +863,7 @@ public:
    };
  
    /// Return the number of times the backedge executes before the given exit
@@ -157,7 +157,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
    /// For a single exit loop, this value is equivelent to the result of
    /// getBackedgeTakenCount.  The loop is guaranteed to exit (via *some* exit)
    /// before the backedge is executed (ExitCount + 1) times.  Note that there
-@@ -1321,7 +1324,7 @@
+@@ -1321,7 +1324,7 @@ private:
    /// ExitNotTakenInfo and BackedgeTakenInfo.
    struct ExitLimit {
      const SCEV *ExactNotTaken; // The exit is not taken exactly this many times
@@ -166,7 +166,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
      // Not taken either exactly MaxNotTaken or zero times
      bool MaxOrZero = false;
-@@ -1375,8 +1378,8 @@
+@@ -1375,8 +1378,8 @@ private:
                                const SCEV *ExactNotTaken,
                                const SCEV *MaxNotTaken,
                                std::unique_ptr<SCEVUnionPredicate> Predicate)
@@ -177,7 +177,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
      bool hasAlwaysTruePredicate() const {
        return !Predicate || Predicate->isAlwaysTrue();
-@@ -1546,7 +1549,7 @@
+@@ -1546,7 +1549,7 @@ private:
    BlockDisposition computeBlockDisposition(const SCEV *S, const BasicBlock *BB);
  
    /// Stores all SCEV that use a given SCEV as its direct operand.
@@ -186,7 +186,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
    /// Memoized results from getRange
    DenseMap<const SCEV *, ConstantRange> UnsignedRanges;
-@@ -1610,7 +1613,7 @@
+@@ -1610,7 +1613,7 @@ private:
  
    /// A helper function for createAddRecFromPHI to handle simple cases.
    const SCEV *createSimpleAffineAddRec(PHINode *PN, Value *BEValueV,
@@ -195,7 +195,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
    /// Helper function called from createNodeForPHI.
    const SCEV *createNodeFromSelectLikePHI(PHINode *PN);
-@@ -1700,8 +1703,7 @@
+@@ -1700,8 +1703,7 @@ private:
  
    ExitLimit computeExitLimitFromCondCached(ExitLimitCacheTy &Cache,
                                             const Loop *L, Value *ExitCond,
@@ -205,7 +205,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
                                             bool AllowPredicates);
    ExitLimit computeExitLimitFromCondImpl(ExitLimitCacheTy &Cache, const Loop *L,
                                           Value *ExitCond, bool ExitIfTrue,
-@@ -1718,8 +1720,7 @@
+@@ -1718,8 +1720,7 @@ private:
    /// to use a minimal set of SCEV predicates in order to return an exact
    /// answer.
    ExitLimit computeExitLimitFromICmp(const Loop *L, ICmpInst *ExitCond,
@@ -215,7 +215,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
                                       bool AllowPredicates = false);
  
    /// Variant of previous which takes the components representing an ICmp
-@@ -1835,10 +1836,9 @@
+@@ -1835,10 +1836,9 @@ private:
    /// whenever the condition described by Pred, FoundLHS, and FoundRHS is
    /// true. Here LHS is an operation that includes FoundLHS as one of its
    /// arguments.
@@ -229,7 +229,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
    /// Test whether the condition described by Pred, LHS, and RHS is true.
    /// Use only simple non-recursive types of checks, such as range analysis etc.
-@@ -1895,10 +1895,9 @@
+@@ -1895,10 +1895,9 @@ private:
    /// This routine tries to figure out predicate for Phis which are SCEVUnknown
    /// if it is true for every possible incoming value from their respective
    /// basic blocks.
@@ -243,7 +243,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
    /// Test whether the condition described by Pred, LHS, and RHS is true
    /// whenever the condition described by Pred, FoundLHS, and FoundRHS is
-@@ -2078,8 +2077,8 @@
+@@ -2078,8 +2077,8 @@ private:
                                   SCEV::NoWrapFlags Flags);
  
    // Get addrec expr already created or create a new one.
@@ -254,10 +254,10 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolution.h llvm-14.0.6.src
  
    /// Return x if \p Val is f(x) where f is a 1-1 function.
    const SCEV *stripInjectiveFunctions(const SCEV *Val) const;
-diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolutionExpressions.h llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolutionExpressions.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolutionExpressions.h llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolutionExpressions.h
 --- llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolutionExpressions.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolutionExpressions.h	2023-12-07 20:42:05.429688978 +0800
-@@ -66,6 +66,10 @@
++++ llvm-14.0.6.src.patched/include/llvm/Analysis/ScalarEvolutionExpressions.h	2024-07-05 17:03:20.329059313 +0800
+@@ -66,6 +66,10 @@ class SCEVConstant : public SCEV {
        : SCEV(ID, scConstant, 1), V(v) {}
  
  public:
@@ -268,7 +268,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolutionExpressions.h llvm
    ConstantInt *getValue() const { return V; }
    const APInt &getAPInt() const { return getValue()->getValue(); }
  
-@@ -196,6 +200,8 @@
+@@ -196,6 +200,8 @@ protected:
          NumOperands(N) {}
  
  public:
@@ -277,7 +277,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolutionExpressions.h llvm
    size_t getNumOperands() const { return NumOperands; }
  
    const SCEV *getOperand(unsigned i) const {
-@@ -304,6 +310,7 @@
+@@ -304,6 +310,7 @@ class SCEVUDivExpr : public SCEV {
    }
  
  public:
@@ -285,18 +285,20 @@ diff -ur llvm-14.0.6.src/include/llvm/Analysis/ScalarEvolutionExpressions.h llvm
    const SCEV *getLHS() const { return Operands[0]; }
    const SCEV *getRHS() const { return Operands[1]; }
    size_t getNumOperands() const { return 2; }
-@@ -589,6 +596,7 @@
+@@ -589,6 +596,9 @@ class SCEVUnknown final : public SCEV, p
    void allUsesReplacedWith(Value *New) override;
  
  public:
++  // Change note BY Zeng-WCh
++  bool is_copied = false;
 +  // SCEVUnknown(const SCEVUnknown *N) : SCEV(N), SE(N->SE), Next(Next) {}
    Value *getValue() const { return getValPtr(); }
  
    /// @{
-diff -ur llvm-14.0.6.src/include/llvm/CodeGen/MachineFunctionPass.h llvm-14.0.6.src.patched/include/llvm/CodeGen/MachineFunctionPass.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/CodeGen/MachineFunctionPass.h llvm-14.0.6.src.patched/include/llvm/CodeGen/MachineFunctionPass.h
 --- llvm-14.0.6.src/include/llvm/CodeGen/MachineFunctionPass.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/CodeGen/MachineFunctionPass.h	2023-12-07 20:45:50.997706831 +0800
-@@ -29,7 +29,8 @@
++++ llvm-14.0.6.src.patched/include/llvm/CodeGen/MachineFunctionPass.h	2024-07-04 15:24:55.527947755 +0800
+@@ -29,7 +29,8 @@ namespace llvm {
  /// override runOnMachineFunction.
  class MachineFunctionPass : public FunctionPass {
  public:
@@ -306,7 +308,7 @@ diff -ur llvm-14.0.6.src/include/llvm/CodeGen/MachineFunctionPass.h llvm-14.0.6.
      // Cache the properties info at module-init time so we don't have to
      // construct them for every function.
      RequiredProperties = getRequiredProperties();
-@@ -37,6 +38,7 @@
+@@ -37,6 +38,7 @@ public:
      ClearedProperties = getClearedProperties();
      return false;
    }
@@ -314,7 +316,7 @@ diff -ur llvm-14.0.6.src/include/llvm/CodeGen/MachineFunctionPass.h llvm-14.0.6.
  protected:
    explicit MachineFunctionPass(char &ID) : FunctionPass(ID) {}
  
-@@ -75,6 +77,6 @@
+@@ -75,6 +77,6 @@ private:
    bool runOnFunction(Function &F) override;
  };
  
@@ -322,10 +324,10 @@ diff -ur llvm-14.0.6.src/include/llvm/CodeGen/MachineFunctionPass.h llvm-14.0.6.
 +} // namespace llvm
  
  #endif
-diff -ur llvm-14.0.6.src/include/llvm/IR/Constants.h llvm-14.0.6.src.patched/include/llvm/IR/Constants.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/IR/Constants.h llvm-14.0.6.src.patched/include/llvm/IR/Constants.h
 --- llvm-14.0.6.src/include/llvm/IR/Constants.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/IR/Constants.h	2023-12-07 18:54:20.513764831 +0800
-@@ -87,7 +87,7 @@
++++ llvm-14.0.6.src.patched/include/llvm/IR/Constants.h	2024-07-04 15:24:55.527947755 +0800
+@@ -87,7 +87,7 @@ class ConstantInt final : public Constan
  
  public:
    ConstantInt(const ConstantInt &) = delete;
@@ -334,9 +336,9 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Constants.h llvm-14.0.6.src.patched/inc
    static ConstantInt *getTrue(LLVMContext &Context);
    static ConstantInt *getFalse(LLVMContext &Context);
    static ConstantInt *getBool(LLVMContext &Context, bool V);
-diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.patched/include/llvm/IR/LegacyPassManagers.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.patched/include/llvm/IR/LegacyPassManagers.h
 --- llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/IR/LegacyPassManagers.h	2023-12-08 13:37:05.414876760 +0800
++++ llvm-14.0.6.src.patched/include/llvm/IR/LegacyPassManagers.h	2024-07-04 15:24:55.527947755 +0800
 @@ -12,12 +12,12 @@
  
  #ifndef LLVM_IR_LEGACYPASSMANAGERS_H
@@ -364,7 +366,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  //
  // PassManager and FunctionPassManager are two top-level pass manager that
  // represents the external interface of this entire pass manager infrastucture.
-@@ -94,18 +94,18 @@
+@@ -94,18 +94,18 @@ class PMDataManager;
  
  // enums for debugging strings
  enum PassDebuggingString {
@@ -392,7 +394,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  class PassManagerPrettyStackEntry : public PrettyStackTraceEntry {
    Pass *P;
    Value *V;
-@@ -113,11 +113,11 @@
+@@ -113,11 +113,11 @@ class PassManagerPrettyStackEntry : publ
  
  public:
    explicit PassManagerPrettyStackEntry(Pass *p)
@@ -407,7 +409,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  
    /// print - Emit information about this stack frame to OS.
    void print(raw_ostream &OS) const override;
-@@ -129,10 +129,10 @@
+@@ -129,10 +129,10 @@ public:
  /// PMStack - This class implements a stack data structure of PMDataManager
  /// pointers.
  ///
@@ -422,7 +424,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  class PMStack {
  public:
    typedef std::vector<PMDataManager *>::const_reverse_iterator iterator;
-@@ -176,7 +176,7 @@
+@@ -176,7 +176,7 @@ public:
    void schedulePass(Pass *P);
  
    /// Set pass P as the last user of the given analysis passes.
@@ -431,7 +433,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  
    /// Collect passes whose last user is P
    void collectLastUses(SmallVectorImpl<Pass *> &LastUses, Pass *P);
-@@ -197,7 +197,7 @@
+@@ -197,7 +197,7 @@ public:
    /// Add immutable pass and initialize it.
    void addImmutablePass(ImmutablePass *P);
  
@@ -440,7 +442,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
      return ImmutablePasses;
    }
  
-@@ -234,7 +234,7 @@
+@@ -234,7 +234,7 @@ private:
  
    // Map to keep track of passes that are last used by a pass.
    // This is kept in sync with LastUser.
@@ -449,7 +451,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  
    /// Immutable passes are managed by top level manager.
    SmallVector<ImmutablePass *, 16> ImmutablePasses;
-@@ -242,22 +242,20 @@
+@@ -242,22 +242,20 @@ private:
    /// Map from ID to immutable passes.
    SmallDenseMap<AnalysisID, ImmutablePass *, 8> ImmutablePassMap;
  
@@ -478,7 +480,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
            ID.AddPointer(AID);
        };
        ProfileVec(AU.getRequiredSet());
-@@ -267,18 +265,18 @@
+@@ -267,18 +265,18 @@ private:
      }
    };
  
@@ -503,7 +505,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  
    /// Collection of PassInfo objects found via analysis IDs and in this top
    /// level manager. This is used to memoize queries to the pass registry.
-@@ -312,12 +310,10 @@
+@@ -312,12 +310,10 @@ public:
    void removeNotPreservedAnalysis(Pass *P);
  
    /// Remove dead passes used by P.
@@ -518,7 +520,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  
    /// Add pass P into the PassVector. Update
    /// AvailableAnalysis appropriately if ProcessAnalysis is true.
-@@ -343,8 +339,8 @@
+@@ -343,8 +339,8 @@ public:
    bool preserveHigherLevelAnalysis(Pass *P);
  
    /// Populate UsedPasses with analysis pass that are used or required by pass
@@ -529,7 +531,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
    void collectRequiredAndUsedAnalyses(
        SmallVectorImpl<Pass *> &UsedPasses,
        SmallVectorImpl<AnalysisID> &ReqPassNotAvailable, Pass *P);
-@@ -375,16 +371,14 @@
+@@ -375,16 +371,14 @@ public:
    void dumpPreservedSet(const Pass *P) const;
    void dumpUsedSet(const Pass *P) const;
  
@@ -549,7 +551,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
      return &AvailableAnalysis;
    }
  
-@@ -402,15 +396,15 @@
+@@ -402,15 +396,15 @@ public:
        Module &M,
        StringMap<std::pair<unsigned, unsigned>> &FunctionToInstrCount);
  
@@ -572,7 +574,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
    void emitInstrCountChangedRemark(
        Pass *P, Module &M, int64_t Delta, unsigned CountBefore,
        StringMap<std::pair<unsigned, unsigned>> &FunctionToInstrCount,
-@@ -440,7 +434,7 @@
+@@ -440,7 +434,7 @@ private:
    // pass. If a pass requires an analysis which is not available then
    // the required analysis pass is scheduled to run before the pass itself is
    // scheduled to run.
@@ -581,7 +583,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
  
    // Collection of higher level analysis used by the pass managed by
    // this manager.
-@@ -501,7 +495,7 @@
+@@ -501,7 +495,7 @@ public:
    StringRef getPassName() const override { return "Function Pass Manager"; }
  
    FunctionPass *getContainedPass(unsigned N) {
@@ -590,7 +592,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
      FunctionPass *FP = static_cast<FunctionPass *>(PassVector[N]);
      return FP;
    }
-@@ -511,6 +505,6 @@
+@@ -511,6 +505,6 @@ public:
    }
  };
  
@@ -598,10 +600,10 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/LegacyPassManagers.h llvm-14.0.6.src.pa
 +} // namespace llvm
  
  #endif
-diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include/llvm/IR/Value.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include/llvm/IR/Value.h
 --- llvm-14.0.6.src/include/llvm/IR/Value.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/IR/Value.h	2023-12-07 21:32:22.772614816 +0800
-@@ -47,7 +47,7 @@
++++ llvm-14.0.6.src.patched/include/llvm/IR/Value.h	2024-07-04 15:24:55.527947755 +0800
+@@ -47,7 +47,7 @@ class MDNode;
  class Module;
  class ModuleSlotTracker;
  class raw_ostream;
@@ -610,7 +612,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  class Twine;
  class Type;
  class User;
-@@ -80,6 +80,13 @@
+@@ -80,6 +80,13 @@ class Value {
  
    const unsigned char SubclassID;   // Subclass identifier (for isa/dyn_cast)
    unsigned char HasValueHandle : 1; // Has a ValueHandle pointing to this?
@@ -624,7 +626,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  
  protected:
    /// Hold subclass data that can be dropped.
-@@ -181,7 +188,9 @@
+@@ -181,7 +188,9 @@ private:
      user_iterator_impl() = default;
  
      bool operator==(const user_iterator_impl &x) const { return UI == x.UI; }
@@ -635,7 +637,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  
      /// Returns true if this iterator is equal to user_end() on the value.
      bool atEnd() const { return *this == user_iterator_impl(); }
-@@ -198,9 +207,7 @@
+@@ -198,9 +207,7 @@ private:
      }
  
      // Retrieve a pointer to the current User.
@@ -646,7 +648,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  
      UserTy *operator->() const { return operator*(); }
  
-@@ -346,9 +353,7 @@
+@@ -346,9 +353,7 @@ public:
      return UseList == nullptr;
    }
  
@@ -657,7 +659,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  
    using use_iterator = use_iterator_impl<Use>;
    using const_use_iterator = use_iterator_impl<const Use>;
-@@ -458,8 +463,8 @@
+@@ -458,8 +463,8 @@ public:
      return const_cast<Value *>(this)->getSingleUndroppableUse();
    }
  
@@ -668,7 +670,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
    User *getUniqueUndroppableUser();
    const User *getUniqueUndroppableUser() const {
      return const_cast<Value *>(this)->getUniqueUndroppableUser();
-@@ -514,7 +519,7 @@
+@@ -514,7 +519,7 @@ public:
  #define HANDLE_VALUE(Name) Name##Val,
  #include "llvm/IR/Value.def"
  
@@ -677,7 +679,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  #define HANDLE_CONSTANT_MARKER(Marker, Constant) Marker = Constant##Val,
  #include "llvm/IR/Value.def"
    };
-@@ -529,21 +534,15 @@
+@@ -529,21 +534,15 @@ public:
    /// # there are more possible values for the value type than in ValueTy enum.
    /// # the InstructionVal enumerator must be the highest valued enumerator in
    ///   the ValueTy enum.
@@ -702,7 +704,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  
    /// Check the optional flags for equality.
    bool hasSameSubclassOptionalData(const Value *V) const {
-@@ -666,8 +665,8 @@
+@@ -666,8 +665,8 @@ public:
    /// Alias analysis.
    const Value *stripPointerCastsForAliasAnalysis() const;
    Value *stripPointerCastsForAliasAnalysis() {
@@ -713,7 +715,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
    }
  
    /// Strip off pointer casts and all-constant inbounds GEPs.
-@@ -677,7 +676,7 @@
+@@ -677,7 +676,7 @@ public:
    const Value *stripInBoundsConstantOffsets() const;
    Value *stripInBoundsConstantOffsets() {
      return const_cast<Value *>(
@@ -722,7 +724,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
    }
  
    /// Accumulate the constant offset this value has compared to a base pointer.
-@@ -742,7 +741,7 @@
+@@ -742,7 +741,7 @@ public:
    const Value *stripInBoundsOffsets(function_ref<void(const Value *)> Func =
                                          [](const Value *) {}) const;
    inline Value *stripInBoundsOffsets(function_ref<void(const Value *)> Func =
@@ -731,7 +733,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
      return const_cast<Value *>(
          static_cast<const Value *>(this)->stripInBoundsOffsets(Func));
    }
-@@ -762,8 +761,7 @@
+@@ -762,8 +761,7 @@ public:
    /// IF CanBeFreed is true, the pointer is known to be dereferenceable at
    /// point of definition only.  Caller must prove that allocation is not
    /// deallocated between point of definition and use.
@@ -741,7 +743,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
                                            bool &CanBeFreed) const;
  
    /// Returns an alignment of the pointer value.
-@@ -782,7 +780,7 @@
+@@ -782,7 +780,7 @@ public:
                                  const BasicBlock *PredBB) const;
    Value *DoPHITranslation(const BasicBlock *CurBB, const BasicBlock *PredBB) {
      return const_cast<Value *>(
@@ -750,7 +752,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
    }
  
    /// The maximum alignment for instructions.
-@@ -798,9 +796,7 @@
+@@ -798,9 +796,7 @@ public:
    /// completely invalid IR very easily.  It is strongly recommended that you
    /// recreate IR objects with the right types instead of mutating them in
    /// place.
@@ -761,7 +763,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  
    /// Sort the use-list.
    ///
-@@ -853,7 +849,9 @@
+@@ -853,7 +849,9 @@ protected:
    void setValueSubclassData(unsigned short D) { SubclassData = D; }
  };
  
@@ -772,7 +774,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  
  /// Use this instead of std::unique_ptr<Value> or std::unique_ptr<Instruction>.
  /// Those don't work because Value and Instruction's destructors are protected,
-@@ -866,9 +864,11 @@
+@@ -866,9 +864,11 @@ inline raw_ostream &operator<<(raw_ostre
  }
  
  void Use::set(Value *V) {
@@ -786,7 +788,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  }
  
  Value *Use::operator=(Value *RHS) {
-@@ -953,7 +953,8 @@
+@@ -953,7 +953,8 @@ template <class Compare> void Value::sor
  //
  template <> struct isa_impl<Constant, Value> {
    static inline bool doit(const Value &Val) {
@@ -796,7 +798,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
      return Val.getValueID() <= Value::ConstantLastVal;
    }
  };
-@@ -973,7 +974,7 @@
+@@ -973,7 +974,7 @@ template <> struct isa_impl<ConstantAggr
  };
  
  template <> struct isa_impl<Argument, Value> {
@@ -805,7 +807,7 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
      return Val.getValueID() == Value::ArgumentVal;
    }
  };
-@@ -1038,21 +1039,20 @@
+@@ -1038,21 +1039,20 @@ DEFINE_ISA_CONVERSION_FUNCTIONS(Value, L
  
  // Specialized opaque value conversions.
  inline Value **unwrap(LLVMValueRef *Vals) {
@@ -831,10 +833,10 @@ diff -ur llvm-14.0.6.src/include/llvm/IR/Value.h llvm-14.0.6.src.patched/include
  }
  
  } // end namespace llvm
-diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llvm/Pass.h
+diff --color -uprN llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llvm/Pass.h
 --- llvm-14.0.6.src/include/llvm/Pass.h	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/include/llvm/Pass.h	2023-12-07 20:45:51.057706830 +0800
-@@ -89,7 +89,7 @@
++++ llvm-14.0.6.src.patched/include/llvm/Pass.h	2024-07-04 15:24:55.527947755 +0800
+@@ -89,7 +89,7 @@ enum class ThinOrFullLTOPhase {
  /// constrained passes described below.
  ///
  class Pass {
@@ -843,7 +845,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
    const void *PassID;
    PassKind Kind;
  
-@@ -107,13 +107,11 @@
+@@ -107,13 +107,11 @@ public:
    virtual StringRef getPassName() const;
  
    /// getPassID - Return the PassID number that corresponds to this pass.
@@ -859,7 +861,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
  
    /// doFinalization - Virtual method overriden by subclasses to do any
    /// necessary clean up after all passes have run.
-@@ -127,7 +125,7 @@
+@@ -127,7 +125,7 @@ public:
    /// ignored.
    virtual void print(raw_ostream &OS, const Module *M) const;
  
@@ -868,7 +870,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
  
    /// createPrinterPass - Get a Pass appropriate to print the IR this
    /// pass operates on (Module, Function or MachineFunction).
-@@ -136,8 +134,7 @@
+@@ -136,8 +134,7 @@ public:
  
    /// Each pass is responsible for assigning a pass manager to itself.
    /// PMS is the stack of available pass manager.
@@ -878,7 +880,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
  
    /// Check if available pass managers are suitable for this pass or not.
    virtual void preparePassManager(PMStack &);
-@@ -201,8 +198,9 @@
+@@ -201,8 +198,9 @@ public:
    /// the case when the analysis is not available.  This method is often used by
    /// transformation APIs to update analysis results for a pass automatically as
    /// the transform is performed.
@@ -890,7 +892,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
  
    /// mustPreserveAnalysisID - This method serves the same function as
    /// getAnalysisIfAvailable, but works if you just have an AnalysisID.  This
-@@ -214,7 +212,7 @@
+@@ -214,7 +212,7 @@ public:
    /// getAnalysis<AnalysisType>() - This function is used by subclasses to get
    /// to the analysis information that they claim to use by overriding the
    /// getAnalysisUsage function.
@@ -899,7 +901,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
    AnalysisType &getAnalysis() const; // Defined in PassAnalysisSupport.h
  
    template <typename AnalysisType>
-@@ -222,7 +220,7 @@
+@@ -222,7 +220,7 @@ public:
    getAnalysis(Function &F,
                bool *Changed = nullptr); // Defined in PassAnalysisSupport.h
  
@@ -908,7 +910,7 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
    AnalysisType &getAnalysisID(AnalysisID PI) const;
  
    template <typename AnalysisType>
-@@ -306,6 +304,7 @@
+@@ -306,6 +304,7 @@ public:
    /// runOnFunction - Virtual method overriden by subclasses to do the
    /// per-function processing of the pass.
    virtual bool runOnFunction(Function &F) = 0;
@@ -916,10 +918,10 @@ diff -ur llvm-14.0.6.src/include/llvm/Pass.h llvm-14.0.6.src.patched/include/llv
  
    void assignPassManager(PMStack &PMS, PassManagerType T) override;
  
-diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patched/lib/Analysis/ScalarEvolution.cpp
+diff --color -uprN llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patched/lib/Analysis/ScalarEvolution.cpp
 --- llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/lib/Analysis/ScalarEvolution.cpp	2023-12-07 21:05:20.773825834 +0800
-@@ -147,12 +147,12 @@
++++ llvm-14.0.6.src.patched/lib/Analysis/ScalarEvolution.cpp	2024-07-05 16:54:32.389431060 +0800
+@@ -147,12 +147,12 @@ STATISTIC(NumBruteForceTripCountsCompute
            "Number of loops with trip counts computed by force");
  
  static cl::opt<unsigned>
@@ -938,7 +940,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  // FIXME: Enable this with EXPENSIVE_CHECKS when the test suite is clean.
  static cl::opt<bool> VerifySCEV(
-@@ -215,15 +215,15 @@
+@@ -215,15 +215,15 @@ static cl::opt<unsigned>
                    cl::desc("Max coefficients in AddRec during evolving"),
                    cl::init(8));
  
@@ -963,7 +965,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  static cl::opt<bool> UseExpensiveRangeSharpening(
      "scalar-evolution-use-expensive-range-sharpening", cl::Hidden,
-@@ -248,9 +248,11 @@
+@@ -248,9 +248,11 @@ LLVM_DUMP_METHOD void SCEV::dump() const
  
  void SCEV::print(raw_ostream &OS) const {
    switch (getSCEVType()) {
@@ -977,7 +979,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    case scPtrToInt: {
      const SCEVPtrToIntExpr *PtrToInt = cast<SCEVPtrToIntExpr>(this);
      const SCEV *Op = PtrToInt->getOperand();
-@@ -268,15 +270,15 @@
+@@ -268,15 +270,15 @@ void SCEV::print(raw_ostream &OS) const
    case scZeroExtend: {
      const SCEVZeroExtendExpr *ZExt = cast<SCEVZeroExtendExpr>(this);
      const SCEV *Op = ZExt->getOperand();
@@ -997,7 +999,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      return;
    }
    case scAddRecExpr: {
-@@ -306,10 +308,18 @@
+@@ -306,10 +308,18 @@ void SCEV::print(raw_ostream &OS) const
      const SCEVNAryExpr *NAry = cast<SCEVNAryExpr>(this);
      const char *OpStr = nullptr;
      switch (NAry->getSCEVType()) {
@@ -1020,7 +1022,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      case scUMinExpr:
        OpStr = " umin ";
        break;
-@@ -323,9 +333,9 @@
+@@ -323,9 +333,9 @@ void SCEV::print(raw_ostream &OS) const
        llvm_unreachable("There are no other nary expression types.");
      }
      OS << "(";
@@ -1033,7 +1035,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      OS << ")";
      switch (NAry->getSCEVType()) {
      case scAddExpr:
-@@ -430,18 +440,20 @@
+@@ -430,18 +440,20 @@ bool SCEV::isAllOnesValue() const {
  
  bool SCEV::isNonConstantNegative() const {
    const SCEVMulExpr *Mul = dyn_cast<SCEVMulExpr>(this);
@@ -1058,7 +1060,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  bool SCEVCouldNotCompute::classof(const SCEV *S) {
    return S->getSCEVType() == scCouldNotCompute;
-@@ -452,7 +464,8 @@
+@@ -452,7 +464,8 @@ const SCEV *ScalarEvolution::getConstant
    ID.AddInteger(scConstant);
    ID.AddPointer(V);
    void *IP = nullptr;
@@ -1068,7 +1070,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    SCEV *S = new (SCEVAllocator) SCEVConstant(ID.Intern(SCEVAllocator), V);
    UniqueSCEVs.InsertNode(S, IP);
    return S;
-@@ -462,8 +475,7 @@
+@@ -462,8 +475,7 @@ const SCEV *ScalarEvolution::getConstant
    return getConstant(ConstantInt::get(getContext(), Val));
  }
  
@@ -1078,7 +1080,19 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    IntegerType *ITy = cast<IntegerType>(getEffectiveSCEVType(Ty));
    return getConstant(ConstantInt::get(ITy, V, isSigned));
  }
-@@ -533,8 +545,7 @@
+@@ -508,6 +520,11 @@ SCEVSignExtendExpr::SCEVSignExtendExpr(c
+ }
+ 
+ void SCEVUnknown::deleted() {
++  // change by Zeng-WCh
++  if (this->is_copied) {
++    setValPtr(nullptr);
++    return;
++  }
+   // Clear this SCEVUnknown from various maps.
+   SE->forgetMemoizedResults(this);
+ 
+@@ -533,8 +550,7 @@ bool SCEVUnknown::isSizeOf(Type *&AllocT
      if (VCE->getOpcode() == Instruction::PtrToInt)
        if (ConstantExpr *CE = dyn_cast<ConstantExpr>(VCE->getOperand(0)))
          if (CE->getOpcode() == Instruction::GetElementPtr &&
@@ -1088,7 +1102,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            if (ConstantInt *CI = dyn_cast<ConstantInt>(CE->getOperand(1)))
              if (CI->isOne()) {
                AllocTy = cast<GEPOperator>(CE)->getSourceElementType();
-@@ -552,12 +563,10 @@
+@@ -552,12 +568,10 @@ bool SCEVUnknown::isAlignOf(Type *&Alloc
              CE->getOperand(0)->isNullValue()) {
            Type *Ty = cast<GEPOperator>(CE)->getSourceElementType();
            if (StructType *STy = dyn_cast<StructType>(Ty))
@@ -1103,7 +1117,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                      STy->getElementType(0)->isIntegerTy(1)) {
                    AllocTy = STy->getElementType(1);
                    return true;
-@@ -573,8 +582,7 @@
+@@ -573,8 +587,7 @@ bool SCEVUnknown::isOffsetOf(Type *&CTy,
      if (VCE->getOpcode() == Instruction::PtrToInt)
        if (ConstantExpr *CE = dyn_cast<ConstantExpr>(VCE->getOperand(0)))
          if (CE->getOpcode() == Instruction::GetElementPtr &&
@@ -1113,7 +1127,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              CE->getOperand(1)->isNullValue()) {
            Type *Ty = cast<GEPOperator>(CE)->getSourceElementType();
            // Ignore vector types here so that ScalarEvolutionExpander doesn't
-@@ -848,9 +856,10 @@
+@@ -848,9 +861,10 @@ CompareSCEVComplexity(EquivalenceClasses
  /// results from this routine.  In other words, we don't want the results of
  /// this to depend on where the addresses of various SCEV objects happened to
  /// land in memory.
@@ -1127,7 +1141,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    EquivalenceClasses<const SCEV *> EqCacheSCEV;
    EquivalenceClasses<const Value *> EqCacheValue;
-@@ -879,18 +888,20 @@
+@@ -879,18 +893,20 @@ static void GroupByComplexity(SmallVecto
    // complexity.  Note that this is, at worst, N^2, but the vector is likely to
    // be extremely short in practice.  Note that we take this approach because we
    // do not want to depend on the addresses of the objects we are grouping.
@@ -1153,7 +1167,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        }
      }
    }
-@@ -910,8 +921,7 @@
+@@ -910,8 +926,7 @@ static bool hasHugeExpression(ArrayRef<c
  
  /// Compute BC(It, K).  The result has width W.  Assume, K > 0.
  static const SCEV *BinomialCoefficient(const SCEV *It, unsigned K,
@@ -1163,7 +1177,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // Handle the simplest case efficiently.
    if (K == 1)
      return SE.getTruncateOrZeroExtend(It, ResultTy);
-@@ -995,19 +1005,19 @@
+@@ -995,19 +1010,19 @@ static const SCEV *BinomialCoefficient(c
    // Calculate the multiplicative inverse of K! / 2^T;
    // this multiplication factor will perform the exact division by
    // K! / 2^T.
@@ -1189,7 +1203,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    // Divide by 2^T
-@@ -1032,9 +1042,9 @@
+@@ -1032,9 +1047,9 @@ const SCEV *SCEVAddRecExpr::evaluateAtIt
    return evaluateAtIteration(makeArrayRef(op_begin(), op_end()), It, SE);
  }
  
@@ -1202,7 +1216,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    assert(Operands.size() > 0);
    const SCEV *Result = Operands[0];
    for (unsigned i = 1, e = Operands.size(); i != e; ++i) {
-@@ -1192,8 +1202,7 @@
+@@ -1192,8 +1207,7 @@ const SCEV *ScalarEvolution::getTruncate
                                               unsigned Depth) {
    assert(getTypeSizeInBits(Op->getType()) > getTypeSizeInBits(Ty) &&
           "This is not a truncating conversion!");
@@ -1212,7 +1226,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    assert(!Op->getType()->isPointerTy() && "Can't truncate pointer!");
    Ty = getEffectiveSCEVType(Ty);
  
-@@ -1202,12 +1211,13 @@
+@@ -1202,12 +1216,13 @@ const SCEV *ScalarEvolution::getTruncate
    ID.AddPointer(Op);
    ID.AddPointer(Ty);
    void *IP = nullptr;
@@ -1228,7 +1242,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // trunc(trunc(x)) --> trunc(x)
    if (const SCEVTruncateExpr *ST = dyn_cast<SCEVTruncateExpr>(Op))
-@@ -1276,8 +1286,8 @@
+@@ -1276,8 +1291,8 @@ const SCEV *ScalarEvolution::getTruncate
    // The cast wasn't folded; create an explicit cast node. We can reuse
    // the existing insert position since if we get here, we won't have
    // made any changes which would invalidate it.
@@ -1239,7 +1253,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    UniqueSCEVs.InsertNode(S, IP);
    registerUser(S, Op);
    return S;
-@@ -1349,8 +1359,9 @@
+@@ -1349,8 +1364,9 @@ struct ExtendOpTraits<SCEVSignExtendExpr
    }
  };
  
@@ -1251,7 +1265,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  template <>
  struct ExtendOpTraits<SCEVZeroExtendExpr> : public ExtendOpTraitsBase {
-@@ -1365,8 +1376,9 @@
+@@ -1365,8 +1381,9 @@ struct ExtendOpTraits<SCEVZeroExtendExpr
    }
  };
  
@@ -1263,7 +1277,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  } // end anonymous namespace
  
-@@ -1408,7 +1420,7 @@
+@@ -1408,7 +1425,7 @@ static const SCEV *getPreStartForExtend(
  
    // 1. NSW/NUW flags on the step increment.
    auto PreStartFlags =
@@ -1272,7 +1286,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    const SCEV *PreStart = SE->getAddExpr(DiffOps, PreStartFlags);
    const SCEVAddRecExpr *PreAR = dyn_cast<SCEVAddRecExpr>(
        SE->getAddRecExpr(PreStart, Step, L, SCEV::FlagAnyWrap));
-@@ -1453,17 +1465,16 @@
+@@ -1453,17 +1470,16 @@ static const SCEV *getPreStartForExtend(
  // Get the normalized zero or sign extended expression for this AddRec's Start.
  template <typename ExtendOpTy>
  static const SCEV *getExtendAddRecStart(const SCEVAddRecExpr *AR, Type *Ty,
@@ -1294,7 +1308,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  }
  
  // Try to prove away overflow by looking at "nearby" add recurrences.  A
-@@ -1524,16 +1535,16 @@
+@@ -1524,16 +1540,16 @@ bool ScalarEvolution::proveNoWrapByVaryi
      ID.AddPointer(L);
      void *IP = nullptr;
      const auto *PreAR =
@@ -1314,7 +1328,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          return true;
      }
    }
-@@ -1578,19 +1589,18 @@
+@@ -1578,19 +1594,18 @@ static APInt extractConstantWithoutWrapp
    return APInt(BitWidth, 0);
  }
  
@@ -1338,7 +1352,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // zext(zext(x)) --> zext(x)
    if (const SCEVZeroExtendExpr *SZ = dyn_cast<SCEVZeroExtendExpr>(Op))
-@@ -1603,10 +1613,11 @@
+@@ -1603,10 +1618,11 @@ ScalarEvolution::getZeroExtendExpr(const
    ID.AddPointer(Op);
    ID.AddPointer(Ty);
    void *IP = nullptr;
@@ -1353,7 +1367,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      UniqueSCEVs.InsertNode(S, IP);
      registerUser(S, Op);
      return S;
-@@ -1669,49 +1680,46 @@
+@@ -1669,49 +1685,46 @@ ScalarEvolution::getZeroExtendExpr(const
          if (MaxBECount == RecastedMaxBECount) {
            Type *WideTy = IntegerType::get(getContext(), BitWidth * 2);
            // Check whether Start+Step*MaxBECount has no unsigned overflow.
@@ -1427,7 +1441,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            }
          }
        }
-@@ -1734,14 +1742,12 @@
+@@ -1734,14 +1747,12 @@ ScalarEvolution::getZeroExtendExpr(const
            // it's one of two issue possible causes for a change which was
            // reverted.  Be conservative for the moment.
            return getAddRecExpr(
@@ -1446,7 +1460,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          if (isKnownNegative(Step)) {
            const SCEV *N = getConstant(APInt::getMaxValue(BitWidth) -
                                        getSignedRangeMin(Step));
-@@ -1752,11 +1758,10 @@
+@@ -1752,11 +1763,10 @@ ScalarEvolution::getZeroExtendExpr(const
              // still can't self-wrap.
              setNoWrapFlags(const_cast<SCEVAddRecExpr *>(AR), SCEV::FlagNW);
              // Return the expression with the addrec on the outside.
@@ -1462,7 +1476,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            }
          }
        }
-@@ -1873,27 +1878,27 @@
+@@ -1873,27 +1883,27 @@ ScalarEvolution::getZeroExtendExpr(const
  
    // The cast wasn't folded; create an explicit cast node.
    // Recompute the insert position, as it may have been invalidated.
@@ -1498,7 +1512,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // sext(sext(x)) --> sext(x)
    if (const SCEVSignExtendExpr *SS = dyn_cast<SCEVSignExtendExpr>(Op))
-@@ -1910,11 +1915,12 @@
+@@ -1910,11 +1920,12 @@ ScalarEvolution::getSignExtendExpr(const
    ID.AddPointer(Op);
    ID.AddPointer(Ty);
    void *IP = nullptr;
@@ -1514,7 +1528,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      UniqueSCEVs.InsertNode(S, IP);
      registerUser(S, Op);
      return S;
-@@ -2011,39 +2017,37 @@
+@@ -2011,39 +2022,37 @@ ScalarEvolution::getSignExtendExpr(const
          if (MaxBECount == RecastedMaxBECount) {
            Type *WideTy = IntegerType::get(getContext(), BitWidth * 2);
            // Check whether Start+Step*MaxBECount has no signed overflow.
@@ -1574,7 +1588,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            if (SAdd == OperandExtendedAdd) {
              // If AR wraps around then
              //
-@@ -2056,11 +2060,10 @@
+@@ -2056,11 +2065,10 @@ ScalarEvolution::getSignExtendExpr(const
              setNoWrapFlags(const_cast<SCEVAddRecExpr *>(AR), SCEV::FlagNW);
  
              // Return the expression with the addrec on the outside.
@@ -1590,7 +1604,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            }
          }
        }
-@@ -2109,11 +2112,12 @@
+@@ -2109,11 +2117,12 @@ ScalarEvolution::getSignExtendExpr(const
  
    // The cast wasn't folded; create an explicit cast node.
    // Recompute the insert position, as it may have been invalidated.
@@ -1607,7 +1621,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return S;
  }
  
-@@ -2135,12 +2139,10 @@
+@@ -2135,12 +2144,10 @@ const SCEV *ScalarEvolution::getCastExpr
  
  /// getAnyExtendExpr - Return a SCEV for the given operand extended with
  /// unspecified bits out to the given type.
@@ -1622,7 +1636,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    Ty = getEffectiveSCEVType(Ty);
  
    // Sign-extend negative constants.
-@@ -2205,13 +2207,12 @@
+@@ -2205,13 +2212,12 @@ const SCEV *ScalarEvolution::getAnyExten
  /// may be exposed. This helps getAddRecExpr short-circuit extra work in
  /// the common case where no interesting opportunities are present, and
  /// is also used as a check to avoid infinite recursion.
@@ -1642,7 +1656,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    bool Interesting = false;
  
    // Iterate over the add operands. They are sorted, with constants first.
-@@ -2234,10 +2235,9 @@
+@@ -2234,10 +2240,9 @@ CollectAddOperandsWithScales(DenseMap<co
        if (Mul->getNumOperands() == 2 && isa<SCEVAddExpr>(Mul->getOperand(1))) {
          // A multiplication of a constant with another add; recurse.
          const SCEVAddExpr *Add = cast<SCEVAddExpr>(Mul->getOperand(1));
@@ -1656,7 +1670,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        } else {
          // A multiplication of a constant with some other value. Update
          // the map.
-@@ -2349,10 +2349,10 @@
+@@ -2349,10 +2354,10 @@ ScalarEvolution::getStrengthenedNoWrapFl
  // We're trying to construct a SCEV of type `Type' with `Ops' as operands and
  // `OldFlags' as can't-wrap behavior.  Infer a more aggressive set of
  // can't-overflow flags for the operation if possible.
@@ -1671,7 +1685,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    using namespace std::placeholders;
  
    using OBO = OverflowingBinaryOperator;
-@@ -2443,7 +2443,8 @@
+@@ -2443,7 +2448,8 @@ const SCEV *ScalarEvolution::getAddExpr(
    assert(!(OrigFlags & ~(SCEV::FlagNUW | SCEV::FlagNSW)) &&
           "only nuw or nsw allowed");
    assert(!Ops.empty() && "Cannot get empty add!");
@@ -1681,7 +1695,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  #ifndef NDEBUG
    Type *ETy = getEffectiveSCEVType(Ops[0]->getType());
    for (unsigned i = 1, e = Ops.size(); i != e; ++i)
-@@ -2465,8 +2466,9 @@
+@@ -2465,8 +2471,9 @@ const SCEV *ScalarEvolution::getAddExpr(
      while (const SCEVConstant *RHSC = dyn_cast<SCEVConstant>(Ops[Idx])) {
        // We found two constants, fold them together!
        Ops[0] = getConstant(LHSC->getAPInt() + RHSC->getAPInt());
@@ -1693,7 +1707,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        LHSC = cast<SCEVConstant>(Ops[0]);
      }
  
-@@ -2476,7 +2478,8 @@
+@@ -2476,7 +2483,8 @@ const SCEV *ScalarEvolution::getAddExpr(
        --Idx;
      }
  
@@ -1703,7 +1717,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    // Delay expensive flag strengthening until necessary.
-@@ -2501,11 +2504,11 @@
+@@ -2501,11 +2509,11 @@ const SCEV *ScalarEvolution::getAddExpr(
    // sorted the list, these values are required to be adjacent.
    Type *Ty = Ops[0]->getType();
    bool FoundMatch = false;
@@ -1718,7 +1732,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          ++Count;
        // Merge the values into a multiply.
        const SCEV *Scale = getConstant(Ty, Count);
-@@ -2513,8 +2516,9 @@
+@@ -2513,8 +2521,9 @@ const SCEV *ScalarEvolution::getAddExpr(
        if (Ops.size() == Count)
          return Mul;
        Ops[i] = Mul;
@@ -1730,7 +1744,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        FoundMatch = true;
      }
    if (FoundMatch)
-@@ -2556,7 +2560,7 @@
+@@ -2556,7 +2565,7 @@ const SCEV *ScalarEvolution::getAddExpr(
          SmallVector<const SCEV *, 8> LargeMulOps;
          for (unsigned j = 0, f = M->getNumOperands(); j != f && Ok; ++j) {
            if (const SCEVTruncateExpr *T =
@@ -1739,7 +1753,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              if (T->getOperand()->getType() != SrcType) {
                Ok = false;
                break;
-@@ -2570,7 +2574,8 @@
+@@ -2570,7 +2579,8 @@ const SCEV *ScalarEvolution::getAddExpr(
            }
          }
          if (Ok)
@@ -1749,7 +1763,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        } else {
          Ok = false;
          break;
-@@ -2654,7 +2659,7 @@
+@@ -2654,7 +2664,7 @@ const SCEV *ScalarEvolution::getAddExpr(
          break;
        // If we have an add, expand the add operands onto the end of the operands
        // list.
@@ -1758,7 +1772,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        Ops.append(Add->op_begin(), Add->op_end());
        DeletedAdd = true;
        CommonFlags = maskFlags(CommonFlags, Add->getNoWrapFlags());
-@@ -2678,9 +2683,8 @@
+@@ -2678,9 +2688,8 @@ const SCEV *ScalarEvolution::getAddExpr(
      DenseMap<const SCEV *, APInt> M;
      SmallVector<const SCEV *, 8> NewOps;
      APInt AccumulatedConstant(BitWidth, 0);
@@ -1770,7 +1784,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        struct APIntCompare {
          bool operator()(const APInt &LHS, const APInt &RHS) const {
            return LHS.ult(RHS);
-@@ -2701,10 +2705,10 @@
+@@ -2701,10 +2710,10 @@ const SCEV *ScalarEvolution::getAddExpr(
          if (MulOp.first == 1) {
            Ops.push_back(getAddExpr(MulOp.second, SCEV::FlagAnyWrap, Depth + 1));
          } else if (MulOp.first != 0) {
@@ -1785,7 +1799,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          }
        }
        if (Ops.empty())
-@@ -2732,49 +2736,51 @@
+@@ -2732,49 +2741,51 @@ const SCEV *ScalarEvolution::getAddExpr(
              // If the multiply has more than two operands, we must get the
              // Y*Z term.
              SmallVector<const SCEV *, 4> MulOps(Mul->op_begin(),
@@ -1854,7 +1868,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                InnerMul2 = getMulExpr(MulOps, SCEV::FlagAnyWrap, Depth + 1);
              }
              SmallVector<const SCEV *, 2> TwoOps = {InnerMul1, InnerMul2};
-@@ -2782,9 +2788,10 @@
+@@ -2782,9 +2793,10 @@ const SCEV *ScalarEvolution::getAddExpr(
                  getAddExpr(TwoOps, SCEV::FlagAnyWrap, Depth + 1);
              const SCEV *OuterMul = getMulExpr(MulOpSCEV, InnerMulSum,
                                                SCEV::FlagAnyWrap, Depth + 1);
@@ -1868,7 +1882,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              Ops.push_back(OuterMul);
              return getAddExpr(Ops, SCEV::FlagAnyWrap, Depth + 1);
            }
-@@ -2808,8 +2815,9 @@
+@@ -2808,8 +2820,9 @@ const SCEV *ScalarEvolution::getAddExpr(
      for (unsigned i = 0, e = Ops.size(); i != e; ++i)
        if (isAvailableAtLoopEntry(Ops[i], AddRecLoop)) {
          LIOps.push_back(Ops[i]);
@@ -1880,7 +1894,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        }
  
      // If we found some loop invariants, fold them into the recurrence.
-@@ -2852,7 +2860,8 @@
+@@ -2852,7 +2865,8 @@ const SCEV *ScalarEvolution::getAddExpr(
        const SCEV *NewRec = getAddRecExpr(AddRecOps, AddRecLoop, Flags);
  
        // If all of the other operands were loop invariant, we are done.
@@ -1890,7 +1904,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
        // Otherwise, add the folded AddRec by the non-invariant parts.
        for (unsigned i = 0;; ++i)
-@@ -2866,15 +2875,15 @@
+@@ -2866,15 +2880,15 @@ const SCEV *ScalarEvolution::getAddExpr(
      // Okay, if there weren't any loop invariants to be folded, check to see if
      // there are multiple AddRec's with the same loop induction variable being
      // added together.  If so, we can fold them.
@@ -1910,7 +1924,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        if (AddRecLoop == cast<SCEVAddRecExpr>(Ops[OtherIdx])->getLoop()) {
          // Other + {A,+,B}<L> + {C,+,D}<L>  -->  Other + {A+C,+,B+D}<L>
          SmallVector<const SCEV *, 4> AddRecOps(AddRec->operands());
-@@ -2882,10 +2891,10 @@
+@@ -2882,10 +2896,10 @@ const SCEV *ScalarEvolution::getAddExpr(
               ++OtherIdx) {
            const auto *OtherAddRec = cast<SCEVAddRecExpr>(Ops[OtherIdx]);
            if (OtherAddRec->getLoop() == AddRecLoop) {
@@ -1924,7 +1938,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                                   OtherAddRec->op_end());
                  break;
                }
-@@ -2893,7 +2902,8 @@
+@@ -2893,7 +2907,8 @@ const SCEV *ScalarEvolution::getAddExpr(
                    AddRecOps[i], OtherAddRec->getOperand(i)};
                AddRecOps[i] = getAddExpr(TwoOps, SCEV::FlagAnyWrap, Depth + 1);
              }
@@ -1934,7 +1948,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            }
          }
          // Step size has changed, so we cannot guarantee no self-wraparound.
-@@ -2911,9 +2921,8 @@
+@@ -2911,9 +2926,8 @@ const SCEV *ScalarEvolution::getAddExpr(
    return getOrCreateAddExpr(Ops, ComputeFlags(Ops));
  }
  
@@ -1946,7 +1960,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    FoldingSetNodeID ID;
    ID.AddInteger(scAddExpr);
    for (const SCEV *Op : Ops)
-@@ -2933,9 +2942,9 @@
+@@ -2933,9 +2947,9 @@ ScalarEvolution::getOrCreateAddExpr(Arra
    return S;
  }
  
@@ -1959,7 +1973,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    FoldingSetNodeID ID;
    ID.AddInteger(scAddRecExpr);
    for (const SCEV *Op : Ops)
-@@ -2957,21 +2966,20 @@
+@@ -2957,21 +2971,20 @@ ScalarEvolution::getOrCreateAddRecExpr(A
    return S;
  }
  
@@ -1986,7 +2000,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      UniqueSCEVs.InsertNode(S, IP);
      registerUser(S, Ops);
    }
-@@ -2980,8 +2988,9 @@
+@@ -2980,8 +2993,9 @@ ScalarEvolution::getOrCreateMulExpr(Arra
  }
  
  static uint64_t umul_ov(uint64_t i, uint64_t j, bool &Overflow) {
@@ -1998,7 +2012,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return k;
  }
  
-@@ -2997,15 +3006,17 @@
+@@ -2997,15 +3011,17 @@ static uint64_t Choose(uint64_t n, uint6
    // intermediate computations. However, we can still overflow even when the
    // final result would fit.
  
@@ -2021,7 +2035,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      r /= i;
    }
    return r;
-@@ -3022,9 +3033,7 @@
+@@ -3022,9 +3038,7 @@ static bool containsConstantInAddMulChai
        return isa<SCEVAddExpr>(S) || isa<SCEVMulExpr>(S);
      }
  
@@ -2032,7 +2046,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    };
  
    FindConstantInAddMulChain F;
-@@ -3040,7 +3049,8 @@
+@@ -3040,7 +3054,8 @@ const SCEV *ScalarEvolution::getMulExpr(
    assert(OrigFlags == maskFlags(OrigFlags, SCEV::FlagNUW | SCEV::FlagNSW) &&
           "only nuw or nsw allowed");
    assert(!Ops.empty() && "Cannot get empty mul!");
@@ -2042,7 +2056,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  #ifndef NDEBUG
    Type *ETy = Ops[0]->getType();
    assert(!ETy->isPointerTy());
-@@ -3060,8 +3070,9 @@
+@@ -3060,8 +3075,9 @@ const SCEV *ScalarEvolution::getMulExpr(
      while (const SCEVConstant *RHSC = dyn_cast<SCEVConstant>(Ops[Idx])) {
        // We found two constants, fold them together!
        Ops[0] = getConstant(LHSC->getAPInt() * RHSC->getAPInt());
@@ -2054,7 +2068,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        LHSC = cast<SCEVConstant>(Ops[0]);
      }
  
-@@ -3120,9 +3131,10 @@
+@@ -3120,9 +3136,10 @@ const SCEV *ScalarEvolution::getMulExpr(
            SmallVector<const SCEV *, 4> NewOps;
            bool AnyFolded = false;
            for (const SCEV *AddOp : Add->operands()) {
@@ -2068,7 +2082,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              NewOps.push_back(Mul);
            }
            if (AnyFolded)
-@@ -3131,8 +3143,8 @@
+@@ -3131,8 +3148,8 @@ const SCEV *ScalarEvolution::getMulExpr(
            // Negation preserves a recurrence's no self-wrap property.
            SmallVector<const SCEV *, 4> Operands;
            for (const SCEV *AddRecOp : AddRec->operands())
@@ -2079,7 +2093,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
            return getAddRecExpr(Operands, AddRec->getLoop(),
                                 AddRec->getNoWrapFlags(SCEV::FlagNW));
-@@ -3153,7 +3165,7 @@
+@@ -3153,7 +3170,7 @@ const SCEV *ScalarEvolution::getMulExpr(
          break;
        // If we have an mul, expand the mul operands onto the end of the
        // operands list.
@@ -2088,7 +2102,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        Ops.append(Mul->op_begin(), Mul->op_end());
        DeletedMul = true;
      }
-@@ -3181,8 +3193,9 @@
+@@ -3181,8 +3198,9 @@ const SCEV *ScalarEvolution::getMulExpr(
      for (unsigned i = 0, e = Ops.size(); i != e; ++i)
        if (isAvailableAtLoopEntry(Ops[i], AddRecLoop)) {
          LIOps.push_back(Ops[i]);
@@ -2100,7 +2114,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        }
  
      // If we found some loop invariants, fold them into the recurrence.
-@@ -3201,11 +3214,12 @@
+@@ -3201,11 +3219,12 @@ const SCEV *ScalarEvolution::getMulExpr(
        // No self-wrap cannot be guaranteed after changing the step size, but
        // will be inferred if either NUW or NSW is true.
        SCEV::NoWrapFlags Flags = ComputeFlags({Scale, AddRec});
@@ -2116,7 +2130,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
        // Otherwise, multiply the folded AddRec by the non-invariant parts.
        for (unsigned i = 0;; ++i)
-@@ -3231,40 +3245,42 @@
+@@ -3231,40 +3250,42 @@ const SCEV *ScalarEvolution::getMulExpr(
      // addrec's are of different length (mathematically, it's equivalent to
      // an infinite stream of zeros on the right).
      bool OpsModified = false;
@@ -2172,7 +2186,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              const SCEV *Term2 = OtherAddRec->getOperand(z);
              SumOps.push_back(getMulExpr(CoeffTerm, Term1, Term2,
                                          SCEV::FlagAnyWrap, Depth + 1));
-@@ -3275,11 +3291,13 @@
+@@ -3275,11 +3296,13 @@ const SCEV *ScalarEvolution::getMulExpr(
          AddRecOps.push_back(getAddExpr(SumOps, SCEV::FlagAnyWrap, Depth + 1));
        }
        if (!Overflow) {
@@ -2190,7 +2204,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          OpsModified = true;
          AddRec = dyn_cast<SCEVAddRecExpr>(NewAddRec);
          if (!AddRec)
-@@ -3299,10 +3317,9 @@
+@@ -3299,10 +3322,9 @@ const SCEV *ScalarEvolution::getMulExpr(
  }
  
  /// Represents an unsigned remainder expression based on unsigned division.
@@ -2203,7 +2217,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
           "SCEVURemExpr operand types don't match!");
  
    // Short-circuit easy cases
-@@ -3328,8 +3345,7 @@
+@@ -3328,8 +3350,7 @@ const SCEV *ScalarEvolution::getURemExpr
  
  /// Get a canonical unsigned division expression, or something simpler if
  /// possible.
@@ -2213,7 +2227,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    assert(!LHS->getType()->isPointerTy() &&
           "SCEVUDivExpr operand can't be pointer!");
    assert(LHS->getType() == RHS->getType() &&
-@@ -3350,7 +3366,7 @@
+@@ -3350,7 +3371,7 @@ const SCEV *ScalarEvolution::getUDivExpr
  
    if (const SCEVConstant *RHSC = dyn_cast<SCEVConstant>(RHS)) {
      if (RHSC->getValue()->isOne())
@@ -2222,7 +2236,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      // If the denominator is zero, the result of the udiv is undefined. Don't
      // try to analyze it, because the resolution chosen here may differ from
      // the resolution chosen in other parts of the compiler.
-@@ -3366,18 +3382,18 @@
+@@ -3366,18 +3387,18 @@ const SCEV *ScalarEvolution::getUDivExpr
        if (!RHSC->getAPInt().isPowerOf2())
          ++MaxShiftAmt;
        IntegerType *ExtTy =
@@ -2246,7 +2260,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              SmallVector<const SCEV *, 4> Operands;
              for (const SCEV *Op : AR->operands())
                Operands.push_back(getUDivExpr(Op, RHS));
-@@ -3389,9 +3405,9 @@
+@@ -3389,9 +3410,9 @@ const SCEV *ScalarEvolution::getUDivExpr
            const SCEVConstant *StartC = dyn_cast<SCEVConstant>(AR->getStart());
            if (StartC && !DivInt.urem(StepInt) &&
                getZeroExtendExpr(AR, ExtTy) ==
@@ -2259,7 +2273,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              const APInt &StartInt = StartC->getAPInt();
              const APInt &StartRem = StartInt.urem(StepInt);
              if (StartRem != 0) {
-@@ -3469,8 +3485,8 @@
+@@ -3469,8 +3490,8 @@ const SCEV *ScalarEvolution::getUDivExpr
        if (const SCEVConstant *LHSC = dyn_cast<SCEVConstant>(LHS)) {
          Constant *LHSCV = LHSC->getValue();
          Constant *RHSCV = RHSC->getValue();
@@ -2270,7 +2284,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        }
      }
    }
-@@ -3478,9 +3494,10 @@
+@@ -3478,9 +3499,10 @@ const SCEV *ScalarEvolution::getUDivExpr
    // The Insertion Point (IP) might be invalid by now (due to UniqueSCEVs
    // changes). Make sure we get a new one.
    IP = nullptr;
@@ -2284,7 +2298,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    UniqueSCEVs.InsertNode(S, IP);
    registerUser(S, {LHS, RHS});
    return S;
-@@ -3578,7 +3595,8 @@
+@@ -3578,7 +3600,8 @@ const SCEV *ScalarEvolution::getAddRecEx
  const SCEV *
  ScalarEvolution::getAddRecExpr(SmallVectorImpl<const SCEV *> &Operands,
                                 const Loop *L, SCEV::NoWrapFlags Flags) {
@@ -2294,7 +2308,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  #ifndef NDEBUG
    Type *ETy = getEffectiveSCEVType(Operands[0]->getType());
    for (unsigned i = 1, e = Operands.size(); i != e; ++i) {
-@@ -3596,8 +3614,8 @@
+@@ -3596,8 +3619,8 @@ ScalarEvolution::getAddRecExpr(SmallVect
      return getAddRecExpr(Operands, L, SCEV::FlagAnyWrap); // {X,+,0}  -->  X
    }
  
@@ -2305,7 +2319,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // BE count requires calling getAddRecExpr, so we may not yet have a
    // meaningful BE count at this point (and if we don't, we'd be stuck
    // with a SCEVCouldNotCompute as the cached BE count).
-@@ -3625,7 +3643,7 @@
+@@ -3625,7 +3648,7 @@ ScalarEvolution::getAddRecExpr(SmallVect
          // The outer recurrence keeps its NW flag but only keeps NUW/NSW if the
          // inner recurrence has the same property.
          SCEV::NoWrapFlags OuterFlags =
@@ -2314,7 +2328,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
          NestedOperands[0] = getAddRecExpr(Operands, L, OuterFlags);
          AllInvariant = all_of(NestedOperands, [&](const SCEV *Op) {
-@@ -3638,7 +3656,7 @@
+@@ -3638,7 +3661,7 @@ ScalarEvolution::getAddRecExpr(SmallVect
            // The inner recurrence keeps its NW flag but only keeps NUW/NSW if
            // the outer recurrence has the same property.
            SCEV::NoWrapFlags InnerFlags =
@@ -2323,7 +2337,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            return getAddRecExpr(NestedOperands, NestedLoop, InnerFlags);
          }
        }
-@@ -3673,7 +3691,7 @@
+@@ -3673,7 +3696,7 @@ ScalarEvolution::getGEPExpr(GEPOperator
    }();
  
    SCEV::NoWrapFlags OffsetWrap =
@@ -2332,7 +2346,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    Type *CurTy = GEP->getType();
    bool FirstIter = true;
-@@ -3720,7 +3738,8 @@
+@@ -3720,7 +3743,8 @@ ScalarEvolution::getGEPExpr(GEPOperator
    // base address is unsigned. However, if we know that the offset is
    // non-negative, we can use nuw.
    SCEV::NoWrapFlags BaseWrap = AssumeInBoundsFlags && isKnownNonNegative(Offset)
@@ -2342,7 +2356,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    auto *GEPExpr = getAddExpr(BaseExpr, Offset, BaseWrap);
    assert(BaseExpr->getType() == GEPExpr->getType() &&
           "GEP should not change type mid-flight.");
-@@ -3746,7 +3765,8 @@
+@@ -3746,7 +3770,8 @@ const SCEV *ScalarEvolution::getMinMaxEx
                                             SmallVectorImpl<const SCEV *> &Ops) {
    assert(SCEVMinMaxExpr::isMinMaxType(Kind) && "Not a SCEVMinMaxExpr!");
    assert(!Ops.empty() && "Cannot get empty (u|s)(min|max)!");
@@ -2352,7 +2366,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  #ifndef NDEBUG
    Type *ETy = getEffectiveSCEVType(Ops[0]->getType());
    for (unsigned i = 1, e = Ops.size(); i != e; ++i) {
-@@ -3791,8 +3811,9 @@
+@@ -3791,8 +3816,9 @@ const SCEV *ScalarEvolution::getMinMaxEx
        ConstantInt *Fold = ConstantInt::get(
            getContext(), FoldOp(LHSC->getAPInt(), RHSC->getAPInt()));
        Ops[0] = getConstant(Fold);
@@ -2364,7 +2378,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        LHSC = cast<SCEVConstant>(Ops[0]);
      }
  
-@@ -3809,7 +3830,8 @@
+@@ -3809,7 +3835,8 @@ const SCEV *ScalarEvolution::getMinMaxEx
        return LHSC;
      }
  
@@ -2374,7 +2388,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    // Find the first operation of the same kind
-@@ -3822,7 +3844,7 @@
+@@ -3822,7 +3849,7 @@ const SCEV *ScalarEvolution::getMinMaxEx
      bool DeletedAny = false;
      while (Ops[Idx]->getSCEVType() == Kind) {
        const SCEVMinMaxExpr *SMME = cast<SCEVMinMaxExpr>(Ops[Idx]);
@@ -2383,7 +2397,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        Ops.append(SMME->op_begin(), SMME->op_end());
        DeletedAny = true;
      }
-@@ -3857,7 +3879,8 @@
+@@ -3857,7 +3884,8 @@ const SCEV *ScalarEvolution::getMinMaxEx
      }
    }
  
@@ -2393,7 +2407,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    assert(!Ops.empty() && "Reduced smax down to nothing!");
  
-@@ -4102,9 +4125,8 @@
+@@ -4102,9 +4130,8 @@ const SCEV *ScalarEvolution::getUMaxExpr
    return getMinMaxExpr(scUMaxExpr, Ops);
  }
  
@@ -2405,7 +2419,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return getSMinExpr(Ops);
  }
  
-@@ -4114,7 +4136,7 @@
+@@ -4114,7 +4141,7 @@ const SCEV *ScalarEvolution::getSMinExpr
  
  const SCEV *ScalarEvolution::getUMinExpr(const SCEV *LHS, const SCEV *RHS,
                                           bool Sequential) {
@@ -2414,7 +2428,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return getUMinExpr(Ops, Sequential);
  }
  
-@@ -4154,8 +4176,7 @@
+@@ -4154,8 +4181,7 @@ const SCEV *ScalarEvolution::getStoreSiz
    return getConstant(IntTy, getDataLayout().getTypeStoreSize(StoreTy));
  }
  
@@ -2424,7 +2438,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                                               unsigned FieldNo) {
    // We can bypass creating a target-independent constant expression and then
    // folding it back into a ConstantInt. This is just a compile-time
-@@ -4179,8 +4200,8 @@
+@@ -4179,8 +4205,8 @@ const SCEV *ScalarEvolution::getUnknown(
             "Stale SCEVUnknown in uniquing map!");
      return S;
    }
@@ -2435,7 +2449,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    FirstUnknown = cast<SCEVUnknown>(S);
    UniqueSCEVs.InsertNode(S, IP);
    return S;
-@@ -4223,7 +4244,7 @@
+@@ -4223,7 +4249,7 @@ Type *ScalarEvolution::getEffectiveSCEVT
  }
  
  Type *ScalarEvolution::getWiderType(Type *T1, Type *T2) const {
@@ -2444,7 +2458,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  }
  
  bool ScalarEvolution::instructionCouldExistWitthOperands(const SCEV *A,
-@@ -4237,10 +4258,9 @@
+@@ -4237,10 +4263,9 @@ bool ScalarEvolution::instructionCouldEx
      // Can't tell.
      return false;
    return (ScopeA == ScopeB) || DT.dominates(ScopeA, ScopeB) ||
@@ -2456,7 +2470,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  const SCEV *ScalarEvolution::getCouldNotCompute() {
    return CouldNotCompute.get();
  }
-@@ -4385,8 +4405,7 @@
+@@ -4385,8 +4410,7 @@ const SCEV *ScalarEvolution::getExisting
  const SCEV *ScalarEvolution::getNegativeSCEV(const SCEV *V,
                                               SCEV::NoWrapFlags Flags) {
    if (const SCEVConstant *VC = dyn_cast<SCEVConstant>(V))
@@ -2466,7 +2480,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    Type *Ty = V->getType();
    Ty = getEffectiveSCEVType(Ty);
-@@ -4413,8 +4432,7 @@
+@@ -4413,8 +4437,7 @@ const SCEV *ScalarEvolution::getNotSCEV(
    assert(!V->getType()->isPointerTy() && "Can't negate pointer");
  
    if (const SCEVConstant *VC = dyn_cast<SCEVConstant>(V))
@@ -2476,7 +2490,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // Fold ~(u|s)(min|max)(~x, ~y) to (u|s)(max|min)(x, y)
    if (const SCEVMinMaxExpr *MME = dyn_cast<SCEVMinMaxExpr>(V)) {
-@@ -4489,8 +4507,7 @@
+@@ -4489,8 +4512,7 @@ const SCEV *ScalarEvolution::getMinusSCE
    // We represent LHS - RHS as LHS + (-1)*RHS. This transformation
    // makes it so that we cannot make much use of NUW.
    auto AddFlags = SCEV::FlagAnyWrap;
@@ -2486,7 +2500,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (hasFlags(Flags, SCEV::FlagNSW)) {
      // Let M be the minimum representable signed value. Then (-1)*RHS
      // signed-wraps if and only if RHS is M. That can happen even for
-@@ -4524,7 +4541,7 @@
+@@ -4524,7 +4546,7 @@ const SCEV *ScalarEvolution::getTruncate
    assert(SrcTy->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
           "Cannot truncate or zero extend with non-integer arguments!");
    if (getTypeSizeInBits(SrcTy) == getTypeSizeInBits(Ty))
@@ -2495,7 +2509,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (getTypeSizeInBits(SrcTy) > getTypeSizeInBits(Ty))
      return getTruncateExpr(V, Ty, Depth);
    return getZeroExtendExpr(V, Ty, Depth);
-@@ -4536,57 +4553,53 @@
+@@ -4536,57 +4558,53 @@ const SCEV *ScalarEvolution::getTruncate
    assert(SrcTy->isIntOrPtrTy() && Ty->isIntOrPtrTy() &&
           "Cannot truncate or zero extend with non-integer arguments!");
    if (getTypeSizeInBits(SrcTy) == getTypeSizeInBits(Ty))
@@ -2562,7 +2576,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return getTruncateExpr(V, Ty);
  }
  
-@@ -4606,7 +4619,7 @@
+@@ -4606,7 +4624,7 @@ const SCEV *ScalarEvolution::getUMaxFrom
  const SCEV *ScalarEvolution::getUMinFromMismatchedTypes(const SCEV *LHS,
                                                          const SCEV *RHS,
                                                          bool Sequential) {
@@ -2571,7 +2585,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return getUMinFromMismatchedTypes(Ops, Sequential);
  }
  
-@@ -4724,12 +4737,12 @@
+@@ -4724,12 +4742,12 @@ private:
  /// If SCEV contains non-invariant unknown SCEV rewrite cannot be done.
  class SCEVPostIncRewriter : public SCEVRewriteVisitor<SCEVPostIncRewriter> {
  public:
@@ -2588,7 +2602,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    const SCEV *visitUnknown(const SCEVUnknown *Expr) {
-@@ -4946,8 +4959,7 @@
+@@ -4946,8 +4964,7 @@ ScalarEvolution::proveNoSignedWrapViaInd
    // start value and the backedge is guarded by a comparison with the post-inc
    // value, the addrec is safe.
    ICmpInst::Predicate Pred;
@@ -2598,7 +2612,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (OverflowLimit &&
        (isLoopBackedgeGuardedByCond(L, Pred, AR, OverflowLimit) ||
         isKnownOnEveryIteration(Pred, AR, OverflowLimit))) {
-@@ -4996,8 +5008,8 @@
+@@ -4996,8 +5013,8 @@ ScalarEvolution::proveNoUnsignedWrapViaI
    // start value and the backedge is guarded by a comparison with the post-inc
    // value, the addrec is safe.
    if (isKnownPositive(Step)) {
@@ -2609,7 +2623,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (isLoopBackedgeGuardedByCond(L, ICmpInst::ICMP_ULT, AR, N) ||
          isKnownOnEveryIteration(ICmpInst::ICMP_ULT, AR, N)) {
        Result = setFlags(Result, SCEV::FlagNUW);
-@@ -5064,7 +5076,8 @@
+@@ -5064,7 +5081,8 @@ static Optional<BinaryOp> MatchBinaryOp(
    case Instruction::Xor:
      if (auto *RHSC = dyn_cast<ConstantInt>(Op->getOperand(1)))
        // If the RHS of the xor is a signmask, then this is just an add.
@@ -2619,7 +2633,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        if (RHSC->getValue().isSignMask())
          return BinaryOp(Instruction::Add, Op->getOperand(0), Op->getOperand(1));
      return BinaryOp(Op);
-@@ -5201,9 +5214,10 @@
+@@ -5201,9 +5219,10 @@ static const Loop *isIntegerLoopHeaderPH
  //    will return the pair {NewAddRec, SmallPredsVec} where:
  //         NewAddRec = {%Start,+,%Step}
  //         SmallPredsVec = {P1, P2, P3} as follows:
@@ -2633,7 +2647,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  //    The returned pair means that SymbolicPHI can be rewritten into NewAddRec
  //    under the predicates {P1,P2,P3}.
  //    This predicated rewrite will be cached in PredicatedSCEVRewrites:
-@@ -5232,7 +5246,8 @@
+@@ -5232,7 +5251,8 @@ static const Loop *isIntegerLoopHeaderPH
  //
  // 3) Outline common code with createAddRecFromPHI to avoid duplication.
  Optional<std::pair<const SCEV *, SmallVector<const SCEVPredicate *, 3>>>
@@ -2643,7 +2657,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    SmallVector<const SCEVPredicate *, 3> Predicates;
  
    // *** Part1: Analyze if we have a phi-with-cast pattern for which we can
-@@ -5465,7 +5480,7 @@
+@@ -5465,7 +5485,7 @@ ScalarEvolution::createAddRecFromPHIWith
    }
  
    Optional<std::pair<const SCEV *, SmallVector<const SCEVPredicate *, 3>>>
@@ -2652,7 +2666,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // Record in the cache that the analysis failed
    if (!Rewrite) {
-@@ -5687,8 +5702,7 @@
+@@ -5687,8 +5707,7 @@ const SCEV *ScalarEvolution::createAddRe
      //   PHI(f(0), f({1,+,1})) --> f({0,+,1})
      const SCEV *Shifted = SCEVShiftRewriter::rewrite(BEValue, L, *this);
      const SCEV *Start = SCEVInitRewriter::rewrite(Shifted, L, *this, false);
@@ -2662,7 +2676,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        const SCEV *StartVal = getSCEV(StartValueV);
        if (Start == StartVal) {
          // Okay, for the entire analysis of this edge we assumed the PHI
-@@ -5718,12 +5732,12 @@
+@@ -5718,12 +5737,12 @@ static bool IsAvailableOnEntry(const Loo
      bool TraversalDone = false;
      bool Available = true;
  
@@ -2677,7 +2691,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
      bool setUnavailable() {
        TraversalDone = true;
-@@ -5827,8 +5841,9 @@
+@@ -5827,8 +5846,9 @@ static bool BrPHIToSelect(DominatorTree
  }
  
  const SCEV *ScalarEvolution::createNodeFromSelectLikePHI(PHINode *PN) {
@@ -2689,7 +2703,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (PN->getNumIncomingValues() == 2 && all_of(PN->blocks(), IsReachable)) {
      const Loop *L = LI.getLoopFor(PN->getParent());
  
-@@ -6075,7 +6090,8 @@
+@@ -6075,7 +6095,8 @@ uint32_t ScalarEvolution::GetMinTrailing
  
    if (const SCEVUnknown *U = dyn_cast<SCEVUnknown>(S)) {
      // For a SCEVUnknown, ask ValueTracking.
@@ -2699,7 +2713,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      return Known.countMinTrailingZeros();
    }
  
-@@ -6112,8 +6128,8 @@
+@@ -6112,8 +6133,8 @@ void ScalarEvolution::setNoWrapFlags(SCE
    }
  }
  
@@ -2710,7 +2724,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    const DataLayout &DL = getDataLayout();
  
    unsigned BitWidth = getTypeSizeInBits(U->getType());
-@@ -6180,7 +6196,7 @@
+@@ -6180,7 +6201,7 @@ getRangeForUnknownRecurrence(const SCEVU
  
    // Compute total shift amount, being careful of overflow and bitwidths.
    auto MaxShiftAmt = KnownStep.getMaxValue();
@@ -2719,7 +2733,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    bool Overflow = false;
    auto TotalShift = MaxShiftAmt.umul_ov(TCAP, Overflow);
    if (Overflow)
-@@ -6195,8 +6211,8 @@
+@@ -6195,8 +6216,8 @@ getRangeForUnknownRecurrence(const SCEVU
      //   saturation => 0 or -1
      //   other => a value closer to zero (of the same sign)
      // Thus, the end value is closer to zero than the start.
@@ -2730,7 +2744,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (KnownStart.isNonNegative())
        // Analogous to lshr (simply not yet canonicalized)
        return ConstantRange::getNonEmpty(KnownEnd.getMinValue(),
-@@ -6213,15 +6229,15 @@
+@@ -6213,15 +6234,15 @@ getRangeForUnknownRecurrence(const SCEVU
      //   saturation => 0
      //   other => a smaller positive number
      // Thus, the low end of the unsigned range is the last value produced.
@@ -2750,7 +2764,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (TotalShift.ult(KnownStart.countMinLeadingZeros()))
        return ConstantRange(KnownStart.getMinValue(),
                             KnownEnd.getMaxValue() + 1);
-@@ -6241,8 +6257,8 @@
+@@ -6241,8 +6262,8 @@ ScalarEvolution::getRangeRef(const SCEV
        SignHint == ScalarEvolution::HINT_RANGE_UNSIGNED ? UnsignedRanges
                                                         : SignedRanges;
    ConstantRange::PreferredRangeType RangeType =
@@ -2761,7 +2775,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // See if we've computed this range already.
    DenseMap<const SCEV *, ConstantRange>::iterator I = Cache.find(S);
-@@ -6278,8 +6294,8 @@
+@@ -6278,8 +6299,8 @@ ScalarEvolution::getRangeRef(const SCEV
      if (Add->hasNoUnsignedWrap())
        WrapType |= OBO::NoUnsignedWrap;
      for (unsigned i = 1, e = Add->getNumOperands(); i != e; ++i)
@@ -2772,7 +2786,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      return setRange(Add, SignHint,
                      ConservativeResult.intersectWith(X, RangeType));
    }
-@@ -6329,16 +6345,16 @@
+@@ -6329,16 +6350,16 @@ ScalarEvolution::getRangeRef(const SCEV
  
    if (const SCEVZeroExtendExpr *ZExt = dyn_cast<SCEVZeroExtendExpr>(S)) {
      ConstantRange X = getRangeRef(ZExt->getOperand(), SignHint);
@@ -2795,7 +2809,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    if (const SCEVPtrToIntExpr *PtrToInt = dyn_cast<SCEVPtrToIntExpr>(S)) {
-@@ -6348,9 +6364,9 @@
+@@ -6348,9 +6369,9 @@ ScalarEvolution::getRangeRef(const SCEV
  
    if (const SCEVTruncateExpr *Trunc = dyn_cast<SCEVTruncateExpr>(S)) {
      ConstantRange X = getRangeRef(Trunc->getOperand(), SignHint);
@@ -2808,7 +2822,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    if (const SCEVAddRecExpr *AddRec = dyn_cast<SCEVAddRecExpr>(S)) {
-@@ -6384,15 +6400,16 @@
+@@ -6384,15 +6405,16 @@ ScalarEvolution::getRangeRef(const SCEV
              RangeType);
        else if (AllNonPos)
          ConservativeResult = ConservativeResult.intersectWith(
@@ -2829,7 +2843,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        if (!isa<SCEVCouldNotCompute>(MaxBECount) &&
            getTypeSizeInBits(MaxBECount->getType()) <= BitWidth) {
          auto RangeFromAffine = getRangeForAffineAR(
-@@ -6431,8 +6448,8 @@
+@@ -6431,8 +6453,8 @@ ScalarEvolution::getRangeRef(const SCEV
      // Check if the IR explicitly contains !range metadata.
      Optional<ConstantRange> MDRange = GetRangeFromMetadata(U->getValue());
      if (MDRange.hasValue())
@@ -2840,7 +2854,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
      // Use facts about recurrences in the underlying IR.  Note that add
      // recurrences are AddRecExprs and thus don't hit this path.  This
-@@ -6492,7 +6509,7 @@
+@@ -6492,7 +6514,7 @@ ScalarEvolution::getRangeRef(const SCEV
              ConservativeResult.intersectWith(RangeFromOps, RangeType);
          bool Erased = PendingPhiRanges.erase(Phi);
          assert(Erased && "Failed to erase Phi properly?");
@@ -2849,7 +2863,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        }
      }
  
-@@ -6592,8 +6609,8 @@
+@@ -6592,8 +6614,8 @@ ConstantRange ScalarEvolution::getRangeF
  
    // Next, consider step unsigned.
    ConstantRange UR = getRangeForAffineARHelper(
@@ -2860,7 +2874,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // Finally, intersect signed and unsigned ranges.
    return SR.intersectWith(UR, ConstantRange::Smallest);
-@@ -6653,8 +6670,8 @@
+@@ -6653,8 +6675,8 @@ ConstantRange ScalarEvolution::getRangeF
    if (RangeBetween.isFullSet())
      return RangeBetween;
    // Only deal with ranges that do not wrap (i.e. RangeMin < RangeMax).
@@ -2871,7 +2885,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (IsWrappedSet)
      return ConstantRange::getFull(BitWidth);
  
-@@ -6684,8 +6701,7 @@
+@@ -6684,8 +6706,7 @@ ConstantRange ScalarEvolution::getRangeV
        Optional<unsigned> CastOp;
        APInt Offset(BitWidth, 0);
  
@@ -2881,7 +2895,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
        // Peel off a constant offset:
        if (auto *SA = dyn_cast<SCEVAddExpr>(S)) {
-@@ -6783,7 +6799,8 @@
+@@ -6783,7 +6804,8 @@ ConstantRange ScalarEvolution::getRangeV
  }
  
  SCEV::NoWrapFlags ScalarEvolution::getNoWrapFlagsFromUB(const Value *V) {
@@ -2891,7 +2905,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    const BinaryOperator *BinOp = cast<BinaryOperator>(V);
  
    // Return early if there are no flags to propagate to the SCEV.
-@@ -6889,7 +6906,6 @@
+@@ -6889,7 +6911,6 @@ bool ScalarEvolution::isGuaranteedToTran
    return false;
  }
  
@@ -2899,7 +2913,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  bool ScalarEvolution::isSCEVExprNeverPoison(const Instruction *I) {
    // Only proceed if we can prove that I does not yield poison.
    if (!programUndefinedIfPoison(I))
-@@ -7148,8 +7164,7 @@
+@@ -7148,8 +7169,7 @@ const SCEV *ScalarEvolution::createSCEV(
          unsigned TZ = A.countTrailingZeros();
          unsigned BitWidth = A.getBitWidth();
          KnownBits Known(BitWidth);
@@ -2909,7 +2923,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
          APInt EffectiveMask =
              APInt::getLowBitsSet(BitWidth, BitWidth - LZ - TZ).shl(TZ);
-@@ -7163,7 +7178,7 @@
+@@ -7163,7 +7183,7 @@ const SCEV *ScalarEvolution::createSCEV(
                unsigned MulZeros = OpC->getAPInt().countTrailingZeros();
                unsigned GCD = std::min(MulZeros, TZ);
                APInt DivAmt = APInt::getOneBitSet(BitWidth, TZ - GCD);
@@ -2918,7 +2932,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                MulOps.push_back(getConstant(OpC->getAPInt().lshr(GCD)));
                MulOps.append(LHSMul->op_begin() + 1, LHSMul->op_end());
                auto *NewMul = getMulExpr(MulOps, LHSMul->getNoWrapFlags());
-@@ -7174,7 +7189,8 @@
+@@ -7174,7 +7194,8 @@ const SCEV *ScalarEvolution::createSCEV(
              ShiftedLHS = getUDivExpr(LHS, MulCount);
            return getMulExpr(
                getZeroExtendExpr(
@@ -2928,7 +2942,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                        IntegerType::get(getContext(), BitWidth - LZ - TZ)),
                    BO->LHS->getType()),
                MulCount);
-@@ -7303,8 +7319,8 @@
+@@ -7303,8 +7324,8 @@ const SCEV *ScalarEvolution::createSCEV(
          if (L->getOperand(1) == BO->RHS)
            // For a two-shift sext-inreg, i.e. n = m,
            // use sext(trunc(x)) as the SCEV expression.
@@ -2939,7 +2953,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
          ConstantInt *ShlAmtCI = dyn_cast<ConstantInt>(L->getOperand(1));
          if (ShlAmtCI && ShlAmtCI->getValue().ult(BitWidth)) {
-@@ -7314,11 +7330,12 @@
+@@ -7314,11 +7335,12 @@ const SCEV *ScalarEvolution::createSCEV(
              // expression. We already checked that ShlAmt < BitWidth, so
              // the multiplier, 1 << (ShlAmt - AShrAmt), fits into TruncTy as
              // ShlAmt - AShrAmt < Amt.
@@ -2955,7 +2969,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            }
          }
        }
-@@ -7869,7 +7886,7 @@
+@@ -7869,7 +7891,7 @@ void ScalarEvolution::forgetLoop(const L
      auto LoopUsersItr = LoopUsers.find(CurrL);
      if (LoopUsersItr != LoopUsers.end()) {
        ToForget.insert(ToForget.end(), LoopUsersItr->second.begin(),
@@ -2964,7 +2978,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        LoopUsers.erase(LoopUsersItr);
      }
  
-@@ -7907,7 +7924,8 @@
+@@ -7907,7 +7929,8 @@ void ScalarEvolution::forgetTopmostLoop(
  
  void ScalarEvolution::forgetValue(Value *V) {
    Instruction *I = dyn_cast<Instruction>(V);
@@ -2974,7 +2988,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // Drop information about expressions based on loop-header PHIs.
    SmallVector<Instruction *, 16> Worklist;
-@@ -7919,7 +7937,7 @@
+@@ -7919,7 +7942,7 @@ void ScalarEvolution::forgetValue(Value
    while (!Worklist.empty()) {
      I = Worklist.pop_back_val();
      ValueExprMapType::iterator It =
@@ -2983,7 +2997,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (It != ValueExprMap.end()) {
        eraseValueFromMap(It->first);
        ToForget.push_back(It->second);
-@@ -8029,8 +8047,7 @@
+@@ -8029,8 +8052,7 @@ bool ScalarEvolution::BackedgeTakenInfo:
  }
  
  ScalarEvolution::ExitLimit::ExitLimit(const SCEV *E)
@@ -2993,7 +3007,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  ScalarEvolution::ExitLimit::ExitLimit(
      const SCEV *E, const SCEV *M, bool MaxOrZero,
-@@ -8060,13 +8077,11 @@
+@@ -8060,13 +8082,11 @@ ScalarEvolution::ExitLimit::ExitLimit(
  ScalarEvolution::ExitLimit::ExitLimit(
      const SCEV *E, const SCEV *M, bool MaxOrZero,
      const SmallPtrSetImpl<const SCEVPredicate *> &PredSet)
@@ -3009,7 +3023,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  /// Allocate memory for BackedgeTakenInfo and copy the not-taken count of each
  /// computable exit into a persistent ExitNotTakenInfo array.
-@@ -8172,8 +8187,10 @@
+@@ -8172,8 +8192,10 @@ ScalarEvolution::computeBackedgeTakenCou
        }
      }
    }
@@ -3022,7 +3036,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // The loop backedge will be taken the maximum or zero times if there's
    // a single exit that must be taken the maximum or zero times.
    bool MaxOrZero = (MustExitMaxOrZero && ExitingBlocks.size() == 1);
-@@ -8190,7 +8207,7 @@
+@@ -8190,7 +8212,7 @@ ScalarEvolution::computeBackedgeTakenCou
  
  ScalarEvolution::ExitLimit
  ScalarEvolution::computeExitLimit(const Loop *L, BasicBlock *ExitingBlock,
@@ -3031,7 +3045,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    assert(L->contains(ExitingBlock) && "Exit count for non-loop block?");
    // If our exiting block does not dominate the latch, then its connection with
    // loop's exit limit may be far from trivial.
-@@ -8206,9 +8223,9 @@
+@@ -8206,9 +8228,9 @@ ScalarEvolution::computeExitLimit(const
      assert(ExitIfTrue == L->contains(BI->getSuccessor(1)) &&
             "It should have one successor in loop and one exit block!");
      // Proceed to the next level to examine the exit condition expression.
@@ -3044,7 +3058,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    if (SwitchInst *SI = dyn_cast<SwitchInst>(Term)) {
-@@ -8228,9 +8245,10 @@
+@@ -8228,9 +8250,10 @@ ScalarEvolution::computeExitLimit(const
    return getCouldNotCompute();
  }
  
@@ -3058,7 +3072,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    ScalarEvolution::ExitLimitCacheTy Cache(L, ExitIfTrue, AllowPredicates);
    return computeExitLimitFromCondCached(Cache, L, ExitCond, ExitIfTrue,
                                          ControlsExit, AllowPredicates);
-@@ -8254,8 +8272,7 @@
+@@ -8254,8 +8277,7 @@ ScalarEvolution::ExitLimitCache::find(co
  }
  
  void ScalarEvolution::ExitLimitCache::insert(const Loop *L, Value *ExitCond,
@@ -3068,7 +3082,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                                               bool AllowPredicates,
                                               const ExitLimit &EL) {
    assert(this->L == L && this->ExitIfTrue == ExitIfTrue &&
-@@ -8323,9 +8340,8 @@
+@@ -8323,9 +8345,8 @@ ScalarEvolution::ExitLimit ScalarEvoluti
    const APInt *C;
    if (match(ExitCond, m_ExtractValue<1>(m_WithOverflowInst(WO))) &&
        match(WO->getRHS(), m_APInt(C))) {
@@ -3080,7 +3094,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      CmpInst::Predicate Pred;
      APInt NewRHSC, Offset;
      NWR.getEquivalentICmp(Pred, NewRHSC, Offset);
-@@ -8336,7 +8352,8 @@
+@@ -8336,7 +8357,8 @@ ScalarEvolution::ExitLimit ScalarEvoluti
        LHS = getAddExpr(LHS, getConstant(Offset));
      auto EL = computeExitLimitFromICmp(L, Pred, LHS, getConstant(NewRHSC),
                                         ControlsExit, AllowPredicates);
@@ -3090,7 +3104,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    // If it's not an integer or pointer comparison then compute it the hard way.
-@@ -8414,14 +8431,12 @@
+@@ -8414,14 +8436,12 @@ ScalarEvolution::computeExitLimitFromCon
      MaxBECount = getConstant(getUnsignedRangeMax(BECount));
  
    return ExitLimit(BECount, MaxBECount, false,
@@ -3108,7 +3122,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                                            bool AllowPredicates) {
    // If the condition was exit on true, convert the condition to exit on false
    ICmpInst::Predicate Pred;
-@@ -8436,10 +8451,10 @@
+@@ -8436,10 +8456,10 @@ ScalarEvolution::computeExitLimitFromICm
  
    ExitLimit EL = computeExitLimitFromICmp(L, Pred, LHS, RHS, ControlsExit,
                                            AllowPredicates);
@@ -3122,7 +3136,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    if (!isa<SCEVCouldNotCompute>(ExhaustiveCount))
      return ExhaustiveCount;
-@@ -8447,12 +8462,9 @@
+@@ -8447,12 +8467,9 @@ ScalarEvolution::computeExitLimitFromICm
    return computeShiftCompareExitLimit(ExitCond->getOperand(0),
                                        ExitCond->getOperand(1), L, OriginalPred);
  }
@@ -3138,7 +3152,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // Try to evaluate any dependencies out of the loop.
    LHS = getSCEVAtScope(LHS, L);
-@@ -8482,7 +8494,8 @@
+@@ -8482,7 +8499,8 @@ ScalarEvolution::computeExitLimitFromICm
              ConstantRange::makeExactICmpRegion(Pred, RHSC->getAPInt());
  
          const SCEV *Ret = AddRec->getNumIterationsInRange(CompRange, *this);
@@ -3148,7 +3162,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        }
  
    // If this loop must exit based on this condition (or execute undefined
-@@ -8498,11 +8511,11 @@
+@@ -8498,11 +8516,11 @@ ScalarEvolution::computeExitLimitFromICm
        InnerLHS = ZExt->getOperand();
      if (const SCEVAddRecExpr *AR = dyn_cast<SCEVAddRecExpr>(InnerLHS)) {
        auto *StrideC = dyn_cast<SCEVConstant>(AR->getStepRecurrence(*this));
@@ -3162,7 +3176,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          Flags = StrengthenNoWrapFlags(this, scAddRecExpr, Operands, Flags);
          setNoWrapFlags(const_cast<SCEVAddRecExpr *>(AR), Flags);
        }
-@@ -8510,7 +8523,7 @@
+@@ -8510,7 +8528,7 @@ ScalarEvolution::computeExitLimitFromICm
    }
  
    switch (Pred) {
@@ -3171,7 +3185,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      // Convert to: while (X-Y != 0)
      if (LHS->getType()->isPointerTy()) {
        LHS = getLosslessPtrToIntExpr(LHS);
-@@ -8522,12 +8535,13 @@
+@@ -8522,12 +8540,13 @@ ScalarEvolution::computeExitLimitFromICm
        if (isa<SCEVCouldNotCompute>(RHS))
          return RHS;
      }
@@ -3189,7 +3203,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      // Convert to: while (X-Y == 0)
      if (LHS->getType()->isPointerTy()) {
        LHS = getLosslessPtrToIntExpr(LHS);
-@@ -8540,24 +8554,26 @@
+@@ -8540,24 +8559,26 @@ ScalarEvolution::computeExitLimitFromICm
          return RHS;
      }
      ExitLimit EL = howFarToNonZero(getMinusSCEV(LHS, RHS), L);
@@ -3226,7 +3240,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      break;
    }
    default:
-@@ -8617,9 +8633,8 @@
+@@ -8617,9 +8638,8 @@ ScalarEvolution::ExitLimit ScalarEvoluti
  
    // Return true if V is of the form "LHS `shift_op` <positive constant>".
    // Return LHS in OutLHS and shift_opt in OutOpCode.
@@ -3238,7 +3252,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      using namespace PatternMatch;
  
      ConstantInt *ShiftAmt;
-@@ -8643,8 +8658,8 @@
+@@ -8643,8 +8663,8 @@ ScalarEvolution::ExitLimit ScalarEvoluti
    //
    // Return true on a successful match.  Return the corresponding PHI node (%iv
    // above) in PNOut and the opcode of the shift operation in OpCodeOut.
@@ -3249,7 +3263,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      Optional<Instruction::BinaryOps> PostShiftOpCode;
  
      {
-@@ -8747,9 +8762,9 @@
+@@ -8747,9 +8767,9 @@ ScalarEvolution::ExitLimit ScalarEvoluti
  /// Return true if we can constant fold an instruction of the specified type,
  /// assuming that all operands were constants.
  static bool CanConstantFold(const Instruction *I) {
@@ -3262,7 +3276,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      return true;
  
    if (const CallInst *CI = dyn_cast<CallInst>(I))
-@@ -8762,7 +8777,8 @@
+@@ -8762,7 +8782,8 @@ static bool CanConstantFold(const Instru
  /// assuming its operands can all constant evolve.
  static bool canConstantEvolve(Instruction *I, const Loop *L) {
    // An instruction outside of the loop can't be derived from a loop PHI.
@@ -3272,7 +3286,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    if (isa<PHINode>(I)) {
      // We don't currently keep track of the control flow needed to evaluate
-@@ -8788,10 +8804,12 @@
+@@ -8788,10 +8809,12 @@ getConstantEvolvingPHIOperands(Instructi
    // constant or derived from a PHI node themselves.
    PHINode *PHI = nullptr;
    for (Value *Op : UseInst->operands()) {
@@ -3287,7 +3301,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
      PHINode *P = dyn_cast<PHINode>(OpInst);
      if (!P)
-@@ -8806,9 +8824,9 @@
+@@ -8806,9 +8829,9 @@ getConstantEvolvingPHIOperands(Instructi
        PHIMap[OpInst] = P;
      }
      if (!P)
@@ -3299,7 +3313,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      PHI = P;
    }
    // This is a expression evolving from a constant PHI!
-@@ -8822,7 +8840,8 @@
+@@ -8822,7 +8845,8 @@ getConstantEvolvingPHIOperands(Instructi
  /// constraints, return null.
  static PHINode *getConstantEvolvingPHI(Value *V, const Loop *L) {
    Instruction *I = dyn_cast<Instruction>(V);
@@ -3309,7 +3323,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    if (PHINode *PN = dyn_cast<PHINode>(I))
      return PN;
-@@ -8841,33 +8860,40 @@
+@@ -8841,33 +8865,40 @@ static Constant *EvaluateExpression(Valu
                                      const DataLayout &DL,
                                      const TargetLibraryInfo *TLI) {
    // Convenient constant check, but redundant for recursive calls.
@@ -3358,7 +3372,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      Operands[i] = C;
    }
  
-@@ -8881,7 +8907,6 @@
+@@ -8881,7 +8912,6 @@ static Constant *EvaluateExpression(Valu
    return ConstantFoldInstOperands(I, Operands, DL, TLI);
  }
  
@@ -3366,7 +3380,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  // If every incoming value to PN except the one for BB is a specific Constant,
  // return that, else return nullptr.
  static Constant *getOtherIncomingValue(PHINode *PN, BasicBlock *BB) {
-@@ -8909,16 +8934,16 @@
+@@ -8909,16 +8939,16 @@ static Constant *getOtherIncomingValue(P
  /// in the header of its containing loop, we know the loop executes a
  /// constant number of times, and the PHI node is just a recurrence
  /// involving constants, fold it.
@@ -3388,7 +3402,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    Constant *&RetVal = ConstantEvolutionLoopExitValue[PN];
  
-@@ -8946,9 +8971,9 @@
+@@ -8946,9 +8976,9 @@ ScalarEvolution::getConstantEvolutionLoo
    unsigned NumIterations = BEs.getZExtValue(); // must be in range
    unsigned IterationNum = 0;
    const DataLayout &DL = getDataLayout();
@@ -3400,7 +3414,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
      // Compute the value of the PHIs for the next iteration.
      // EvaluateExpression adds non-phi values to the CurrentIterVals map.
-@@ -8956,7 +8981,7 @@
+@@ -8956,7 +8986,7 @@ ScalarEvolution::getConstantEvolutionLoo
      Constant *NextPHI =
          EvaluateExpression(BEValue, L, CurrentIterVals, DL, &TLI);
      if (!NextPHI)
@@ -3409,7 +3423,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      NextIterVals[PN] = NextPHI;
  
      bool StoppedEvolving = NextPHI == CurrentIterVals[PN];
-@@ -8967,7 +8992,8 @@
+@@ -8967,7 +8997,8 @@ ScalarEvolution::getConstantEvolutionLoo
      SmallVector<std::pair<PHINode *, Constant *>, 8> PHIsToCompute;
      for (const auto &I : CurrentIterVals) {
        PHINode *PHI = dyn_cast<PHINode>(I.first);
@@ -3419,7 +3433,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        PHIsToCompute.emplace_back(PHI, I.second);
      }
      // We use two distinct loops because EvaluateExpression may invalidate any
-@@ -8975,7 +9001,7 @@
+@@ -8975,7 +9006,7 @@ ScalarEvolution::getConstantEvolutionLoo
      for (const auto &I : PHIsToCompute) {
        PHINode *PHI = I.first;
        Constant *&NextPHI = NextIterVals[PHI];
@@ -3428,7 +3442,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          Value *BEValue = PHI->getIncomingValueForBlock(Latch);
          NextPHI = EvaluateExpression(BEValue, L, CurrentIterVals, DL, &TLI);
        }
-@@ -8996,11 +9022,13 @@
+@@ -8996,11 +9027,13 @@ const SCEV *ScalarEvolution::computeExit
                                                            Value *Cond,
                                                            bool ExitWhen) {
    PHINode *PN = getConstantEvolvingPHI(Cond, L);
@@ -3444,7 +3458,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    DenseMap<Instruction *, Constant *> CurrentIterVals;
    BasicBlock *Header = L->getHeader();
-@@ -9019,14 +9047,16 @@
+@@ -9019,14 +9052,16 @@ const SCEV *ScalarEvolution::computeExit
    // Okay, we find a PHI node that defines the trip count of this loop.  Execute
    // the loop symbolically to determine when the condition gets a value of
    // "ExitWhen".
@@ -3464,7 +3478,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
      if (CondVal->getValue() == uint64_t(ExitWhen)) {
        ++NumBruteForceTripCountsComputed;
-@@ -9042,12 +9072,14 @@
+@@ -9042,12 +9077,14 @@ const SCEV *ScalarEvolution::computeExit
      SmallVector<PHINode *, 8> PHIsToCompute;
      for (const auto &I : CurrentIterVals) {
        PHINode *PHI = dyn_cast<PHINode>(I.first);
@@ -3481,7 +3495,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
        Value *BEValue = PHI->getIncomingValueForBlock(Latch);
        NextPHI = EvaluateExpression(BEValue, L, CurrentIterVals, DL, &TLI);
-@@ -9193,7 +9225,8 @@
+@@ -9193,7 +9230,8 @@ static Constant *BuildConstantFromSCEV(c
  }
  
  const SCEV *ScalarEvolution::computeSCEVAtScope(const SCEV *V, const Loop *L) {
@@ -3491,7 +3505,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // If this instruction is evolved from a constant-evolving PHI, compute the
    // exit value from the loop without using SCEVs.
-@@ -9245,7 +9278,8 @@
+@@ -9245,7 +9283,8 @@ const SCEV *ScalarEvolution::computeSCEV
              // the specified iteration number.
              Constant *RV = getConstantEvolutionLoopExitValue(
                  PN, BTCC->getAPInt(), CurrLoop);
@@ -3501,7 +3515,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            }
          }
  
-@@ -9256,7 +9290,8 @@
+@@ -9256,7 +9295,8 @@ const SCEV *ScalarEvolution::computeSCEV
            const SCEV *InputAtScope = getSCEVAtScope(Input, L);
            // TODO: We can generalize it using LI.replacementPreservesLCSSAForm,
            // for the simplest case just support constants.
@@ -3511,7 +3525,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          }
        }
  
-@@ -9284,12 +9319,12 @@
+@@ -9284,12 +9324,12 @@ const SCEV *ScalarEvolution::computeSCEV
            MadeImprovement |= OrigV != OpV;
  
            Constant *C = BuildConstantFromSCEV(OpV);
@@ -3529,7 +3543,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            Operands.push_back(C);
          }
  
-@@ -9306,7 +9341,8 @@
+@@ -9306,7 +9346,8 @@ const SCEV *ScalarEvolution::computeSCEV
                                                 DL);
            } else
              C = ConstantFoldInstOperands(I, Operands, DL, &TLI);
@@ -3539,7 +3553,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            return getSCEV(C);
          }
        }
-@@ -9326,7 +9362,7 @@
+@@ -9326,7 +9367,7 @@ const SCEV *ScalarEvolution::computeSCEV
          // Okay, at least one of these operands is loop variant but might be
          // foldable.  Build a new instance of the folded commutative expression.
          SmallVector<const SCEV *, 8> NewOps(Comm->op_begin(),
@@ -3548,7 +3562,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          NewOps.push_back(OpAtScope);
  
          for (++i; i != e; ++i) {
-@@ -9352,7 +9388,7 @@
+@@ -9352,7 +9393,7 @@ const SCEV *ScalarEvolution::computeSCEV
      const SCEV *LHS = getSCEVAtScope(Div->getLHS(), L);
      const SCEV *RHS = getSCEVAtScope(Div->getRHS(), L);
      if (LHS == Div->getLHS() && RHS == Div->getRHS())
@@ -3557,7 +3571,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      return getUDivExpr(LHS, RHS);
    }
  
-@@ -9370,14 +9406,13 @@
+@@ -9370,14 +9411,13 @@ const SCEV *ScalarEvolution::computeSCEV
        // Okay, at least one of these operands is loop variant but might be
        // foldable.  Build a new instance of the folded commutative expression.
        SmallVector<const SCEV *, 8> NewOps(AddRec->op_begin(),
@@ -3575,7 +3589,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        AddRec = dyn_cast<SCEVAddRecExpr>(FoldedRec);
        // The addrec may be folded to a nonrecurrence, for example, if the
        // induction variable is multiplied by zero after constant folding. Go
-@@ -9393,7 +9428,8 @@
+@@ -9393,7 +9433,8 @@ const SCEV *ScalarEvolution::computeSCEV
        // To evaluate this recurrence, we need to know how many times the AddRec
        // loop iterates.  Compute this now.
        const SCEV *BackedgeTakenCount = getBackedgeTakenCount(AddRec->getLoop());
@@ -3585,7 +3599,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
        // Then, evaluate the AddRec.
        return AddRec->evaluateAtIteration(BackedgeTakenCount, *this);
-@@ -9405,7 +9441,7 @@
+@@ -9405,7 +9446,7 @@ const SCEV *ScalarEvolution::computeSCEV
    if (const SCEVCastExpr *Cast = dyn_cast<SCEVCastExpr>(V)) {
      const SCEV *Op = getSCEVAtScope(Cast->getOperand(), L);
      if (Op == Cast->getOperand())
@@ -3594,7 +3608,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      return getCastExpr(Cast->getSCEVType(), Op, Cast->getType());
    }
  
-@@ -9433,7 +9469,7 @@
+@@ -9433,7 +9474,7 @@ const SCEV *ScalarEvolution::stripInject
  ///
  /// If the equation does not have a solution, SCEVCouldNotCompute is returned.
  static const SCEV *SolveLinEquationWithOverflow(const APInt &A, const SCEV *B,
@@ -3603,7 +3617,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    uint32_t BW = A.getBitWidth();
    assert(BW == SE.getTypeSizeInBits(B->getType()));
    assert(A != 0 && "A must be non-zero.");
-@@ -9458,9 +9494,9 @@
+@@ -9458,9 +9499,9 @@ static const SCEV *SolveLinEquationWithO
    // If D == 1, (N / D) == N == 2^BW, so we need one extra bit to represent
    // (N / D) in general. The inverse itself always fits into BW bits, though,
    // so we immediately truncate it.
@@ -3615,7 +3629,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    APInt I = AD.multiplicativeInverse(Mod).trunc(BW);
  
    // 4. Compute the minimum unsigned root of the equation:
-@@ -9486,8 +9522,8 @@
+@@ -9486,8 +9527,8 @@ GetQuadraticEquation(const SCEVAddRecExp
    const SCEVConstant *LC = dyn_cast<SCEVConstant>(AddRec->getOperand(0));
    const SCEVConstant *MC = dyn_cast<SCEVConstant>(AddRec->getOperand(1));
    const SCEVConstant *NC = dyn_cast<SCEVConstant>(AddRec->getOperand(2));
@@ -3626,7 +3640,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // We currently can only solve this if the coefficients are constants.
    if (!LC || !MC || !NC) {
-@@ -9502,8 +9538,7 @@
+@@ -9502,8 +9543,7 @@ GetQuadraticEquation(const SCEVAddRecExp
  
    unsigned BitWidth = LC->getAPInt().getBitWidth();
    unsigned NewWidth = BitWidth + 1;
@@ -3636,7 +3650,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // The sign-extension (as opposed to a zero-extension) here matches the
    // extension used in SolveQuadraticEquationWrap (with the same motivation).
    N = N.sext(NewWidth);
-@@ -9524,9 +9559,9 @@
+@@ -9524,9 +9564,9 @@ GetQuadraticEquation(const SCEVAddRecExp
    APInt B = 2 * M - A;
    APInt C = 2 * L;
    APInt T = APInt(NewWidth, 2);
@@ -3649,7 +3663,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return std::make_tuple(A, B, C, T, BitWidth);
  }
  
-@@ -9580,8 +9615,8 @@
+@@ -9580,8 +9620,8 @@ static Optional<APInt> TruncIfPossible(O
  /// (b) SolveQuadraticEquationWrap was unable to find a solution. For cases
  ///     like x^2 = 5, no integer solutions exist, in other cases an integer
  ///     solution may exist, but SolveQuadraticEquationWrap may fail to find it.
@@ -3660,7 +3674,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    APInt A, B, C, M;
    unsigned BitWidth;
    auto T = GetQuadraticEquation(AddRec);
-@@ -9590,7 +9625,8 @@
+@@ -9590,7 +9630,8 @@ SolveQuadraticAddRecExact(const SCEVAddR
  
    std::tie(A, B, C, M, BitWidth) = *T;
    LLVM_DEBUG(dbgs() << __func__ << ": solving for unsigned overflow\n");
@@ -3670,7 +3684,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (!X.hasValue())
      return None;
  
-@@ -9612,9 +9648,9 @@
+@@ -9612,9 +9653,9 @@ SolveQuadraticAddRecExact(const SCEVAddR
  /// (a) the addrec coefficients are not constant, or
  /// (b) SolveQuadraticEquationWrap was unable to find a solution for the
  ///     bounds of the range.
@@ -3683,7 +3697,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    assert(AddRec->getOperand(0)->isZero() &&
           "Starting value of addrec should be 0");
    LLVM_DEBUG(dbgs() << __func__ << ": solving boundary crossing for range "
-@@ -9638,7 +9674,7 @@
+@@ -9638,7 +9679,7 @@ SolveQuadraticAddRecRange(const SCEVAddR
    // cannot make any conclusions.
    // Return a pair: the optional solution and a flag indicating if the
    // solution was found.
@@ -3692,7 +3706,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      // Solve for signed overflow and unsigned overflow, pick the lower
      // solution.
      LLVM_DEBUG(dbgs() << "SolveQuadraticAddRecRange: checking boundary "
-@@ -9653,16 +9689,16 @@
+@@ -9653,16 +9694,16 @@ SolveQuadraticAddRecRange(const SCEVAddR
      }
      LLVM_DEBUG(dbgs() << "SolveQuadraticAddRecRange: solving for "
                           "unsigned overflow\n");
@@ -3713,7 +3727,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        ConstantInt *V1 = EvaluateConstantChrecAtConstant(AddRec, C1, SE);
        if (Range.contains(V1->getValue()))
          return true;
-@@ -9673,19 +9709,19 @@
+@@ -9673,19 +9714,19 @@ SolveQuadraticAddRecRange(const SCEVAddR
      // be a solution, but the function failed to find it. We cannot treat it
      // as "no solution".
      if (!SO.hasValue() || !UO.hasValue())
@@ -3737,7 +3751,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    };
  
    std::tie(A, B, C, M, BitWidth) = *T;
-@@ -9740,9 +9776,10 @@
+@@ -9740,9 +9781,10 @@ SolveQuadraticAddRecRange(const SCEVAddR
    return TruncIfPossible(MinOptional(SL.first, SU.first), BitWidth);
  }
  
@@ -3751,7 +3765,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // This is only used for loops with a "x != y" exit test. The exit condition
    // is now expressed as a single expression, V = x-y. So the exit test is
-@@ -9753,8 +9790,9 @@
+@@ -9753,8 +9795,9 @@ ScalarEvolution::howFarToZero(const SCEV
    // If the value is a constant
    if (const SCEVConstant *C = dyn_cast<SCEVConstant>(V)) {
      // If the value is already zero, the branch will execute zero times.
@@ -3763,7 +3777,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    const SCEVAddRecExpr *AddRec =
-@@ -9826,9 +9864,9 @@
+@@ -9826,9 +9869,9 @@ ScalarEvolution::howFarToZero(const SCEV
      APInt MaxBECount = getUnsignedRangeMax(applyLoopGuards(Distance, L));
      MaxBECount = APIntOps::umin(MaxBECount, getUnsignedRangeMax(Distance));
  
@@ -3776,7 +3790,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      //
      // Explicitly handling this here is necessary because getUnsignedRange
      // isn't context-sensitive; it doesn't know that we only care about the
-@@ -9874,8 +9912,8 @@
+@@ -9874,8 +9917,8 @@ ScalarEvolution::howFarToZero(const SCEV
    return ExitLimit(E, M, false, Predicates);
  }
  
@@ -3787,7 +3801,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // Loops that look like: while (X == 0) are very strange indeed.  We don't
    // handle them yet except for the trivial case.  This could be expanded in the
    // future as needed.
-@@ -9885,7 +9923,7 @@
+@@ -9885,7 +9928,7 @@ ScalarEvolution::howFarToNonZero(const S
    if (const SCEVConstant *C = dyn_cast<SCEVConstant>(V)) {
      if (!C->getValue()->isZero())
        return getZero(C->getType());
@@ -3796,7 +3810,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    // We could implement others, but I really doubt anyone writes loops like
-@@ -9894,8 +9932,8 @@
+@@ -9894,8 +9937,8 @@ ScalarEvolution::howFarToNonZero(const S
  }
  
  std::pair<const BasicBlock *, const BasicBlock *>
@@ -3807,7 +3821,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // If the block has a unique predecessor, then there is no path from the
    // predecessor to the block that does not go through the direct edge
    // from the predecessor to the block.
-@@ -9917,13 +9955,15 @@
+@@ -9917,13 +9960,15 @@ ScalarEvolution::getPredecessorWithUniqu
  /// front-end may have replicated the controlling expression.
  static bool HasSameValue(const SCEV *A, const SCEV *B) {
    // Quick check to see if they are the same SCEV.
@@ -3825,7 +3839,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    };
  
    // Otherwise, if they're both SCEVUnknown, it's possible that they hold
-@@ -9959,9 +9999,8 @@
+@@ -9959,9 +10004,8 @@ bool ScalarEvolution::SimplifyICmpOperan
    if (const SCEVConstant *LHSC = dyn_cast<SCEVConstant>(LHS)) {
      // Check for both operands constant.
      if (const SCEVConstant *RHSC = dyn_cast<SCEVConstant>(RHS)) {
@@ -3837,7 +3851,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          return TrivialCase(false);
        else
          return TrivialCase(true);
-@@ -10028,7 +10067,6 @@
+@@ -10028,7 +10072,6 @@ bool ScalarEvolution::SimplifyICmpOperan
                }
          break;
  
@@ -3845,7 +3859,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          // The "Should have been caught earlier!" messages refer to the fact
          // that the ExactCR.isFullSet() or ExactCR.isEmptySet() check above
          // should have fired on the corresponding cases, and canonicalized the
-@@ -10080,8 +10118,8 @@
+@@ -10080,8 +10123,8 @@ bool ScalarEvolution::SimplifyICmpOperan
    switch (Pred) {
    case ICmpInst::ICMP_SLE:
      if (ControllingFiniteLoop || !getSignedRangeMax(RHS).isMaxSignedValue()) {
@@ -3856,7 +3870,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        Pred = ICmpInst::ICMP_SLT;
        Changed = true;
      } else if (!getSignedRangeMin(LHS).isMinSignedValue()) {
-@@ -10098,16 +10136,16 @@
+@@ -10098,16 +10141,16 @@ bool ScalarEvolution::SimplifyICmpOperan
        Pred = ICmpInst::ICMP_SGT;
        Changed = true;
      } else if (!getSignedRangeMax(LHS).isMaxSignedValue()) {
@@ -3877,7 +3891,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        Pred = ICmpInst::ICMP_ULT;
        Changed = true;
      } else if (!getUnsignedRangeMin(LHS).isMinValue()) {
-@@ -10122,8 +10160,8 @@
+@@ -10122,8 +10165,8 @@ bool ScalarEvolution::SimplifyICmpOperan
        Pred = ICmpInst::ICMP_UGT;
        Changed = true;
      } else if (!getUnsignedRangeMax(LHS).isMaxValue()) {
@@ -3888,7 +3902,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        Pred = ICmpInst::ICMP_UGT;
        Changed = true;
      }
-@@ -10168,11 +10206,11 @@
+@@ -10168,11 +10211,11 @@ ScalarEvolution::SplitIntoInitAndPostInc
    // Compute SCEV on entry of loop L.
    const SCEV *Start = SCEVInitRewriter::rewrite(S, L, *this);
    if (Start == getCouldNotCompute())
@@ -3902,7 +3916,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  }
  
  bool ScalarEvolution::isKnownViaInduction(ICmpInst::Predicate Pred,
-@@ -10185,7 +10223,7 @@
+@@ -10185,7 +10228,7 @@ bool ScalarEvolution::isKnownViaInductio
    if (LoopsUsed.empty())
      return false;
  
@@ -3911,7 +3925,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  #ifndef NDEBUG
    for (auto *L1 : LoopsUsed)
      for (auto *L2 : LoopsUsed)
-@@ -10194,24 +10232,23 @@
+@@ -10194,24 +10237,23 @@ bool ScalarEvolution::isKnownViaInductio
               "Domination relationship is not a linear order");
  #endif
  
@@ -3942,7 +3956,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // It is possible that init SCEV contains an invariant load but it does
    // not dominate MDL and is not available at MDL loop entry, so we should
    // check it here.
-@@ -10627,19 +10664,19 @@
+@@ -10627,19 +10669,19 @@ bool ScalarEvolution::isImpliedViaGuard(
  /// isLoopBackedgeGuardedByCond - Test whether the backedge of the loop is
  /// protected by a conditional between LHS and RHS.  This is used to
  /// to eliminate casts.
@@ -3968,7 +3982,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (isKnownViaNonRecursiveReasoning(Pred, LHS, RHS))
      return true;
  
-@@ -10648,10 +10685,9 @@
+@@ -10648,10 +10690,9 @@ ScalarEvolution::isLoopBackedgeGuardedBy
      return false;
  
    BranchInst *LoopContinuePredicate =
@@ -3981,7 +3995,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                      LoopContinuePredicate->getSuccessor(0) != L->getHeader()))
      return true;
  
-@@ -10672,7 +10708,7 @@
+@@ -10672,7 +10713,7 @@ ScalarEvolution::isLoopBackedgeGuardedBy
      Type *Ty = LatchBECount->getType();
      auto NoWrapFlags = SCEV::NoWrapFlags(SCEV::FlagNUW | SCEV::FlagNW);
      const SCEV *LoopCounter =
@@ -3990,7 +4004,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (isImpliedCond(Pred, LHS, RHS, ICmpInst::ICMP_ULT, LoopCounter,
                        LatchBECount))
        return true;
-@@ -10756,7 +10792,7 @@
+@@ -10756,7 +10797,7 @@ bool ScalarEvolution::isBasicBlockEntryG
    bool ProvedNonEquality = false;
  
    auto SplitAndProve =
@@ -3999,7 +4013,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (!ProvedNonStrictComparison)
        ProvedNonStrictComparison = Fn(NonStrictPredicate);
      if (!ProvedNonEquality)
-@@ -10803,9 +10839,9 @@
+@@ -10803,9 +10844,9 @@ bool ScalarEvolution::isBasicBlockEntryG
      return false;
    };
  
@@ -4012,7 +4026,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    const Loop *ContainingLoop = LI.getLoopFor(BB);
    const BasicBlock *PredBB;
    if (ContainingLoop && ContainingLoop->getHeader() == BB)
-@@ -10819,8 +10855,7 @@
+@@ -10819,8 +10860,7 @@ bool ScalarEvolution::isBasicBlockEntryG
  
      const BranchInst *LoopEntryPredicate =
          dyn_cast<BranchInst>(Pair.first->getTerminator());
@@ -4022,7 +4036,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        continue;
  
      if (ProveViaCond(LoopEntryPredicate->getCondition(),
-@@ -10892,7 +10927,8 @@
+@@ -10892,7 +10932,8 @@ bool ScalarEvolution::isImpliedCond(ICmp
    }
  
    const ICmpInst *ICI = dyn_cast<ICmpInst>(FoundCondValue);
@@ -4032,7 +4046,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    // Now that we found a conditional branch that dominates the loop or controls
    // the loop latch. Check to see if it is the comparison we are looking for.
-@@ -10948,8 +10984,9 @@
+@@ -10948,8 +10989,9 @@ bool ScalarEvolution::isImpliedCond(ICmp
        RHS = getZeroExtendExpr(RHS, FoundLHS->getType());
      }
    } else if (getTypeSizeInBits(LHS->getType()) >
@@ -4044,7 +4058,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        return false;
      if (CmpInst::isSigned(FoundPred)) {
        FoundLHS = getSignExtendExpr(FoundLHS, LHS->getType());
-@@ -11093,8 +11130,8 @@
+@@ -11093,8 +11135,8 @@ bool ScalarEvolution::isImpliedCondBalan
      // range we consider has to correspond to same signedness as the
      // predicate we're interested in folding.
  
@@ -4055,7 +4069,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
      if (Min == C->getAPInt()) {
        // Given (V >= Min && V != Min) we conclude V >= (Min + 1).
-@@ -11104,48 +11141,49 @@
+@@ -11104,48 +11146,49 @@ bool ScalarEvolution::isImpliedCondBalan
        APInt SharperMin = Min + 1;
  
        switch (Pred) {
@@ -4142,7 +4156,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        }
      }
    }
-@@ -11164,9 +11202,8 @@
+@@ -11164,9 +11207,8 @@ bool ScalarEvolution::isImpliedCondBalan
    return false;
  }
  
@@ -4154,7 +4168,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    const auto *AE = dyn_cast<SCEVAddExpr>(Expr);
    if (!AE || AE->getNumOperands() != 2)
      return false;
-@@ -11349,7 +11386,8 @@
+@@ -11349,7 +11391,8 @@ bool ScalarEvolution::isImpliedCondOpera
      FoundRHSLimit = -(*RDiff);
    } else {
      assert(Pred == CmpInst::ICMP_SLT && "Checked above!");
@@ -4164,7 +4178,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
  
    // Try to prove (1) or (2), as needed.
-@@ -11438,7 +11476,8 @@
+@@ -11438,7 +11481,8 @@ bool ScalarEvolution::isImpliedViaMerge(
      // PHIs, for it we can compare incoming values of AddRec from above the loop
      // and latch with their respective incoming values of LPhi.
      // TODO: Generalize to handle loops with many inputs in a header.
@@ -4174,7 +4188,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
      auto *RLoop = RAR->getLoop();
      auto *Predecessor = RLoop->getLoopPredecessor();
-@@ -11532,8 +11571,7 @@
+@@ -11532,8 +11576,7 @@ bool ScalarEvolution::isImpliedCondOpera
                                            CtxI))
      return true;
  
@@ -4184,7 +4198,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  }
  
  /// Is MaybeMinMaxExpr an (U|S)(Min|Max) of Candidate and some other values?
-@@ -11571,8 +11609,8 @@
+@@ -11571,8 +11614,8 @@ static bool IsKnownPredicateViaAddRecSta
    if (LAR->getStepRecurrence(SE) != RAR->getStepRecurrence(SE))
      return false;
  
@@ -4195,7 +4209,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (!LAR->getNoWrapFlags(NW) || !RAR->getNoWrapFlags(NW))
      return false;
  
-@@ -11813,9 +11851,9 @@
+@@ -11813,9 +11856,9 @@ static bool isKnownPredicateExtendIdiom(
    return false;
  }
  
@@ -4208,7 +4222,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    return isKnownPredicateExtendIdiom(Pred, LHS, RHS) ||
           isKnownPredicateViaConstantRanges(Pred, LHS, RHS) ||
           IsKnownPredicateViaMinOrMax(*this, Pred, LHS, RHS) ||
-@@ -11823,13 +11861,14 @@
+@@ -11823,13 +11866,14 @@ ScalarEvolution::isKnownViaNonRecursiveR
           isKnownPredicateViaNoOverflow(Pred, LHS, RHS);
  }
  
@@ -4229,7 +4243,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    case ICmpInst::ICMP_EQ:
    case ICmpInst::ICMP_NE:
      if (HasSameValue(LHS, FoundLHS) && HasSameValue(RHS, FoundRHS))
-@@ -11926,7 +11965,7 @@
+@@ -11926,7 +11970,7 @@ bool ScalarEvolution::canIVOverflowOnLT(
  
  bool ScalarEvolution::canIVOverflowOnGT(const SCEV *RHS, const SCEV *Stride,
                                          bool IsSigned) {
@@ -4238,7 +4252,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    unsigned BitWidth = getTypeSizeInBits(RHS->getType());
    const SCEV *One = getOne(Stride->getType());
  
-@@ -12079,15 +12118,14 @@
+@@ -12079,15 +12123,14 @@ ScalarEvolution::howManyLessThans(const
            const SCEV *Step = AR->getStepRecurrence(*this);
            Type *Ty = ZExt->getType();
            auto *S = getAddRecExpr(
@@ -4256,7 +4270,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    if (!IV && AllowPredicates) {
      // Try to make this an AddRec using runtime tests, in the first X
      // iterations of this loop, where X is the SCEV expression found by the
-@@ -12305,8 +12343,8 @@
+@@ -12305,8 +12348,8 @@ ScalarEvolution::howManyLessThans(const
        //
        // FIXME: Should isLoopEntryGuardedByCond do this for us?
        auto CondGT = IsSigned ? ICmpInst::ICMP_SGT : ICmpInst::ICMP_UGT;
@@ -4267,7 +4281,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        return isLoopEntryGuardedByCond(L, CondGT, OrigRHS, StartMinusOne);
      };
  
-@@ -12328,7 +12366,8 @@
+@@ -12328,7 +12371,8 @@ ScalarEvolution::howManyLessThans(const
  
        // See what would happen if we assume the backedge is taken. This is
        // used to compute MaxBECount.
@@ -4277,7 +4291,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      }
  
      // At this point, we know:
-@@ -12503,11 +12542,11 @@
+@@ -12503,11 +12547,11 @@ ScalarEvolution::howManyGreaterThans(con
    const SCEV *BECount = getUDivExpr(
        getAddExpr(getMinusSCEV(Start, End), getMinusSCEV(Stride, One)), Stride);
  
@@ -4293,7 +4307,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    unsigned BitWidth = getTypeSizeInBits(LHS->getType());
    APInt Limit = IsSigned ? APInt::getSignedMinValue(BitWidth) + (MinStride - 1)
-@@ -12516,9 +12555,8 @@
+@@ -12516,9 +12560,8 @@ ScalarEvolution::howManyGreaterThans(con
    // Although End can be a MIN expression we estimate MinEnd considering only
    // the case End = RHS. This is safe because in the other case (Start - End)
    // is zero, leading to a zero maximum backedge taken count.
@@ -4305,7 +4319,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
    const SCEV *MaxBECount = isa<SCEVConstant>(BECount)
                                 ? BECount
-@@ -12533,7 +12571,7 @@
+@@ -12533,7 +12576,7 @@ ScalarEvolution::howManyGreaterThans(con
  
  const SCEV *SCEVAddRecExpr::getNumIterationsInRange(const ConstantRange &Range,
                                                      ScalarEvolution &SE) const {
@@ -4314,7 +4328,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      return SE.getCouldNotCompute();
  
    // If the start is a non-zero constant, shift the range to simplify things.
-@@ -12541,8 +12579,8 @@
+@@ -12541,8 +12584,8 @@ const SCEV *SCEVAddRecExpr::getNumIterat
      if (!SC->getValue()->isZero()) {
        SmallVector<const SCEV *, 4> Operands(operands());
        Operands[0] = SE.getZero(SC->getType());
@@ -4325,7 +4339,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        if (const auto *ShiftedAddRec = dyn_cast<SCEVAddRecExpr>(Shifted))
          return ShiftedAddRec->getNumIterationsInRange(
              Range.subtract(SC->getAPInt()), SE);
-@@ -12584,12 +12622,13 @@
+@@ -12584,12 +12627,13 @@ const SCEV *SCEVAddRecExpr::getNumIterat
      // things must have happened.
      ConstantInt *Val = EvaluateConstantChrecAtConstant(this, ExitValue, SE);
      if (Range.contains(Val->getValue()))
@@ -4342,7 +4356,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
             "Linear scev computation is off in a bad way!");
      return SE.getConstant(ExitValue);
    }
-@@ -12623,8 +12662,8 @@
+@@ -12623,8 +12667,8 @@ SCEVAddRecExpr::getPostIncExpr(ScalarEvo
    const SCEV *Last = getOperand(getNumOperands() - 1);
    assert(!Last->isZero() && "Recurrency with zero step?");
    Ops.push_back(Last);
@@ -4353,7 +4367,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  }
  
  // Return true when S contains at least an undef value.
-@@ -12692,7 +12731,7 @@
+@@ -12692,7 +12736,7 @@ void ScalarEvolution::SCEVCallbackVH::al
  }
  
  ScalarEvolution::SCEVCallbackVH::SCEVCallbackVH(Value *V, ScalarEvolution *se)
@@ -4362,7 +4376,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
  
  //===----------------------------------------------------------------------===//
  //                   ScalarEvolution Class Implementation
-@@ -12777,8 +12816,7 @@
+@@ -12777,8 +12821,7 @@ bool ScalarEvolution::hasLoopInvariantBa
    return !isa<SCEVCouldNotCompute>(getBackedgeTakenCount(L));
  }
  
@@ -4372,7 +4386,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // Print all inner loops first
    for (Loop *I : *L)
      PrintLoopInfo(OS, SE, I);
-@@ -12808,7 +12846,8 @@
+@@ -12808,7 +12851,8 @@ static void PrintLoopInfo(raw_ostream &O
    OS << ": ";
  
    if (!isa<SCEVCouldNotCompute>(SE->getConstantMaxBackedgeTakenCount(L))) {
@@ -4382,7 +4396,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (SE->isBackedgeTakenCountMaxOrZero(L))
        OS << ", actual taken count either this or zero.";
    } else {
-@@ -12892,7 +12931,8 @@
+@@ -12892,7 +12936,8 @@ void ScalarEvolution::print(raw_ostream
          }
  
          if (L) {
@@ -4392,7 +4406,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            const SCEV *ExitValue = SE.getSCEVAtScope(SV, L->getParentLoop());
            if (!SE.isLoopInvariant(ExitValue, L)) {
              OS << "<<Unknown>>";
-@@ -12903,7 +12943,8 @@
+@@ -12903,7 +12948,8 @@ void ScalarEvolution::print(raw_ostream
            bool First = true;
            for (auto *Iter = L; Iter; Iter = Iter->getParentLoop()) {
              if (First) {
@@ -4402,7 +4416,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
                First = false;
              } else {
                OS << ", ";
-@@ -12917,14 +12958,16 @@
+@@ -12917,14 +12963,16 @@ void ScalarEvolution::print(raw_ostream
              if (InnerL == L)
                continue;
              if (First) {
@@ -4421,7 +4435,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
            }
  
            OS << " }";
-@@ -12984,7 +13027,8 @@
+@@ -12984,7 +13032,8 @@ ScalarEvolution::computeLoopDisposition(
      // Everything that is not defined at loop entry is variant.
      if (DT.dominates(L->getHeader(), AR->getLoop()->getHeader()))
        return LoopVariant;
@@ -4431,7 +4445,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
             " dominate the contained loop's header?");
  
      // This recurrence is invariant w.r.t. L if AR's loop contains L.
-@@ -13025,8 +13069,8 @@
+@@ -13025,8 +13074,8 @@ ScalarEvolution::computeLoopDisposition(
      LoopDisposition RD = getLoopDisposition(UDiv->getRHS(), L);
      if (RD == LoopVariant)
        return LoopVariant;
@@ -4442,7 +4456,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    }
    case scUnknown:
      // All non-instruction values are loop invariant.  All instructions are loop
-@@ -13118,12 +13162,13 @@
+@@ -13118,12 +13167,13 @@ ScalarEvolution::computeBlockDisposition
      BlockDisposition RD = getBlockDisposition(RHS, BB);
      if (RD == DoesNotDominateBlock)
        return DoesNotDominateBlock;
@@ -4459,7 +4473,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        if (I->getParent() == BB)
          return DominatesBlock;
        if (DT.properlyDominates(I->getParent(), BB))
-@@ -13238,9 +13283,8 @@
+@@ -13238,9 +13288,8 @@ void ScalarEvolution::forgetMemoizedResu
    }
  }
  
@@ -4471,7 +4485,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    struct FindUsedLoops {
      FindUsedLoops(SmallPtrSetImpl<const Loop *> &LoopsUsed)
          : LoopsUsed(LoopsUsed) {}
-@@ -13370,9 +13414,8 @@
+@@ -13370,9 +13419,8 @@ void ScalarEvolution::verify() const {
          std::abort();
        }
        if (It->second != KV.first) {
@@ -4483,7 +4497,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          std::abort();
        }
      }
-@@ -13406,8 +13449,9 @@
+@@ -13406,8 +13454,9 @@ void ScalarEvolution::verify() const {
          if (It != ValuesAtScopesUsers.end() &&
              is_contained(It->second, std::make_pair(L, Value)))
            continue;
@@ -4495,7 +4509,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
          std::abort();
        }
      }
-@@ -13423,8 +13467,9 @@
+@@ -13423,8 +13472,9 @@ void ScalarEvolution::verify() const {
        if (It != ValuesAtScopes.end() &&
            is_contained(It->second, std::make_pair(L, ValueAtScope)))
          continue;
@@ -4507,7 +4521,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        std::abort();
      }
    }
-@@ -13438,7 +13483,7 @@
+@@ -13438,7 +13488,7 @@ void ScalarEvolution::verify() const {
          if (!isa<SCEVConstant>(ENT.ExactNotTaken)) {
            auto UserIt = BECountUsers.find(ENT.ExactNotTaken);
            if (UserIt != BECountUsers.end() &&
@@ -4516,7 +4530,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
              continue;
            dbgs() << "Value " << *ENT.ExactNotTaken << " for loop "
                   << *LoopAndBEInfo.first << " missing from BECountUsers\n";
-@@ -13451,9 +13496,8 @@
+@@ -13451,9 +13501,8 @@ void ScalarEvolution::verify() const {
    VerifyBECountUsers(/* Predicated */ true);
  }
  
@@ -4528,7 +4542,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // Invalidate the ScalarEvolution object whenever it isn't preserved or one
    // of its dependencies is invalidated.
    auto PAC = PA.getChecker<ScalarEvolutionAnalysis>();
-@@ -13479,8 +13523,8 @@
+@@ -13479,8 +13528,8 @@ ScalarEvolutionVerifierPass::run(Functio
    return PreservedAnalyses::all();
  }
  
@@ -4539,7 +4553,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    // For compatibility with opt's -analyze feature under legacy pass manager
    // which was not ported to NPM. This keeps tests using
    // update_analyze_test_checks.py working.
-@@ -13506,6 +13550,7 @@
+@@ -13506,6 +13555,7 @@ ScalarEvolutionWrapperPass::ScalarEvolut
  }
  
  bool ScalarEvolutionWrapperPass::runOnFunction(Function &F) {
@@ -4547,7 +4561,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    SE.reset(new ScalarEvolution(
        F, getAnalysis<TargetLibraryInfoWrapperPass>().getTLI(F),
        getAnalysis<AssumptionCacheTracker>().getAssumptionCache(F),
-@@ -13574,7 +13619,6 @@
+@@ -13574,7 +13624,6 @@ namespace {
  
  class SCEVPredicateRewriter : public SCEVRewriteVisitor<SCEVPredicateRewriter> {
  public:
@@ -4555,7 +4569,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
    /// Rewrites \p S in the context of a loop L and the SCEV predication
    /// infrastructure.
    ///
-@@ -13634,9 +13678,10 @@
+@@ -13634,9 +13683,10 @@ public:
    }
  
  private:
@@ -4569,7 +4583,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        : SCEVRewriteVisitor(SE), NewPreds(NewPreds), Pred(Pred), L(L) {}
  
    bool addOverflowAssumption(const SCEVPredicate *P) {
-@@ -13664,10 +13709,10 @@
+@@ -13664,10 +13714,10 @@ private:
      if (!isa<PHINode>(Expr->getValue()))
        return Expr;
      Optional<std::pair<const SCEV *, SmallVector<const SCEVPredicate *, 3>>>
@@ -4582,7 +4596,7 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
        // Wrap predicates from outer loops are not supported.
        if (auto *WP = dyn_cast<const SCEVWrapPredicate>(P)) {
          auto *AR = cast<const SCEVAddRecExpr>(WP->getExpr());
-@@ -14050,18 +14095,17 @@
+@@ -14050,18 +14100,17 @@ bool ScalarEvolution::matchURem(const SC
  
  const SCEV *
  ScalarEvolution::computeSymbolicMaxBackedgeTakenCount(const Loop *L) {
@@ -4604,10 +4618,10 @@ diff -ur llvm-14.0.6.src/lib/Analysis/ScalarEvolution.cpp llvm-14.0.6.src.patche
      if (!isa<SCEVCouldNotCompute>(ExitCount)) {
        assert(DT.dominates(ExitingBB, L->getLoopLatch()) &&
               "We should only have known counts for exiting blocks that "
-diff -ur llvm-14.0.6.src/lib/CodeGen/MachineModuleInfo.cpp llvm-14.0.6.src.patched/lib/CodeGen/MachineModuleInfo.cpp
+diff --color -uprN llvm-14.0.6.src/lib/CodeGen/MachineModuleInfo.cpp llvm-14.0.6.src.patched/lib/CodeGen/MachineModuleInfo.cpp
 --- llvm-14.0.6.src/lib/CodeGen/MachineModuleInfo.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/lib/CodeGen/MachineModuleInfo.cpp	2023-09-04 16:33:57.196869349 +0800
-@@ -313,7 +313,7 @@
++++ llvm-14.0.6.src.patched/lib/CodeGen/MachineModuleInfo.cpp	2024-07-04 15:24:55.527947755 +0800
+@@ -313,7 +313,7 @@ MachineFunction &MachineModuleInfo::getO
  }
  
  void MachineModuleInfo::deleteMachineFunctionFor(Function &F) {
@@ -4616,10 +4630,10 @@ diff -ur llvm-14.0.6.src/lib/CodeGen/MachineModuleInfo.cpp llvm-14.0.6.src.patch
    LastRequest = nullptr;
    LastResult = nullptr;
  }
-diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/lib/IR/LegacyPassManager.cpp
+diff --color -uprN llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/lib/IR/LegacyPassManager.cpp
 --- llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ llvm-14.0.6.src.patched/lib/IR/LegacyPassManager.cpp	2023-12-08 13:39:11.780929983 +0800
-@@ -46,9 +46,7 @@
++++ llvm-14.0.6.src.patched/lib/IR/LegacyPassManager.cpp	2024-07-04 15:24:55.527947755 +0800
+@@ -46,9 +46,7 @@ using namespace llvm;
  
  namespace {
  // Different debug levels that can be enabled...
@@ -4630,7 +4644,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  } // namespace
  
  static cl::opt<enum PassDebugLevel> PassDebugging(
-@@ -251,8 +249,10 @@
+@@ -251,8 +249,10 @@ class FunctionPassManagerImpl : public P
                                  public PMDataManager,
                                  public PMTopLevelManager {
    virtual void anchor();
@@ -4641,7 +4655,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  public:
    static char ID;
    explicit FunctionPassManagerImpl()
-@@ -260,9 +260,7 @@
+@@ -260,9 +260,7 @@ public:
          wasRun(false) {}
  
    /// \copydoc FunctionPassManager::add()
@@ -4652,7 +4666,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  
    /// createPrinterPass - Get a function printer pass.
    Pass *createPrinterPass(raw_ostream &O,
-@@ -286,7 +284,6 @@
+@@ -286,7 +284,6 @@ public:
    ///
    bool doFinalization(Module &M) override;
  
@@ -4660,7 +4674,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    PMDataManager *getAsPMDataManager() override { return this; }
    Pass *getAsPass() override { return this; }
    PassManagerType getTopLevelPassManagerType() override {
-@@ -406,8 +403,8 @@
+@@ -406,8 +403,8 @@ public:
    /// whether any of the passes modifies the module, and if so, return true.
    bool runOnModule(Module &M);
  
@@ -4670,7 +4684,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  
    /// Pass Manager itself does not invalidate any analysis info.
    void getAnalysisUsage(AnalysisUsage &Info) const override {
-@@ -432,7 +429,7 @@
+@@ -432,7 +429,7 @@ public:
  
    // Print passes managed by this manager
    void dumpPassStructure(unsigned Offset) override {
@@ -4679,7 +4693,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      for (unsigned Index = 0; Index < getNumContainedPasses(); ++Index) {
        ModulePass *MP = getContainedPass(Index);
        MP->dumpPassStructure(Offset + 1);
-@@ -440,7 +437,7 @@
+@@ -440,7 +437,7 @@ public:
            OnTheFlyManagers.find(MP);
        if (I != OnTheFlyManagers.end())
          I->second->dumpPassStructure(Offset + 2);
@@ -4688,7 +4702,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      }
    }
  
-@@ -453,10 +450,10 @@
+@@ -453,10 +450,10 @@ public:
      return PMT_ModulePassManager;
    }
  
@@ -4701,7 +4715,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  };
  
  char MPPassManager::ID = 0;
-@@ -480,9 +477,7 @@
+@@ -480,9 +477,7 @@ public:
        : Pass(PT_PassManager, ID), PMTopLevelManager(new MPPassManager()) {}
  
    /// \copydoc PassManager::add()
@@ -4712,7 +4726,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  
    /// createPrinterPass - Get a module printer pass.
    Pass *createPrinterPass(raw_ostream &O,
-@@ -494,8 +489,8 @@
+@@ -494,8 +489,8 @@ public:
    /// whether any of the passes modifies the module, and if so, return true.
    bool run(Module &M);
  
@@ -4722,7 +4736,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  
    /// Pass Manager itself does not invalidate any analysis info.
    void getAnalysisUsage(AnalysisUsage &Info) const override {
-@@ -559,8 +554,7 @@
+@@ -559,8 +554,7 @@ PMTopLevelManager::PMTopLevelManager(PMD
  }
  
  /// Set pass P as the last user of the given analysis passes.
@@ -4732,7 +4746,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    unsigned PDepth = 0;
    if (P->getResolver())
      PDepth = P->getResolver()->getPMDataManager().getDepth();
-@@ -637,7 +631,7 @@
+@@ -637,7 +631,7 @@ AnalysisUsage *PMTopLevelManager::findAn
      AnalysisUsage AU;
      P->getAnalysisUsage(AU);
  
@@ -4741,7 +4755,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      FoldingSetNodeID ID;
      AUFoldingSetNode::Profile(ID, AU);
      void *IP = nullptr;
-@@ -692,9 +686,12 @@
+@@ -692,9 +686,12 @@ void PMTopLevelManager::schedulePass(Pas
  
          if (!PI) {
            // Pass P is not in the global PassRegistry
@@ -4757,7 +4771,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
            for (const AnalysisID ID2 : RequiredSet) {
              if (ID == ID2)
                break;
-@@ -702,20 +699,26 @@
+@@ -702,20 +699,26 @@ void PMTopLevelManager::schedulePass(Pas
              if (AnalysisPass2) {
                dbgs() << "\t" << AnalysisPass2->getPassName() << "\n";
              } else {
@@ -4789,7 +4803,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
                   AnalysisPass->getPotentialPassManagerType()) {
            // Schedule analysis pass that is managed by a new manager.
            schedulePass(AnalysisPass);
-@@ -882,7 +885,8 @@
+@@ -882,7 +885,8 @@ void PMDataManager::recordAvailableAnaly
    // This pass is the current implementation of all of the interfaces it
    // implements as well.
    const PassInfo *PInf = TPM->findAnalysisPassInfo(PI);
@@ -4799,7 +4813,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    for (const PassInfo *PI : PInf->getInterfacesImplemented())
      AvailableAnalysis[PI->getTypeInfo()] = P;
  }
-@@ -929,15 +933,16 @@
+@@ -929,15 +933,16 @@ void PMDataManager::removeNotPreservedAn
      return;
  
    const AnalysisUsage::VectorType &PreservedSet = AnUsage->getPreservedSet();
@@ -4820,7 +4834,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
          dbgs() << S->getPassName() << "'\n";
        }
        AvailableAnalysis.erase(Info);
-@@ -950,8 +955,7 @@
+@@ -950,8 +955,7 @@ void PMDataManager::removeNotPreservedAn
      if (!IA)
        continue;
  
@@ -4830,7 +4844,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
           I != E;) {
        DenseMap<AnalysisID, Pass *>::iterator Info = I++;
        if (Info->second->getAsImmutablePass() == nullptr &&
-@@ -959,7 +963,7 @@
+@@ -959,7 +963,7 @@ void PMDataManager::removeNotPreservedAn
          // Remove this analysis
          if (PassDebugging >= Details) {
            Pass *S = Info->second;
@@ -4839,7 +4853,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
            dbgs() << S->getPassName() << "'\n";
          }
          IA->erase(Info);
-@@ -981,7 +985,7 @@
+@@ -981,7 +985,7 @@ void PMDataManager::removeDeadPasses(Pas
    TPM->collectLastUses(DeadPasses, P);
  
    if (PassDebugging >= Details && !DeadPasses.empty()) {
@@ -4848,7 +4862,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      dbgs() << "' is the last user of following pass instances.";
      dbgs() << " Free these instances\n";
    }
-@@ -1091,7 +1095,6 @@
+@@ -1091,7 +1095,6 @@ void PMDataManager::add(Pass *P, bool Pr
    PassVector.push_back(P);
  }
  
@@ -4856,7 +4870,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  /// Populate UP with analysis pass that are used or required by
  /// pass P and are available. Populate RP_NotAvail with analysis
  /// pass that are required by pass P but are not available.
-@@ -1136,7 +1139,7 @@
+@@ -1136,7 +1139,7 @@ void PMDataManager::initializeAnalysisIm
  Pass *PMDataManager::findAnalysisPass(AnalysisID AID, bool SearchParent) {
  
    // Check if AvailableAnalysis map has one entry.
@@ -4865,7 +4879,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  
    if (I != AvailableAnalysis.end())
      return I->second;
-@@ -1149,7 +1152,7 @@
+@@ -1149,7 +1152,7 @@ Pass *PMDataManager::findAnalysisPass(An
  }
  
  // Print list of passes that are last used by P.
@@ -4874,7 +4888,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    if (PassDebugging < Details)
      return;
  
-@@ -1162,7 +1165,7 @@
+@@ -1162,7 +1165,7 @@ void PMDataManager::dumpLastUses(Pass *P
    TPM->collectLastUses(LUses, P);
  
    for (Pass *P : LUses) {
@@ -4883,7 +4897,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      P->dumpPassStructure(0);
    }
  }
-@@ -1171,17 +1174,14 @@
+@@ -1171,17 +1174,14 @@ void PMDataManager::dumpPassArguments()
    for (Pass *P : PassVector) {
      if (PMDataManager *PMD = P->getAsPMDataManager())
        PMD->dumpPassArguments();
@@ -4905,7 +4919,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    if (PassDebugging < Executions)
      return;
    dbgs() << "[" << std::chrono::system_clock::now() << "] " << (void *)this
-@@ -1204,10 +1204,10 @@
+@@ -1204,10 +1204,10 @@ void PMDataManager::dumpPassInfo(Pass *P
      dbgs() << "' on Function '" << Msg << "'...\n";
      break;
    case ON_MODULE_MSG:
@@ -4918,7 +4932,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      break;
    case ON_LOOP_MSG:
      dbgs() << "' on Loop '" << Msg << "'...\n";
-@@ -1247,14 +1247,16 @@
+@@ -1247,14 +1247,16 @@ void PMDataManager::dumpUsedSet(const Pa
    dumpAnalysisUsage("Used", P, analysisUsage.getUsedSet());
  }
  
@@ -4939,7 +4953,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      const PassInfo *PInf = TPM->findAnalysisPassInfo(Set[i]);
      if (!PInf) {
        // Some preserved passes, such as AliasAnalysis, may not be initialized by
-@@ -1332,13 +1334,9 @@
+@@ -1332,13 +1334,9 @@ FunctionPassManager::FunctionPassManager
    FPM->setResolver(AR);
  }
  
@@ -4955,7 +4969,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  
  /// run - Execute all of the passes scheduled for execution.  Keep
  /// track of whether any of the passes modifies the function, and if
-@@ -1351,7 +1349,6 @@
+@@ -1351,7 +1349,6 @@ bool FunctionPassManager::run(Function &
    return FPM->run(F);
  }
  
@@ -4963,7 +4977,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  /// doInitialization - Run all of the initializers for the function passes.
  ///
  bool FunctionPassManager::doInitialization() {
-@@ -1360,37 +1357,34 @@
+@@ -1360,37 +1357,34 @@ bool FunctionPassManager::doInitializati
  
  /// doFinalization - Run all of the finalizers for the function passes.
  ///
@@ -5007,7 +5021,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  /// Execute all of the passes scheduled for execution by invoking
  /// runOnFunction method.  Keep track of whether any of the passes modifies
  /// the function, and if so, return true.
-@@ -1399,10 +1393,10 @@
+@@ -1399,10 +1393,10 @@ bool FPPassManager::runOnFunction(Functi
      return false;
  
    bool Changed = false;
@@ -5019,7 +5033,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    unsigned InstrCount, FunctionSize = 0;
    StringMap<std::pair<unsigned, unsigned>> FunctionToInstrCount;
    bool EmitICRemark = M.shouldEmitInstrCountChangedRemark();
-@@ -1413,9 +1407,10 @@
+@@ -1413,9 +1407,10 @@ bool FPPassManager::runOnFunction(Functi
    }
  
    llvm::TimeTraceScope FunctionScope("OptFunction", F.getName());
@@ -5033,7 +5047,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
      bool LocalChanged = false;
  
      llvm::TimeTraceScope PassScope("RunPass", FP->getPassName());
-@@ -1506,8 +1501,7 @@
+@@ -1506,8 +1501,7 @@ bool FPPassManager::doFinalization(Modul
  /// Execute all of the passes scheduled for execution by invoking
  /// runOnModule method.  Keep track of whether any of the passes modifies
  /// the module, and if so, return true.
@@ -5043,7 +5057,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    llvm::TimeTraceScope TimeScope("OptModule", M.getName());
  
    bool Changed = false;
-@@ -1621,7 +1615,7 @@
+@@ -1621,7 +1615,7 @@ void MPPassManager::addLowerLevelRequire
    Pass *FoundPass = nullptr;
    if (RequiredPassPI && RequiredPassPI->isAnalysis()) {
      FoundPass =
@@ -5052,7 +5066,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
    }
    if (!FoundPass) {
      FoundPass = RequiredPass;
-@@ -1632,7 +1626,7 @@
+@@ -1632,7 +1626,7 @@ void MPPassManager::addLowerLevelRequire
    // Register P as the last user of FoundPass or RequiredPass.
    SmallVector<Pass *, 1> LU;
    LU.push_back(FoundPass);
@@ -5061,7 +5075,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  }
  
  /// Return function pass corresponding to PassInfo PI, that is
-@@ -1662,19 +1656,13 @@
+@@ -1662,19 +1656,13 @@ PassManager::PassManager() {
    PM->setTopLevelManager(PM);
  }
  
@@ -5084,7 +5098,7 @@ diff -ur llvm-14.0.6.src/lib/IR/LegacyPassManager.cpp llvm-14.0.6.src.patched/li
  } // namespace legacy
  } // namespace llvm
  
-@@ -1694,21 +1682,21 @@
+@@ -1694,21 +1682,21 @@ void PMStack::pop() {
  // Push PM on the stack and set its top level manager.
  void PMStack::push(PMDataManager *PM) {
    assert(PM && "Unable to push. Pass Manager expected");
