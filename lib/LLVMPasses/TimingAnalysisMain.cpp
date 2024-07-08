@@ -146,7 +146,6 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
   }
 }
 
-
 boost::optional<std::string>
 TimingAnalysisMain::getNextFunction(unsigned int core) {
   auto it = mp.find(core);
@@ -214,7 +213,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   std::map<std::string, size_t> vec;
   bool ETchage = true;
   int ET = 0;
-  while (ET<1) {
+  while (ETchage) {
     ET++;
     ETchage = false;
     for (unsigned i = 0; i < CoreNums; ++i) {
@@ -261,7 +260,8 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
       }
       outs() << " No next analyse point for this core.\n";
     }
-    outs() << "---------------------------------The "<< ET <<" iteration is over----------------------------------\n";
+    outs() << "---------------------------------The " << ET
+           << " iteration is over----------------------------------\n";
     std::ofstream myfile;
     std::string fileName = "MISSC.txt";
     myfile.open(fileName, std::ios_base::trunc);
@@ -270,7 +270,6 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
            << "L2MISS : " << ::L2MISS << '\n';
     myfile.close();
     IMISS = DMISS = L2MISS = 0; // RESET
-
   }
   // Release the call graph instance
   CallGraph::getGraph().releaseInstance();
