@@ -437,9 +437,9 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
         }
         output_data.update(functionName, "BCET", this->BCETtime);
         output_data.update(functionName, "WCET", this->WCETtime);
-        output_data.update(functionName, "IMISS", IMISS);
-        output_data.update(functionName, "DMISS", DMISS);
-        output_data.update(functionName, "L2MISS", L2MISS);
+        output_data.update(functionName, "I-MISS", IMISS);
+        output_data.update(functionName, "D-MISS", DMISS);
+        output_data.update(functionName, "L2-MISS", L2MISS);
       }
       outs() << " No next analyse point for this core.\n";
     }
