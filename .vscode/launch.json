@@ -5,7 +5,7 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch",
+            "name": "(gdb) Launch Native",
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/build/bin/llvmta",
@@ -47,6 +47,48 @@
                     "value": "${workspaceRoot}/thirdParty/gurobi952/linux64/lib"
                 }
             ],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                },
+                {
+                    "description": "Set Disassembly Flavor to Intel",
+                    "text": "-gdb-set disassembly-flavor intel",
+                    "ignoreFailures": true
+                }
+            ],
+            "preLaunchTask": "run gdb"
+        },
+        {
+            "name": "(gdb) Launch Docker",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/bin/llvmta",
+            "args": [
+                "-disable-tail-calls",
+                "-float-abi=hard",
+                "-mattr=-neon,+vfp2",
+                "-O0",
+                "--ta-muarch-type=outoforder",
+                "--ta-memory-type=separatecaches",
+                "--ta-strict=false",
+                "--ta-loop-bounds-file='${workspaceRoot}/testcases/test/LoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
+                "--ta-loop-lowerbounds-file='${workspaceRoot}/testcases/test/LLoopAnnotations_Arm|NotOptimized|HardFloat.csv'",
+                "--ta-num-callsite-tokens=1",
+                "--core-info=${workspaceRoot}/testcases/test/CoreInfo.json",
+                "--core-numbers=2",
+                "--shared-cache-Persistence-Analysis=false",
+                "--ta-l2cache-persistence=elementwise",
+                "-debug-only=",
+                "optimized.ll"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceRoot}/testcases/dirforgdb",
+            "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
             "setupCommands": [
