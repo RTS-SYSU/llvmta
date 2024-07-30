@@ -44,7 +44,7 @@
                 },
                 {
                     "name": "LD_LIBRARY_PATH",
-                    "value": "${workspaceRoot}/thirdParty/gurobi952/linux64/lib"
+                    "value": "${env:LD_LIBRARY_PATH}:${workspaceRoot}/thirdParty/gurobi952/linux64/lib"
                 }
             ],
             "externalConsole": false,
