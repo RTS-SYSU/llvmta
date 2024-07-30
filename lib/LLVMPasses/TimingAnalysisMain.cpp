@@ -53,6 +53,7 @@
 #include "llvm/Support/MemoryBuffer.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <Util/StatisticOutput.h>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -71,180 +72,6 @@ using namespace llvm;
 using namespace std;
 
 namespace TimingAnalysisPass {
-
-class StatisticOutput {
-private:
-  // data in matrix form
-  std::vector<std::vector<std::string>> datas;
-  std::vector<size_t> max_col_len;
-
-  std::unordered_map<std::string, size_t> row_map, col_map;
-  std::vector<std::string> row_names, col_names;
-
-  // change this to change the output format
-  const static char top_bottom = '=', left_right = '|', line_seg = '-',
-                    col_seg = '|';
-
-  void print_line_seg(FILE *fp, size_t line_size, char ch = line_seg) {
-    for (size_t i = 0; i < line_size; ++i) {
-      fprintf(fp, "%c", ch);
-    }
-    fprintf(fp, "\n");
-  }
-
-  // real dump function
-  void dump_fp(FILE *fp) {
-    // calc line size
-    size_t line_size = 0;
-    for (size_t i = 0; i < max_col_len.size(); ++i) {
-      // 2 for left and right blank, 2 for col_seg
-      line_size += (max_col_len[i] + 3);
-    }
-    line_size++;
-
-    // top line
-    for (size_t i = 0; i < line_size; ++i) {
-      fprintf(fp, "%c", top_bottom);
-    }
-    fprintf(fp, "\n");
-
-    // dump top row info
-    fprintf(fp, "%c", left_right);
-    // 2 for white space
-    for (size_t i = 0; i < max_col_len[0] + 2; ++i) {
-      fprintf(fp, " ");
-    }
-    fprintf(fp, "%c", col_seg);
-
-    for (size_t i = 0; i < col_names.size(); ++i) {
-      fprintf(fp, " ");
-      size_t diff = max_col_len[i + 1] - col_names[i].size();
-      if (diff % 2 == 0) {
-        for (size_t j = 0; j < diff / 2; ++j) {
-          fprintf(fp, " ");
-        }
-        fprintf(fp, "%s", col_names[i].c_str());
-        for (size_t j = 0; j < diff / 2; ++j) {
-          fprintf(fp, " ");
-        }
-      } else {
-        for (size_t j = 0; j < diff / 2; ++j) {
-          fprintf(fp, " ");
-        }
-        fprintf(fp, "%s", col_names[i].c_str());
-        for (size_t j = 0; j < diff / 2 + 1; ++j) {
-          fprintf(fp, " ");
-        }
-      }
-      fprintf(fp, " %c", col_seg);
-    }
-    fprintf(fp, "\n");
-
-    print_line_seg(fp, line_size);
-
-    // each row
-    for (size_t i = 0; i < row_names.size(); ++i) {
-      fprintf(fp, "%c ", left_right);
-      size_t diff = max_col_len[0] - row_names[i].size();
-      if (diff % 2 == 0) {
-        for (size_t j = 0; j < diff / 2; ++j) {
-          fprintf(fp, " ");
-        }
-        fprintf(fp, "%s", row_names[i].c_str());
-        for (size_t j = 0; j < diff / 2; ++j) {
-          fprintf(fp, " ");
-        }
-      } else {
-        for (size_t j = 0; j < diff / 2; ++j) {
-          fprintf(fp, " ");
-        }
-        fprintf(fp, "%s", row_names[i].c_str());
-        for (size_t j = 0; j < diff / 2 + 1; ++j) {
-          fprintf(fp, " ");
-        }
-      }
-      fprintf(fp, " %c", col_seg);
-
-      for (size_t j = 0; j < datas[i].size(); ++j) {
-        fprintf(fp, " ");
-        diff = max_col_len[j + 1] - datas[i][j].size();
-        if (diff % 2 == 0) {
-          for (size_t k = 0; k < diff / 2; ++k) {
-            fprintf(fp, " ");
-          }
-          fprintf(fp, "%s", datas[i][j].c_str());
-          for (size_t k = 0; k < diff / 2; ++k) {
-            fprintf(fp, " ");
-          }
-        } else {
-          for (size_t k = 0; k < diff / 2; ++k) {
-            fprintf(fp, " ");
-          }
-          fprintf(fp, "%s", datas[i][j].c_str());
-          for (size_t k = 0; k < diff / 2 + 1; ++k) {
-            fprintf(fp, " ");
-          }
-        }
-        fprintf(fp, " %c", col_seg);
-      }
-      fprintf(fp, "\n");
-      if (i == row_names.size() - 1)
-        print_line_seg(fp, line_size, top_bottom);
-      else
-        print_line_seg(fp, line_size);
-    }
-  }
-
-public:
-  StatisticOutput() : max_col_len(1, 0){};
-
-  void update(const std::string row, const std::string col, int value) {
-    size_t row_idx = 0, col_idx = 0;
-    if (row_map.find(row) == row_map.end()) {
-      row_map[row] = datas.size();
-      datas.push_back(std::vector<std::string>(col_map.size(), "0"));
-      row_names.push_back(row);
-      max_col_len[0] = std::max(max_col_len[0], row.size());
-    }
-    if (col_map.find(col) == col_map.end()) {
-      col_map[col] = datas[0].size();
-      for (size_t i = 0; i < datas.size(); ++i) {
-        datas[i].push_back("0");
-      }
-      max_col_len.push_back(0);
-      col_names.push_back(col);
-    }
-
-    row_idx = row_map[row];
-    col_idx = col_map[col];
-    datas[row_idx][col_idx] = std::to_string(value);
-    max_col_len[col_idx + 1] =
-        std::max(max_col_len[col_idx + 1],
-                 std::max(col.size(), datas[row_idx][col_idx].size()));
-  }
-
-  void dump() { dump_fp(stdout); }
-
-  void dump(const char *output_file) {
-    FILE *fp = fopen(output_file, "w");
-    if (fp == nullptr) {
-      fprintf(stderr, "[WARN] Unable to open file %s, dump to stdout",
-              output_file);
-      fp = stdout;
-    }
-    dump_fp(fp);
-    if (fp && fp != stdout)
-      fclose(fp);
-  }
-
-  void dump(FILE *fp) {
-    if (fp == nullptr) {
-      fprintf(stderr, "[WARN] fp is nullptr, dump to stdout.\n");
-      fp = stdout;
-    }
-    dump_fp(fp);
-  }
-};
 
 TimingAnalysisMain **MultiCorePasses = nullptr;
 
@@ -388,10 +215,14 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   llvm::json::Array arr;
   std::map<std::string, size_t> vec;
 
-  StatisticOutput output_data = StatisticOutput();
+  uint64_t im = 0, dm = 0, l2m = 0, tm = 0;
+
+  StatisticOutput output_data = StatisticOutput(COL_LEN);
   bool ETchage = true;
   int ET = 0;
-  while (ETchage) {
+  char buf[10];
+  memset(buf, 0, sizeof(buf));
+  while (ET < 1 && ETchage) {
     ET++;
     ETchage = false;
     for (unsigned i = 0; i < CoreNums; ++i) {
@@ -431,15 +262,18 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
           arr.push_back(std::move(obj));
           vec[functionName] = arr.size() - 1;
         } else {
-          auto ptr = arr[vec[functionName]].getAsObject();
+          auto *ptr = arr[vec[functionName]].getAsObject();
           (*ptr)["WCET"] = this->WCETtime;
           (*ptr)["BCET"] = this->BCETtime;
         }
         output_data.update(functionName, "BCET", this->BCETtime);
         output_data.update(functionName, "WCET", this->WCETtime);
-        output_data.update(functionName, "I-MISS", IMISS);
-        output_data.update(functionName, "D-MISS", DMISS);
-        output_data.update(functionName, "L2-MISS", L2MISS);
+        output_data.update(functionName, "I-MISS", IMISS - im);
+        output_data.update(functionName, "D-MISS", DMISS - dm);
+        output_data.update(functionName, "L2-MISS", L2MISS - l2m);
+        im = IMISS;
+        dm = DMISS;
+        l2m = L2MISS;
       }
       outs() << " No next analyse point for this core.\n";
     }
@@ -454,7 +288,7 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     // myfile.close();
     IMISS = DMISS = L2MISS = 0; // RESET
   }
-  output_data.dump("output_information.txt");
+  output_data.dump("output_information.txt", "a");
   // Release the call graph instance
   CallGraph::getGraph().releaseInstance();
   // Dump the json array to file
@@ -607,6 +441,9 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
       outs() << std::to_string(Core)
              << "-Core:   " + AnalysisEntryPoint +
                     "_Calculated Timing Bound: infinite\n";
+      // set wcet and bcet to 0
+      this->WCETtime = 0;
+      this->BCETtime = 0;
     }
   }
   if (AnaType.isSet(AnalysisType::L1ICACHE)) {

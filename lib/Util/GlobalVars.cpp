@@ -7,17 +7,18 @@
 #include "PathAnalysis/LoopBoundInfo.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
 #include "Util/muticoreinfo.h"
+#include <cstdint>
 #include <string>
 #include <vector>
 
 Multicoreinfo mcif(0);
 std::vector<std::string> conflicFunctions;
 bool isBCET = false;
-int IMISS = 0;
-int DMISS = 0;
-int L2MISS = 0;
-int STBUS = 0;
-int BOUND = 0;
+uint64_t IMISS = 0;
+uint64_t DMISS = 0;
+uint64_t L2MISS = 0;
+uint64_t STBUS = 0;
+uint64_t BOUND = 0;
 TimingAnalysisPass::AddressInformation *glAddrInfo = NULL;
 
 unsigned getbound(const MachineBasicBlock *MBB,

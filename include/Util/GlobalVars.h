@@ -3,17 +3,20 @@
 
 #include "PreprocessingAnalysis/AddressInformation.h"
 #include "muticoreinfo.h"
+#include <cstdint>
 #include <string>
 #include <vector>
 extern Multicoreinfo mcif;
 extern bool isBCET;
 extern std::vector<std::string> conflicFunctions;
-extern int IMISS;
-extern int DMISS;
-extern int STBUS;
-extern int L2MISS;
-extern int BOUND;
+extern uint64_t IMISS;
+extern uint64_t DMISS;
+extern uint64_t STBUS;
+extern uint64_t L2MISS;
+extern uint64_t BOUND;
 extern TimingAnalysisPass::AddressInformation *glAddrInfo;
+
+#define COL_LEN 0
 
 unsigned getbound(const MachineBasicBlock *MBB,
                   const TimingAnalysisPass::Context &ctx);

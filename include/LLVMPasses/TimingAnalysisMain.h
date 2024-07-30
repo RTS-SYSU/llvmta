@@ -74,8 +74,8 @@ protected:
 public:
   unsigned int coreNum = 0;
   static char ID;
-  unsigned BCETtime = 0;
-  unsigned WCETtime = 0;
+  uint64_t BCETtime = 0;
+  uint64_t WCETtime = 0;
 
   TimingAnalysisMain(TargetMachine &TM);
 
