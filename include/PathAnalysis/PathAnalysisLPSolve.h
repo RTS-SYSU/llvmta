@@ -77,6 +77,8 @@ public:
     } else {
       ::STBUS += res;
     }
+
+    delete[] row;
   }
 
 protected:
