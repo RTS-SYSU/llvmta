@@ -17,6 +17,7 @@ private:
   std::unordered_map<std::string, size_t> row_map, col_map;
   std::vector<std::string> row_names, col_names;
 
+  std::string title;
   std::string top_header;
 
   std::size_t init_col_len;
@@ -25,7 +26,7 @@ private:
   const static char top_bottom = '-', left_right = '|', line_seg = '-',
                     col_seg = '|', dec = '+';
 
-  inline void print_line_seg(FILE *fp, char ch = line_seg) {
+  inline void print_line_seg(FILE *fp, char ch = line_seg) const {
     for (size_t i = 0; i < max_col_len.size(); ++i) {
       fprintf(fp, "%c", dec);
       for (size_t j = 0; j < max_col_len[i] + 2; ++j) {
@@ -36,7 +37,8 @@ private:
   }
 
   inline void print_data_unit(FILE *fp, const std::string &data,
-                              const size_t max_len, bool is_first = false) {
+                              const size_t max_len,
+                              bool is_first = false) const {
     if (is_first) {
       fprintf(fp, "%c", left_right);
     }
@@ -63,7 +65,10 @@ private:
   }
 
   // real dump function
-  inline void dump_fp(FILE *fp) {
+  inline void dump_fp(FILE *fp) const {
+    if (!title.empty()) {
+      fprintf(fp, "%s\n", title.c_str());
+    }
     print_line_seg(fp, top_bottom);
     print_data_unit(fp, top_header, max_col_len[0], true);
 
@@ -90,21 +95,19 @@ private:
   }
 
 public:
-  inline StatisticOutput(const std::string &top_header = "",
-                         const size_t min_col_len = 0)
+  inline StatisticOutput(const std::string &title = "",
+                         const std::string &top_header = "",
+                         const size_t min_col_len = 0,
+                         const char *dump_file = "")
       : max_col_len(1, std::max(top_header.length(), min_col_len)),
-        top_header(top_header), init_col_len(min_col_len){};
+        title(title), top_header(top_header), init_col_len(min_col_len){};
 
   inline StatisticOutput(const size_t min_col_len)
-      : max_col_len(1, min_col_len), top_header(""),
+      : max_col_len(1, min_col_len), title(""), top_header(""),
         init_col_len(min_col_len){};
 
-  inline void update(const std::string row, const std::string col) {
-    update(row, col, "-");
-  }
-
-  inline void update(const std::string row, const std::string col,
-                     const std::string value) {
+  inline void update(const std::string &row, const std::string &col,
+                     const std::string &value = "-") {
     size_t row_idx = 0, col_idx = 0;
     if (row_map.find(row) == row_map.end()) {
       row_map[row] = datas.size();
@@ -129,32 +132,33 @@ public:
                  std::max(col.size(), datas[row_idx][col_idx].size()));
   }
 
-  inline void update(const std::string row, const std::string col,
+  inline void update(const std::string &row, const std::string &col,
                      uint64_t value) {
     std::string val = std::to_string(value);
     update(row, col, val);
   }
 
-  inline void update(const std::string row, const std::string col, int value) {
+  inline void update(const std::string &row, const std::string &col,
+                     int64_t value) {
     std::string val = std::to_string(value);
     update(row, col, val);
   }
 
-  inline void update(const std::string row, const std::string col,
+  inline void update(const std::string &row, const std::string &col,
                      double value) {
     std::string val = std::to_string(value);
     update(row, col, val);
   }
 
-  inline void update(const std::string row, const std::string col,
+  inline void update(const std::string &row, const std::string &col,
                      float value) {
     std::string val = std::to_string(value);
     update(row, col, val);
   }
 
-  inline void dump() { dump_fp(stdout); }
+  inline void dump() const { dump_fp(stdout); }
 
-  inline void dump(const char *output_file, const char *mode = "a") {
+  inline void dump(const char *output_file, const char *mode = "a") const {
     FILE *fp = fopen(output_file, mode);
     if (fp == nullptr) {
       fprintf(stderr, "[WARN] Unable to open file %s, dump to stdout",
@@ -166,12 +170,89 @@ public:
       fclose(fp);
   }
 
-  inline void dump(FILE *fp) {
+  inline void dump(FILE *fp) const {
     if (fp == nullptr) {
       fprintf(stderr, "[WARN] fp is nullptr, dump to stdout.\n");
       fp = stdout;
     }
     dump_fp(fp);
+  }
+
+  inline void set_title(const std::string &title) { this->title = title; }
+
+  inline void set_top_header(const std::string &top_header) {
+    this->top_header = top_header;
+    // update max_col_len
+    max_col_len[0] = std::max(max_col_len[0], top_header.size());
+  }
+
+  inline void update_min_col_len(size_t min_col_len) {
+    this->init_col_len = min_col_len;
+
+    for (size_t i = 0; i < max_col_len.size(); ++i) {
+      max_col_len[i] = std::max(max_col_len[i], min_col_len);
+    }
+  }
+};
+
+// singleton class
+// dump all the statistic output to a file
+// when the program exits
+class StatisticOutputManager {
+private:
+  std::unordered_map<std::string, StatisticOutput> outputs;
+  std::vector<std::string> titles;
+  std::string filename;
+
+private:
+  inline StatisticOutputManager(
+      const std::string filename = "output_information.txt")
+      : outputs(), titles(), filename(filename) {}
+  inline ~StatisticOutputManager() {
+    if (outputs.empty())
+      return;
+
+    if (filename.empty())
+      filename = "output_information.txt";
+    for (size_t i = 0; i < titles.size(); ++i) {
+      if (i == 0) {
+        outputs[titles[i]].dump(filename.c_str(), "w");
+      } else {
+        outputs[titles[i]].dump(filename.c_str(), "a");
+      }
+    }
+  }
+
+public:
+  inline StatisticOutput &insert(const std::string &title = "") {
+    if (outputs.find(title) != outputs.end()) {
+      // fprintf(stderr, "[WARN] %s has already registered, ignore
+      // insertion.\n",
+      //         title.c_str());
+      return outputs[title];
+    }
+    titles.push_back(title);
+    return outputs.insert(std::make_pair(title, StatisticOutput(title)))
+        .first->second;
+  }
+
+  inline StatisticOutput &insert(const std::string &title,
+                                 StatisticOutput &&so) {
+    if (outputs.find(title) != outputs.end()) {
+      // fprintf(stderr, "[WARN] %s has already registered, ignore
+      // insertion.\n",
+      //         title.c_str());
+      return outputs[title];
+    }
+    titles.push_back(title);
+    return outputs.insert(std::make_pair(title, std::move(so))).first->second;
+  }
+
+  inline void set_dump_file(const char *filename) { this->filename = filename; }
+
+  inline static StatisticOutputManager &getInstance() {
+    static StatisticOutputManager manager;
+    return manager;
   }
 };
 
