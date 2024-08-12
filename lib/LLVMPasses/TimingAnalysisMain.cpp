@@ -138,11 +138,23 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
 
     for (json::Value &task : *functions) {
       auto taskName = task.getAsObject()->get("function")->getAsString();
+      auto deadline = task.getAsObject()->get("deadline")->getAsInteger();
+      auto period = task.getAsObject()->get("period")->getAsInteger();
       if (!taskName) {
         fprintf(stderr, "Unable to get task name for core %lu, exit.", core);
         exit(1);
       }
+      if (!deadline) {
+        fprintf(stderr, "Unable to get deadline for core %lu, exit.", core);
+        exit(1);
+      }
+      if (!period) {
+        fprintf(stderr, "Unable to get period for core %lu, exit.", core);
+        exit(1);
+      }
       mp[core].push(taskName.getValue().str());
+      this->deadFunctionMap[taskName.getValue().str()] = deadline.getValue();
+      this->periodFunctionMap[taskName.getValue().str()] = period.getValue();
       // NOTICE: blabla
       mcif.addTask(core, taskName.getValue().str());
     }
@@ -211,18 +223,26 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
   }
 
   VERBOSE_PRINT(" -> Finished Preprocessing Phase\n");
-  // Create a json array
-  llvm::json::Array arr;
+  // Init the output infos
+  int64_t task_id = 0;
+  // llvm::json::Array arr;
+  llvm::json::Object result{
+      {{"system", llvm::json::Object{{"core_count", CoreNums.getValue()}}},
+       {"tasks", llvm::json::Array()}}};
+
   std::map<std::string, size_t> vec;
 
-  uint64_t im = 0, dm = 0, l2m = 0, tm = 0;
+  auto &manager = StatisticOutputManager::getInstance();
+  // auto &output_data = manager.insert(
+  //     "Summary", StatisticOutput("Summary", "Function Name", COL_LEN));
 
-  StatisticOutput output_data = StatisticOutput(COL_LEN);
+  StatisticOutput output_data =
+      StatisticOutput("Summary", "Function Name", COL_LEN);
   bool ETchage = true;
   int ET = 0;
-  char buf[10];
-  memset(buf, 0, sizeof(buf));
-  while (ET < 1 && ETchage) {
+  // char buf[10];
+  // memset(buf, 0, sizeof(buf));
+  while (ETchage) {
     ET++;
     ETchage = false;
     for (unsigned i = 0; i < CoreNums; ++i) {
@@ -256,24 +276,31 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
 
         // jjy:收集各个任务的WCET信息
         if (vec.count(functionName) == 0) {
-          llvm::json::Object obj{{"function", std::string(functionName)},
-                                 {"WCET", this->WCETtime},
-                                 {"BCET", this->BCETtime}};
-          arr.push_back(std::move(obj));
-          vec[functionName] = arr.size() - 1;
+          llvm::json::Object obj{
+              //  {"BCET", this->BCETtime}
+              {"id", task_id++},
+              {"partition", i},
+              {"WCET", this->WCETtime},
+              {"deadline", this->deadFunctionMap[functionName]},
+              {"period", this->periodFunctionMap[functionName]},
+              {"function", functionName},
+          };
+          auto *arr = result["tasks"].getAsArray();
+          arr->push_back(std::move(obj));
+          vec[functionName] = arr->size() - 1;
         } else {
-          auto *ptr = arr[vec[functionName]].getAsObject();
+          auto *arr = result["tasks"].getAsArray();
+          auto *ptr = (*arr)[vec[functionName]].getAsObject();
           (*ptr)["WCET"] = this->WCETtime;
-          (*ptr)["BCET"] = this->BCETtime;
+          // (*ptr)["BCET"] = this->BCETtime;
         }
+
         output_data.update(functionName, "BCET", this->BCETtime);
         output_data.update(functionName, "WCET", this->WCETtime);
-        output_data.update(functionName, "I-MISS", IMISS - im);
-        output_data.update(functionName, "D-MISS", DMISS - dm);
-        output_data.update(functionName, "L2-MISS", L2MISS - l2m);
-        im = IMISS;
-        dm = DMISS;
-        l2m = L2MISS;
+        output_data.update(functionName, "I-MISS", IMISS);
+        output_data.update(functionName, "D-MISS", DMISS);
+        output_data.update(functionName, "L2-MISS", L2MISS);
+        IMISS = 0, DMISS = 0, L2MISS = 0;
       }
       outs() << " No next analyse point for this core.\n";
     }
@@ -288,16 +315,18 @@ bool TimingAnalysisMain::doFinalization(Module &M) {
     // myfile.close();
     IMISS = DMISS = L2MISS = 0; // RESET
   }
-  output_data.dump("output_information.txt", "a");
+  // output_data.dump("output_information.txt", "a");
   // Release the call graph instance
   CallGraph::getGraph().releaseInstance();
   // Dump the json array to file
   std::error_code EC;
   llvm::raw_fd_ostream OS("WCET.json", EC);
-  llvm::json::Value val(std::move(arr));
+  llvm::json::Value val(std::move(result));
   OS << llvm::formatv("{0:4}", val) << '\n';
   OS.flush();
   OS.close();
+
+  manager.insert("Summary", std::move(output_data));
 
   return false;
 }
@@ -473,13 +502,14 @@ void TimingAnalysisMain::dispatchAnalysisType(AddressInformation &AddressInfo) {
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-/// Timing Analysis ///////////////////////////////////////////////////////////
+/// Timing Analysis
+/// ///////////////////////////////////////////////////////////
 ///////////////////////////////////////////////////////////////////////////////
 
 boost::optional<BoundItv>
 TimingAnalysisMain::dispatchTimingAnalysis(AddressInformation &AddressInfo) {
-  // Note, we no longer need this, this functionName will get check before enter
-  // if (!functionName) {
+  // Note, we no longer need this, this functionName will get check before
+  // enter if (!functionName) {
   //   fprintf(stderr, "You should not come here");
   //   exit(10);
   // }

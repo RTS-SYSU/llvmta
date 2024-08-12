@@ -19,6 +19,7 @@ uint64_t DMISS = 0;
 uint64_t L2MISS = 0;
 uint64_t STBUS = 0;
 uint64_t BOUND = 0;
+unsigned currentCore = 0;
 TimingAnalysisPass::AddressInformation *glAddrInfo = NULL;
 
 unsigned getbound(const MachineBasicBlock *MBB,

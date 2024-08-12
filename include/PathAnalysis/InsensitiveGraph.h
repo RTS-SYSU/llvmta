@@ -101,8 +101,7 @@ public:
   }
 
   void dump(std::ostream &mystream,
-            const std::map<std::string, double> *optTimesTaken,
-            bool isWoRsT = true) const;
+            const std::map<std::string, double> *optTimesTaken) const;
 
   void deleteMuArchInfo();
 
@@ -376,8 +375,9 @@ void InsensitiveGraph<MicroArchDom>::addExternalFunctionToGraph(
 
 template <class MicroArchDom>
 void InsensitiveGraph<MicroArchDom>::dump(
-    std::ostream &mystream, const std::map<std::string, double> *optTimesTaken,
-    bool f) const {
+    std::ostream &mystream,
+    const std::map<std::string, double> *optTimesTaken) const {
+  bool f = false;
   if (!DumpVcgGraph) {
     int clusterNr = 0;
     mystream << "digraph WCET {\n    label = \"Microarchitectural State "
@@ -474,9 +474,9 @@ void InsensitiveGraph<MicroArchDom>::dump(
           }
         }
         if (f)
-          this->dumpEdge(mystream, edge, weight, onPath, false);
+          this->dumpEdge(mystream, edge, weight, onPath);
         else
-          this->dumpEdge(mystream, edge, weight, false, onPath);
+          this->dumpEdge(mystream, edge, weight, onPath);
       }
     }
     mystream << "}\n}";
@@ -579,9 +579,9 @@ void InsensitiveGraph<MicroArchDom>::dump(
           }
         }
         if (f)
-          this->dumpEdge(mystream, edge, weight, O9PaTh, false);
+          this->dumpEdge(mystream, edge, weight, O9PaTh);
         else
-          this->dumpEdge(mystream, edge, weight, false, O9PaTh);
+          this->dumpEdge(mystream, edge, weight, O9PaTh);
       }
     }
     mystream << "}\n}";

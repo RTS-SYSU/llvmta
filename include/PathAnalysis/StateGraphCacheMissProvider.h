@@ -248,7 +248,7 @@ std::string StateGraphCacheMissProvider<MuState, CT>::printWeight(
     for (auto scit = it->second.begin(); scit != it->second.end(); ++scit) {
       if (emitSpace)
         res << " ";
-      res << scit->getId();
+      // res << scit->getId();
     }
     res << ")";
     emitComma = true;

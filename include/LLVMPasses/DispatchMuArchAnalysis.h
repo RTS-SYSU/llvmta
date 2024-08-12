@@ -97,6 +97,7 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps,
       // stats.startMeasurement("core_" + std::to_string(coreNum) + "_" +
       //                        AnalysisEntryPoint +
       //                        "_Timing Stategraph Generation");
+      currentCore = coreNum;
       bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
       // stats.stopMeasurement("core_" + std::to_string(coreNum) + "_" +
       //                       AnalysisEntryPoint + "_Timing Path Analysis");

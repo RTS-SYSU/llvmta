@@ -55,8 +55,9 @@ cl::opt<unsigned>
              cl::desc("The number of core for the analysis (default '1')"),
              cl::cat(MultiCoreCat));
 
-cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis", cl::init(false),
-                            cl::desc("(default 'F')"), cl::cat(MultiCoreCat));
+cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis",
+                            cl::init(false), cl::desc("(default 'F')"),
+                            cl::cat(MultiCoreCat));
 
 cl::opt<unsigned> Core("core", cl::init(0),
                        cl::desc("The core for the analysis (default '0')"),
@@ -355,13 +356,13 @@ cl::opt<BgMemType> BackgroundMemoryType(
     cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
-    Latency("ta-mem-latency", cl::init(150),
+    Latency("ta-mem-latency", cl::init(131),
             cl::desc("The latency of the background memory. (default '9', i.e. "
                      "transferring a single word takes 14 cycles)"),
             cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
-    L2Latency("ta-L2-latency", cl::init(10),
+    L2Latency("ta-L2-latency", cl::init(6),
               cl::desc("The latency of the L2 cache. (default '4', i.e. "
                        "transferring a single word takes 5 cycles)"),
               cl::cat(HardwareDescrCat));

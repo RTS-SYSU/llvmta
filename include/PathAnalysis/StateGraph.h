@@ -94,9 +94,9 @@ public:
    * is assumed to be a mapping from LP-variable names to edge
    * frequencies. All variables with frequency > 0 (i.e. the worst-case
    * path) are colored in "this->longestPathColor" */
-  virtual void dump(std::ostream &mystream,
-                    const std::map<std::string, double> *optTimesTaken,
-                    bool f = true) const = 0;
+  virtual void
+  dump(std::ostream &mystream,
+       const std::map<std::string, double> *optTimesTaken) const = 0;
 
   virtual ~StateGraph() {}
 
@@ -106,7 +106,7 @@ protected:
    * the WCETPathStyle */
   virtual void dumpEdge(std::ostream &stream,
                         std::pair<unsigned, unsigned> edge, std::string &label,
-                        bool onWCETPath, bool onBCETPath) const {
+                        bool onWCETPath) const {
     if (!DumpVcgGraph) {
       stream << edge.first << "->" << edge.second << "[ label = \"" << label
              << "\"\n";
@@ -114,9 +114,6 @@ protected:
       if (onWCETPath) {
         stream << ", color = " << this->WCETPathStyle.color
                << ", penwidth = " << this->WCETPathStyle.thickness << " ";
-      } else if (onBCETPath) {
-        stream << ", color = " << this->BCETPathStyle.color
-               << ", penwidth = " << this->BCETPathStyle.thickness << " ";
       }
       stream << "]\n";
     } else {
@@ -128,9 +125,6 @@ protected:
       if (onWCETPath) {
         stream << "\tcolor : " << this->WCETPathStyle.color << "\n";
         stream << "\tthickness: " << this->WCETPathStyle.thickness << "\n";
-      } else if (onBCETPath) {
-        stream << ", color = " << this->BCETPathStyle.color
-               << ", penwidth = " << this->BCETPathStyle.thickness << " ";
       }
       stream << "}\n";
     }
@@ -343,8 +337,8 @@ public:
   //       /*Normal .vcg Dump*/
   //       mystream << "graph : { \n	layoutalgorithm : hierarchic\n graph : "
   //                   "{\n	title "
-  //                   ": \"State Graph\"\n	label : \"Microarchitectural State
-  //                   " "Graph\"\n";
+  //                   ": \"State Graph\"\n	label : \"Microarchitectural
+  //                   State " "Graph\"\n";
 
   //       std::set<unsigned> persistStatesAlreadyDumped;
   //       const std::function<void(unsigned, const std::set<unsigned> &)>

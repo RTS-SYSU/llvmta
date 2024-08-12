@@ -78,3 +78,7 @@ ninja -j $(nproc)
 - `PATH`：需要将 Gurobi 的 `bin` 文件夹路径添加到该环境变量中，同时，请将项目编译后的 `build/bin` 文件夹路径添加到该环境变量中
 - `CPLUS_INCLUDE_PATH`：需要将 Gurobi 的 `bin` 文件夹路径添加到该环境变量中
 - `GRB_LICENSE_FILE`：请将 Gurobi 的许可文件路径添加到该环境变量中
+
+# 开发
+
+对于使用 VSCode 进行开发的用户，随项目提供有 `.vscode` 文件夹，其中包含了一些配置文件，可以帮助你更好的进行开发，请根据自己的编译环境选择合适的配置文件。

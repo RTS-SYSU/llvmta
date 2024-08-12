@@ -242,6 +242,8 @@ public:
       // fprintf(stderr, "[WARN] %s has already registered, ignore
       // insertion.\n",
       //         title.c_str());
+      // replace the old one
+      outputs[title] = std::move(so);
       return outputs[title];
     }
     titles.push_back(title);
