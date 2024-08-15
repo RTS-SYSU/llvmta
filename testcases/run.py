@@ -26,6 +26,7 @@ parser.add_argument('-lf', '--lower-loop-file', type=str, default='LLoopAnnotati
 parser.add_argument('-uf', '--upper-loop-file', type=str, default='LoopAnnotations.csv', help='The upper bound loop file, relative to the source directory')
 parser.add_argument('-c', '--core-info', type=str, default='CoreInfo.json', help='The core info file, relative to the source directory')
 parser.add_argument('-n', '--num-cores', type=int, default=2, help='The number of cores to use')
+parser.add_argument('-p', action='store_true', help='Generate the proper LoopAnnotations.csv and LLoopAnnotations.csv files')
 
 args = parser.parse_args()
 
