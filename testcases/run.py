@@ -141,95 +141,95 @@ def handle_generate(args):
     os.chdir(pwd)
 
 def handle_run(args):
-src_dir = Path(os.path.abspath(args.src))
-if not src_dir.exists():
-    logger_error(f'Source directory {src_dir} does not exist')
-    exit(1)
+    src_dir = Path(os.path.abspath(args.src))
+    if not src_dir.exists():
+        logger_error(f'Source directory {src_dir} does not exist')
+        exit(1)
 
-if not src_dir.is_dir():
-    logger_error(f'Source directory {src_dir} is not a directory')
-    exit(1)
-
-
-lf = Path(src_dir / args.lower_loop_file)
-if not lf.exists():
-    logger_error(f'Lower loop file {str(lf)} does not exist, please check the file name')
-    exit(1)
-
-uf = Path(src_dir / args.upper_loop_file)
-if not uf.exists():
-    logger_error(f'Upper loop file {str(uf)} does not exist, please check the file name')
-    exit(1)
-    
-cf = Path(src_dir / args.core_info)
-if not cf.exists():
-    logger_error(f'Core info file {str(cf)} does not exist, please check the file name')
-    exit(1)
-    
-out_dir = Path(os.path.abspath(args.out))
-if not out_dir.exists():
-    logger_info(f'Creating output directory {out_dir}')
-    out_dir.mkdir(parents=True)
-
-if not out_dir.is_dir():
-    logger_error(f'Output directory {out_dir} is not a directory')
-    exit(1)
-
-logger_success(f'All files exist, ready to run llvmta')
-
-command = [
-    "llvmta",
-    "-disable-tail-calls",
-    "-float-abi=hard",
-    "-mattr=-neon,+vfp2",
-    "-O0",
-    "--ta-muarch-type=outoforder",
-    "--ta-memory-type=separatecaches",
-    "--ta-strict=false",
-    f"--ta-loop-bounds-file={str(uf)}",
-    f"--ta-loop-lowerbounds-file={str(lf)}",
-    "--ta-num-callsite-tokens=1",
-    f"--core-info={str(cf)}",
-    f"--core-numbers={args.num_cores}",
-    "--shared-cache-Persistence-Analysis=false",
-    "--ta-l2cache-persistence=elementwise",
-    "-debug-only=",
-    "optimized.ll"
-]
-
-logger_info(f'Running llvmta with the following arguments:')
-logger_info(f'Lower loop file: {str(lf)}')
-logger_info(f'Upper loop file: {str(uf)}')
-logger_info(f'Core info file: {str(cf)}')
-logger_info(f'Number of cores: {args.num_cores}')
+    if not src_dir.is_dir():
+        logger_error(f'Source directory {src_dir} is not a directory')
+        exit(1)
 
 
-logger_info(f'Compiling the source file to LLVM IR')
-# First, we need to compile the source file to LLVM IR
-stat = os.system(f'./runBeforeGDB {str(src_dir)}')
-if stat != 0:
-    logger_error(f'Failed to compile the source file to LLVM IR')
-    exit(1)
-else:
-    logger_success(f'Successfully compiled the source file to LLVM IR')
+    lf = Path(src_dir / args.lower_loop_file)
+    if not lf.exists():
+        logger_error(f'Lower loop file {str(lf)} does not exist, please check the file name')
+        exit(1)
 
-logger_info(f'Running llvmta')
-# Run llvmta
-logger_info(f'Using command: {" ".join(command)}')
-# Change working directory to the output directory
+    uf = Path(src_dir / args.upper_loop_file)
+    if not uf.exists():
+        logger_error(f'Upper loop file {str(uf)} does not exist, please check the file name')
+        exit(1)
+        
+    cf = Path(src_dir / args.core_info)
+    if not cf.exists():
+        logger_error(f'Core info file {str(cf)} does not exist, please check the file name')
+        exit(1)
+        
+    out_dir = Path(os.path.abspath(args.out))
+    if not out_dir.exists():
+        logger_info(f'Creating output directory {out_dir}')
+        out_dir.mkdir(parents=True)
 
-pwd = os.getcwd()
-os.chdir('dirforgdb')
-stat = os.system(' '.join(command))
-if stat != 0:
-    logger_error(f'Failed to run llvmta')
-    exit(1)
-else:
-    shutil.copy('WCET.json', out_dir)
-    logger_success(f'Successfully ran llvmta')
-    logger_success(f'Output WCET: {str(out_dir / "WCET.json")}')
+    if not out_dir.is_dir():
+        logger_error(f'Output directory {out_dir} is not a directory')
+        exit(1)
 
-os.chdir(pwd)
+    logger_success(f'All files exist, ready to run llvmta')
+
+    command = [
+        "llvmta",
+        "-disable-tail-calls",
+        "-float-abi=hard",
+        "-mattr=-neon,+vfp2",
+        "-O0",
+        "--ta-muarch-type=outoforder",
+        "--ta-memory-type=separatecaches",
+        "--ta-strict=false",
+        f"--ta-loop-bounds-file={str(uf)}",
+        f"--ta-loop-lowerbounds-file={str(lf)}",
+        "--ta-num-callsite-tokens=1",
+        f"--core-info={str(cf)}",
+        f"--core-numbers={args.num_cores}",
+        "--shared-cache-Persistence-Analysis=false",
+        "--ta-l2cache-persistence=elementwise",
+        "-debug-only=",
+        "optimized.ll"
+    ]
+
+    logger_info(f'Running llvmta with the following arguments:')
+    logger_info(f'Lower loop file: {str(lf)}')
+    logger_info(f'Upper loop file: {str(uf)}')
+    logger_info(f'Core info file: {str(cf)}')
+    logger_info(f'Number of cores: {args.num_cores}')
+
+
+    logger_info(f'Compiling the source file to LLVM IR')
+    # First, we need to compile the source file to LLVM IR
+    stat = os.system(f'./runBeforeGDB {str(src_dir)}')
+    if stat != 0:
+        logger_error(f'Failed to compile the source file to LLVM IR')
+        exit(1)
+    else:
+        logger_success(f'Successfully compiled the source file to LLVM IR')
+
+    logger_info(f'Running llvmta')
+    # Run llvmta
+    logger_info(f'Using command: {" ".join(command)}')
+    # Change working directory to the output directory
+
+    pwd = os.getcwd()
+    os.chdir('dirforgdb')
+    stat = os.system(' '.join(command))
+    if stat != 0:
+        logger_error(f'Failed to run llvmta')
+        exit(1)
+    else:
+        shutil.copy('WCET.json', out_dir)
+        logger_success(f'Successfully ran llvmta')
+        logger_success(f'Output WCET: {str(out_dir / "WCET.json")}')
+
+    os.chdir(pwd)
 
 
 if args.p:
