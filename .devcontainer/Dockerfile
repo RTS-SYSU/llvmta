@@ -7,8 +7,8 @@ FROM mcr.microsoft.com/vscode/devcontainers/base:0-${VARIANT}
 SHELL ["/bin/bash", "-c"]
 
 # [Optional] Use this to change to a mirror that may speed up the process
-RUN sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list \
-       && sed -i 's/security.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
+# RUN sed -i 's/archive.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list \
+#        && sed -i 's/security.ubuntu.com/mirrors.tuna.tsinghua.edu.cn/g' /etc/apt/sources.list
 
 # [Optional] Uncomment this section to install additional OS packages.
 RUN apt-get update --fix-missing && export DEBIAN_FRONTEND=noninteractive \
@@ -18,6 +18,11 @@ RUN apt-get update --fix-missing && export DEBIAN_FRONTEND=noninteractive \
         icecc icecream-sundae libcolamd2 clang-tidy gcc-multilib \
         build-essential ccache python3-pip fakeroot
 
+# [Optional] Use one of the following lines to install the numpy
+# if you need use a mirror to speed up the process, you can use the following command
+# and comment the latter command for numpy installation
+# RUN pip3 install -i https://pypi.tuna.tsinghua.edu.cn/simple numpy
+# else, keep the following command
 RUN pip3 install numpy
 
 
@@ -26,7 +31,7 @@ ENV PATH=$PATH:/workspaces/llvmta/build/bin
 ENV PATH=$PATH:/workspaces/llvm/build/bin
 # ENV CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:/llvm/lib/Target/ARM
 # ENV CPLUS_INCLUDE_PATH=$CPLUS_INCLUDE_PATH:/llvm/lib/Target/RISCV
-RUN mv /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
+RUN ln -s /usr/lib/lp_solve/liblpsolve55.so /usr/lib/liblpsolve55.so
 #RUN echo "/usr/lib/lp_solve" >> /etc/ld.so.conf.d/lpsolve.conf ; ldconfig
 
 # Install Gurobi

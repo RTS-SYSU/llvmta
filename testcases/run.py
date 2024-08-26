@@ -106,10 +106,6 @@ def handle_generate(args):
     else:
         shutil.copy('LoopAnnotations.csv', out_dir / 'LoopAnnotations.csv')
         shutil.copy('LoopAnnotations.csv', out_dir / 'LLoopAnnotations.csv')
-        
-        logger_success(f'Successfully ran llvmta')
-        logger_success(f'Output LoopAnnotations.csv: {str(out_dir / "LoopAnnotations.csv")}')
-        logger_success(f'Output LLoopAnnotations.csv: {str(out_dir / "LLoopAnnotations.csv")}')
 
         with open(out_dir / 'LoopAnnotations.csv', 'r') as f:
             data = f.readlines()
@@ -137,7 +133,9 @@ def handle_generate(args):
         with open(out_dir / 'LLoopAnnotations.csv', 'w') as f:
             f.writelines(output_data)
             
-
+        logger_success(f'Successfully ran llvmta')
+        logger_success(f'Output LoopAnnotations.csv: {str(out_dir / "LoopAnnotations.csv")}')
+        logger_success(f'Output LLoopAnnotations.csv: {str(out_dir / "LLoopAnnotations.csv")}')
     os.chdir(pwd)
 
 def handle_run(args):
