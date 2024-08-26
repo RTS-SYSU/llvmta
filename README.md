@@ -31,42 +31,131 @@ LLVM-TA+ 的设计目标是支持多核实时系统的 WCET 静态分析，具�
 
 为了验证项目实现效果，我们使用了 [TACLeBench](https://github.com/tacle/tacle-bench) 作为我们的测试基准，其中包含了多个多核实时系统的测试用例，我们使用 LLVM-TA+ 对这些测试用例进行了分析，并在树莓派 4B 上进行了验证，实验结果表明 LLVM-TA+ 能够成功的对多核实时系统进行 WCET 静态分析，有关的参数设置如下：
 
-<p align="center">
-
-| 参数 | 参数值 |
-| :-: | :-: |
-| L1 I-Cache 块大小 | 64B |
-| L1 D-Cache 块大小 | 64B |
-| L1 I-Cache 关联度 | 3 |
-| L1 D-Cache 关联度 | 2 |
-| L1 I-Cache 大小 | 48KB |
-| L1 D-Cache 大小 | 32KB |
-| L2 Cache 块大小 | 64B |
-| L2 Cache 关联度 | 16 |
-| L2 Cache 大小 | 1MB |
-| Cache 替换策略 | LRU |
-| L1 Cache 命中延迟 | 4 Cycles |
-| L2 Cache 命中延迟 | 10 Cycles |
-| L2 Cache 未命中延迟 | 130 Cycles |
-
-</p>
+<table align="center">
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">参数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">L1 I-Cache 块大小</td>
+<td align="center">64B</td>
+</tr>
+<tr>
+<td align="center">L1 D-Cache 块大小</td>
+<td align="center">64B</td>
+</tr>
+<tr>
+<td align="center">L1 I-Cache 关联度</td>
+<td align="center">3</td>
+</tr>
+<tr>
+<td align="center">L1 D-Cache 关联度</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center">L1 I-Cache 大小</td>
+<td align="center">48KB</td>
+</tr>
+<tr>
+<td align="center">L1 D-Cache 大小</td>
+<td align="center">32KB</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 块大小</td>
+<td align="center">64B</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 关联度</td>
+<td align="center">16</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 大小</td>
+<td align="center">1MB</td>
+</tr>
+<tr>
+<td align="center">Cache 替换策略</td>
+<td align="center">LRU</td>
+</tr>
+<tr>
+<td align="center">L1 Cache 命中延迟</td>
+<td align="center">4 Cycles</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 命中延迟</td>
+<td align="center">10 Cycles</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 未命中延迟</td>
+<td align="center">130 Cycles</td>
+</tr>
+</tbody>
+</table>
 
 为了评估 LLVM-TA+ 在多核上的分析，我们在树莓派 4B 上进行了试验，实验中在核心 1 上运行了一个固定的 ndes 任务作为干扰项，而在核心 2 上运行了我们的测试用例，实验结果如下：
 
-<p align="center">
-
-| 任务 | LLVM-TA+ 分析值(Cycle) | 树莓派测量值(Cycle) | 分析/测量 |
-| :-: | :-: | :-: | :-: |
-| jfdctint | 10055 | 7261 | 1.385 |
-| st |421293 | 249868 | 1.686 |
-| insertsort | 3356 | 2166 | 1.549 |
-| ludcmp | 9194 | 7127 | 1.290 |
-| cover | 19926 | 11836 | 1.684 |
-| matmul | 176059 | 134862 | 1.305 |
-| ndes | 142202 | 102740 | 1.384 |
-| fdct | 11390 | 6590 | 1.728 |
-
-</p>
+<table align="center">
+<thead>
+<tr>
+<th align="center">任务</th>
+<th align="center">LLVM-TA+ 分析值(Cycle)</th>
+<th align="center">树莓派测量值(Cycle)</th>
+<th align="center">分析/测量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">jfdctint</td>
+<td align="center">10055</td>
+<td align="center">7261</td>
+<td align="center">1.385</td>
+</tr>
+<tr>
+<td align="center">st</td>
+<td align="center">421293</td>
+<td align="center">249868</td>
+<td align="center">1.686</td>
+</tr>
+<tr>
+<td align="center">insertsort</td>
+<td align="center">3356</td>
+<td align="center">2166</td>
+<td align="center">1.549</td>
+</tr>
+<tr>
+<td align="center">ludcmp</td>
+<td align="center">9194</td>
+<td align="center">7127</td>
+<td align="center">1.290</td>
+</tr>
+<tr>
+<td align="center">cover</td>
+<td align="center">19926</td>
+<td align="center">11836</td>
+<td align="center">1.684</td>
+</tr>
+<tr>
+<td align="center">matmul</td>
+<td align="center">176059</td>
+<td align="center">134862</td>
+<td align="center">1.305</td>
+</tr>
+<tr>
+<td align="center">ndes</td>
+<td align="center">142202</td>
+<td align="center">102740</td>
+<td align="center">1.384</td>
+</tr>
+<tr>
+<td align="center">fdct</td>
+<td align="center">11390</td>
+<td align="center">6590</td>
+<td align="center">1.728</td>
+</tr>
+</tbody>
+</table>
 
 可以看到，LLVM-TA+ 的分析值与树莓派测量值的比值在 1.3 到 1.7 之间，这表明 LLVM-TA+ 能够较为准确的对多核实时系统进行 WCET 静态分析。
 
@@ -74,20 +163,66 @@ LLVM-TA+ 的设计目标是支持多核实时系统的 WCET 静态分析，具�
 
 为了验证 LLVM-TA+ 能够对 WCET 上界进行收紧，我们在上面任务中，同时对比了 LLVM-TA+ 和 [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 的分析结果，实验结果如下：
 
-<p align="center">
-
-| 任务 | LLVM-TA+ | LLVMTA | LLVM-TA+/LLVMTA |
-| :-: | :-: | :-: | :-: |
-| jfdctint | 10055 | 105783 | 0.095 |
-| st | 421293 | 2979227 | 0.141 |
-| insertsort | 3356 | 209482 | 0.016 |
-| ludcmp | 9194 | 722084 | 0.013 |
-| cover | 19926 | 61630 | 0.323 |
-| matmul | 176059 | 1394651 | 0.126 |
-| ndes | 142202 | 2378500 | 0.060 |
-| fdct | 11390 | 75868 | 0.150 |
-
-</p>
+<table align="center">
+<thead>
+<tr>
+<th align="center">任务</th>
+<th align="center">LLVM-TA+</th>
+<th align="center">LLVMTA</th>
+<th align="center">LLVM-TA+/LLVMTA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">jfdctint</td>
+<td align="center">10055</td>
+<td align="center">105783</td>
+<td align="center">0.095</td>
+</tr>
+<tr>
+<td align="center">st</td>
+<td align="center">421293</td>
+<td align="center">2979227</td>
+<td align="center">0.141</td>
+</tr>
+<tr>
+<td align="center">insertsort</td>
+<td align="center">3356</td>
+<td align="center">209482</td>
+<td align="center">0.016</td>
+</tr>
+<tr>
+<td align="center">ludcmp</td>
+<td align="center">9194</td>
+<td align="center">722084</td>
+<td align="center">0.013</td>
+</tr>
+<tr>
+<td align="center">cover</td>
+<td align="center">19926</td>
+<td align="center">61630</td>
+<td align="center">0.323</td>
+</tr>
+<tr>
+<td align="center">matmul</td>
+<td align="center">176059</td>
+<td align="center">1394651</td>
+<td align="center">0.126</td>
+</tr>
+<tr>
+<td align="center">ndes</td>
+<td align="center">142202</td>
+<td align="center">2378500</td>
+<td align="center">0.060</td>
+</tr>
+<tr>
+<td align="center">fdct</td>
+<td align="center">11390</td>
+<td align="center">75868</td>
+<td align="center">0.150</td>
+</tr>
+</tbody>
+</table>
 
 可以发现，LLVM-TA+ 的分析值与 LLVMTA 的分析值相比，LLVM-TA+ 的分析值要小得多，这表明 LLVM-TA+ 能够对 WCET 上界进行收紧。
 

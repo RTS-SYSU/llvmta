@@ -21,7 +21,8 @@ def logger_error(msg: str):
 parser = ArgumentParser('Run llvmta')
 
 parser.add_argument('-s', '--src', type=str, required=True, help='The C source file directory, e.g. ./path/to/test')
-parser.add_argument('-o', '--out', type=str, default='./out', help='The temporary directory to store the intermediate files')
+parser.add_argument('-o', '--out', type=str, default='./out', help='The directory to store the result files')
+parser.add_argument('-t', '--tmp', type=str, default='./dirforgdb', help='The temporary directory to store the intermediate files')
 parser.add_argument('-lf', '--lower-loop-file', type=str, default='LLoopAnnotations.csv', help='The lower bound loop file, relative to the source directory')
 parser.add_argument('-uf', '--upper-loop-file', type=str, default='LoopAnnotations.csv', help='The upper bound loop file, relative to the source directory')
 parser.add_argument('-c', '--core-info', type=str, default='CoreInfo.json', help='The core info file, relative to the source directory')
@@ -98,7 +99,7 @@ def handle_generate(args):
     # Change working directory to the output directory
 
     pwd = os.getcwd()
-    os.chdir('dirforgdb')
+    os.chdir(args.tmp)
     stat = os.system(' '.join(command))
     if stat != 0:
         logger_error(f'Failed to run llvmta')
@@ -217,7 +218,7 @@ def handle_run(args):
     # Change working directory to the output directory
 
     pwd = os.getcwd()
-    os.chdir('dirforgdb')
+    os.chdir(args.tmp)
     stat = os.system(' '.join(command))
     if stat != 0:
         logger_error(f'Failed to run llvmta')
