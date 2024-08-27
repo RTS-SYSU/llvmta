@@ -61,7 +61,7 @@ ninja -j $(nproc)
 
 ## 方法二：不使用 Docker
 
-对使用 Ubuntu 22.04 的用户，本项目提供了一个[脚本](./compile.sh)，可以使用该脚本进行快速的环境配置，运行完成后，使用 `source setup_env.sh` 来设定对应的环境变量，需要注意的是 `source setup_env.sh` 在每次重新打开终端后都需要重新执行
+对使用 Ubuntu 22.04 的用户，本项目提供了一个[脚本](./compile.sh)，可以使用该脚本进行快速的环境配置，运行完成后，使用 `source setup_env.sh` 来设定对应的环境变量，需要注意的是 `source setup_env.sh` 在每次重新打开终端后都需要重新执行。
 
 之后类似使用 Docker 的方法，进入 `build` 目录，使用 `ninja` 进行编译即可
 
