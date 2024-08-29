@@ -152,12 +152,14 @@ def handle_run(args):
 
     lf = Path(src_dir / args.lower_loop_file)
     if not lf.exists():
-        logger_error(f'Lower loop file {str(lf)} does not exist, please check the file name')
+        logger_error(f'Lower loop file {str(lf)} does not exist, please check the file exist')
+        logger_error(f'If you want to generate the loop files, please use the -p flag')
         exit(1)
 
     uf = Path(src_dir / args.upper_loop_file)
     if not uf.exists():
-        logger_error(f'Upper loop file {str(uf)} does not exist, please check the file name')
+        logger_error(f'Upper loop file {str(uf)} does not exist, please check the file exist')
+        logger_error(f'If you want to generate the loop files, please use the -p flag')
         exit(1)
         
     cf = Path(src_dir / args.core_info)

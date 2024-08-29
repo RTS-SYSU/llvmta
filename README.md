@@ -4,105 +4,109 @@
 [![](https://img.shields.io/badge/LLVM-TA+-blue.svg)](https://github.com/RTS-SYSU/llvmta)
 [![](https://img.shields.io/badge/Multi_Core-WCET_Analysis-yellowgreen.svg)](https://github.com/RTS-SYSU/llvmta)
 
-本项目 [LLVM-TA+](https://github.com/RTS-SYSU/llvmta) 是一个基于 LLVM 的多核实时系统 WCET(Worst Case Execution Time, 最坏情况执行时间) 静态分析工具。
+<p align="center">
+    <a href="README.md">English</a> | <a href="README_zh.md">中文</a>
+</p>
 
-## 项目简介
+[LLVM-TA+](https://github.com/RTS-SYSU/llvmta) is a static analysis tool for WCET(Worst Case Execution Time) of multi-core real-time systems based on LLVM.
 
-### 项目背景
+## Introduction
 
-目前，对于实时系统的 WCET 静态分析方法，已有较多的研究成果，例如商业化工具 [aiT](https://www.absint.com/ait/index.htm)，以及学术界的开源工具，如 [OTAWA](https://www.tracesgroup.net/otawa/)，[Chronos](https://www.comp.nus.edu.sg/~rpembed/chronos/)，[Heptane](https://team.inria.fr/pacap/software/heptane/)，[LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 等，但是这些分析工具大部分仅支持单核系统。相较于单核系统，多核系统普遍配置有共享资源以满足高性能需求，这导致了复杂的资源竞争情况，这使得单核的分析工具难以直接应用到多核系统中。基于此，本项目将开源的针对单核系统的 WCET 分析同居 [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 进行拓展，使其支持多核系统并支持分析共享缓存，并进一步收紧 WCET 的上届，将其命名为 LLVM-TA+。
+For the static analysis method of WCET in real-time systems, there are many research results, such as commercial tools [aiT](https://www.absint.com/ait/index.htm), and open-source tools in academia, such as [OTAWA](https://www.tracesgroup.net/otawa/), [Chronos](https://www.comp.nus.edu.sg/~rpembed/chronos/), [Heptane](https://team.inria.fr/pacap/software/heptane/), [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta), etc., but most of these analysis tools only support single-core systems. Compared with single-core systems, multi-core systems are generally configured with shared resources to meet high-performance requirements, which leads to complex resource contention situations, making it difficult for single-core analysis tools to be directly applied to multi-core systems. Based on this, this project extends the open-source WCET analysis tool [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) for single-core systems to support multi-core systems and analyze shared cache, and further tighten the upper bound of WCET, named as LLVM-TA+.
 
-### 设计目标
+## Design Goal
 
-LLVM-TA+ 的设计目标是支持多核实时系统的 WCET 静态分析，具体包括：
+Our goal is to provide a static analysis tool for WCET of multi-core real-time systems based on LLVM, which can effectively analyze the WCET of multi-core systems and tighten the WCET upper bound.
 
-1. 值分析(Value Analysis)：通过分析计算得到程序各个位置的寄存器以及内存的数据，并作为后续处理器行为缓存分析的输入。
-2. 控制流分析(Control Flow Analysis)：通过分析程序的控制流，得到程序可能的执行路径的约束条件，例如循环的迭代次数等。LLVM-TA+ 使用的是基于源代码的控制流分析，即通过 LLVM 的 SSA 表示来分析程序的控制流。
-3. 处理器行为分析(Processor Behavior Analysis)：通过控制流分析，可以得到程序的多个可能执行路径，而处理器行为分析则是分析这些路径在处理器上的执行情况，例如缓存的命中情况等，并根据这些计算出路径中基本块(Basic Block)的执行时间界限。
-4. 边界计算(Bound Calculation)：基于控制流分析以及处理器行为分析的结果，能够得到程序的 WCET。
-5. 生命周期分析(Life Cycle Analysis)：对于多核系统，需要分析任务的生命周期，以确定程序片段在处理器上执行的过程中可能涉及到的资源竞争情况。
-6. 迭代分析(Iterative Analysis)：由于初始情况下无法判断任务的生命周期，这对于多核系统的 WCET 分析是一个挑战，因此需要进行迭代分析，以逐步确定任务的生命周期，并确定程序片段之间的资源竞争情况。
-7. 共享缓存分析(Shared Cache Analysis)：多核系统中的共享缓存是一个重要的资源，对于 WCET 分析来说，需要分析任务在共享缓存上的访问情况，结合先前得到的资源竞争情况，以确定任务在共享缓存上的访问情况。
-8. 共享缓存的持久性分析(Persistent Analysis)
+To achieve this, we combine the existing LLVM-TA with the multi-core analysis method, and further improve the analysis accuracy and efficiency. The whole process can be divided into the following steps:
 
-## 实现结果
+1. Value Analysis: Analyze the data of registers and memory at each position of the program, and use it as the input of the subsequent processor behavior analysis.
+2. Control Flow Analysis: Analyze the control flow of the program to obtain the constraint conditions of the possible execution paths of the program, such as the number of iterations of the loop, etc. LLVM-TA+ uses source code-based control flow analysis, that is, analyzing the control flow of the program through the SSA representation of LLVM(LLVM-IR).
+3. Processor Behavior Analysis: Through control flow analysis, we can get multiple possible execution paths of the program, and processor behavior analysis is to analyze the execution situation of these paths on the processor, such as the cache hit situation, etc., and calculate the execution time limit of the basic block in the path.
+4. Bound Calculation: Based on the results of control flow analysis and processor behavior analysis, we can get the bound of the program on a specific execution path, and then calculate the WCET of the program.
+5. Life Time Analysis: For multi-core systems, it is necessary to analyze the life cycle of tasks to determine the resource contention that may be involved in the execution of program fragments on the processor.
+6. Iterative Analysis: Since the life cycle of tasks cannot be determined initially, this is a challenge for WCET analysis of multi-core systems, so iterative analysis is needed to gradually determine the life cycle of tasks and determine the resource contention between program fragments.
+7. Shared Cache Analysis: The shared cache in multi-core systems is an important resource, and for WCET analysis, it is necessary to analyze the access situation of tasks on the shared cache, combined with the previously obtained resource contention, to determine the access situation of tasks on the shared cache.
+8. Persistent Analysis of Shared Cache: The shared cache is a shared resource, and the access situation of tasks on the shared cache is related to the execution of other tasks, so it is necessary to analyze the persistent access situation of tasks on the shared cache to determine the WCET of the program.
 
-### 多核 WCET 静态分析
+## Evaluation
 
-为了验证项目实现效果，我们使用了 [TACLeBench](https://github.com/tacle/tacle-bench) 作为我们的测试基准，其中包含了多个多核实时系统的测试用例，我们使用 LLVM-TA+ 对这些测试用例进行了分析，并在树莓派 4B 上进行了验证，实验结果表明 LLVM-TA+ 能够成功的对多核实时系统进行 WCET 静态分析，有关的参数设置如下：
+### WCET Static Analysis for Multi-core
+
+To evaluate the LLVM-TA+ on multi-core analysis, we conducted experiments on Raspberry Pi 4B, which has a quad-core ARM Cortex-A72 processor with shared L2 cache. Details of the system configuration are shown in the following table:
 
 <table align="center">
 <thead>
 <tr>
-<th align="center">参数</th>
-<th align="center">参数值</th>
+<th align="center">Configuration</th>
+<th align="center">Value</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="center">L1 I-Cache 块大小</td>
+<td align="center">L1 I-Cache Line Size</td>
 <td align="center">64B</td>
 </tr>
 <tr>
-<td align="center">L1 D-Cache 块大小</td>
+<td align="center">L1 D-Cache Line Size</td>
 <td align="center">64B</td>
 </tr>
 <tr>
-<td align="center">L1 I-Cache 关联度</td>
+<td align="center">L1 I-Cache Associativity</td>
 <td align="center">3</td>
 </tr>
 <tr>
-<td align="center">L1 D-Cache 关联度</td>
+<td align="center">L1 D-Cache Associativity</td>
 <td align="center">2</td>
 </tr>
 <tr>
-<td align="center">L1 I-Cache 大小</td>
+<td align="center">L1 I-Cache Size</td>
 <td align="center">48KB</td>
 </tr>
 <tr>
-<td align="center">L1 D-Cache 大小</td>
+<td align="center">L1 D-Cache Size</td>
 <td align="center">32KB</td>
 </tr>
 <tr>
-<td align="center">L2 Cache 块大小</td>
+<td align="center">L2 Cache Line Size</td>
 <td align="center">64B</td>
 </tr>
 <tr>
-<td align="center">L2 Cache 关联度</td>
+<td align="center">L2 Cache Associativity</td>
 <td align="center">16</td>
 </tr>
 <tr>
-<td align="center">L2 Cache 大小</td>
+<td align="center">L2 Cache Size</td>
 <td align="center">1MB</td>
 </tr>
 <tr>
-<td align="center">Cache 替换策略</td>
+<td align="center">Cache Replacement Policy</td>
 <td align="center">LRU</td>
 </tr>
 <tr>
-<td align="center">L1 Cache 命中延迟</td>
+<td align="center">L1 Cache Latency</td>
 <td align="center">4 Cycles</td>
 </tr>
 <tr>
-<td align="center">L2 Cache 命中延迟</td>
+<td align="center">L2 Cache Latency</td>
 <td align="center">10 Cycles</td>
 </tr>
 <tr>
-<td align="center">L2 Cache 未命中延迟</td>
+<td align="center">Memory Latency</td>
 <td align="center">130 Cycles</td>
 </tr>
 </tbody>
 </table>
 
-为了评估 LLVM-TA+ 在多核上的分析，我们在树莓派 4B 上进行了试验，实验中在核心 1 上运行了一个固定的 ndes 任务作为干扰项，而在核心 2 上运行了我们的测试用例，实验结果如下：
+We use [TACLeBench](https://github.com/tacle/tacle-bench) as our test benchmark, which contains multiple test cases for WCET analysis. And in our experiment, we ran a fixed `ndes` task on core 1 as an inference item, which has a large amount of L2 cache access, so that we can evaluate the impact of shared cache on WCET analysis. All the test cases are run on core 2, and the results are shown in the following table:
 
 <table align="center">
 <thead>
 <tr>
-<th align="center">任务</th>
-<th align="center">LLVM-TA+ 分析值(Cycle)</th>
-<th align="center">树莓派测量值(Cycle)</th>
-<th align="center">分析/测量</th>
+<th align="center">Task</th>
+<th align="center">WCET analyzed by LLVM-TA+(Cycle)</th>
+<th align="center">Value obtained from Raspi 4B(Cycle)</th>
+<th align="center">Ratio of WCET/Actual</th>
 </tr>
 </thead>
 <tbody>
@@ -157,19 +161,19 @@ LLVM-TA+ 的设计目标是支持多核实时系统的 WCET 静态分析，具�
 </tbody>
 </table>
 
-可以看到，LLVM-TA+ 的分析值与树莓派测量值的比值在 1.3 到 1.7 之间，这表明 LLVM-TA+ 能够较为准确的对多核实时系统进行 WCET 静态分析。
+We can see that the WCET analyzed by LLVM-TA+ is close to the actual value obtained from the Raspberry Pi 4B, the ratio of WCET to the actual value is between 1.29 and 1.73, which indicates that LLVM-TA+ can effectively analyze the WCET of multi-core systems.
 
-### 对 WCET 上界的收紧
+### WCET Tightening compared with LLVMTA
 
-为了验证 LLVM-TA+ 能够对 WCET 上界进行收紧，我们在上面任务中，同时对比了 LLVM-TA+ 和 [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 的分析结果，实验结果如下：
+To further verify that [LLVM-TA+](https://github.com/RTS-SYSU/llvmta) can tighten the WCET upper bound, we compared the analysis results of LLVM-TA+ and [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) on the above tasks, and the experimental results are as follows:
 
 <table align="center">
 <thead>
 <tr>
-<th align="center">任务</th>
+<th align="center">Tasks</th>
 <th align="center">LLVM-TA+</th>
 <th align="center">LLVMTA</th>
-<th align="center">LLVM-TA+/LLVMTA</th>
+<th align="center">Ratio LLVM-TA+/LLVMTA</th>
 </tr>
 </thead>
 <tbody>
@@ -224,16 +228,17 @@ LLVM-TA+ 的设计目标是支持多核实时系统的 WCET 静态分析，具�
 </tbody>
 </table>
 
-可以发现，LLVM-TA+ 的分析值与 LLVMTA 的分析值相比，LLVM-TA+ 的分析值要小得多，这表明 LLVM-TA+ 能够对 WCET 上界进行收紧。
+It is clearly that the analysis value of LLVM-TA+ is much smaller than that of LLVMTA, which indicates that LLVM-TA+ can tighten the WCET upper bound.
 
-## 项目构建安装
+## Installation
 
-有关项目的构建请参考[安装文档](docs/INSTALL_zh.md)。
+For installation of the project, please refer to the [installation document](docs/INSTALL.md).
 
-## 项目使用
+## Usage
 
-有关项目的使用请参考[使用文档](docs/USAGE_zh.md)。
+For the usage of the project, please refer to the [usage document](docs/USAGE.md).
 
-## 项目开发
+# Acknowledgement
 
-请开发人员参考[开发文档](docs/DEVELOP_zh.md)。
+1. [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta)
+2. [TACLeBench](https://github.com/tacle/tacle-bench)

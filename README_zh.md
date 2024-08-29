@@ -1,84 +1,244 @@
-# 简介
+# LLVM-TA+
 
-本仓库为萨尔大学所开发的 [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 的一个分支。
+[![](https://img.shields.io/badge/RTS-SYSU-brightgreen.svg)](https://github.com/RTS-SYSU)
+[![](https://img.shields.io/badge/LLVM-TA+-blue.svg)](https://github.com/RTS-SYSU/llvmta)
+[![](https://img.shields.io/badge/Multi_Core-WCET_Analysis-yellowgreen.svg)](https://github.com/RTS-SYSU/llvmta)
 
-# 构建
+<p align="center">
+    <a href="README.md">English</a> | <a href="README_zh.md">中文</a>
+</p>
 
-为方便，本项目提供了使用 Docker 和不使用 Docker 的两种构建方法，请根据需要自行选择使用。
+本项目 [LLVM-TA+](https://github.com/RTS-SYSU/llvmta) 是一个基于 LLVM 的多核实时系统 WCET(Worst Case Execution Time, 最坏情况执行时间) 静态分析工具。
 
-> 由于项目构建依赖 Linux 环境，对于 Windows 和 Mac OS 用户，请优先使用 Docker 来进行构建，Windows 用户也可以使用 WSL 来进行本地构建
+## 项目简介
 
-构建前，请将本仓库完整下载并进入到仓库根目录中，可以使用如下的命令来实现
+### 项目背景
 
-```bash
-git clone https://github.com/RTS-SYSU/llvmta
-cd llvmta
-```
+目前，对于实时系统的 WCET 静态分析方法，已有较多的研究成果，例如商业化工具 [aiT](https://www.absint.com/ait/index.htm)，以及学术界的开源工具，如 [OTAWA](https://www.tracesgroup.net/otawa/)，[Chronos](https://www.comp.nus.edu.sg/~rpembed/chronos/)，[Heptane](https://team.inria.fr/pacap/software/heptane/)，[LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 等，但是这些分析工具大部分仅支持单核系统。相较于单核系统，多核系统普遍配置有共享资源以满足高性能需求，这导致了复杂的资源竞争情况，这使得单核的分析工具难以直接应用到多核系统中。基于此，本项目将开源的针对单核系统的 WCET 分析工具 [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 进行拓展，使其支持多核系统并支持分析共享缓存，并进一步收紧 WCET 的上届，将其命名为 LLVM-TA+。
 
-## 方法一：使用 Docker
+### 设计目标
 
-请先确保系统中已经安装有 Docker，然后按照以下步骤进行构建：
+LLVM-TA+ 的设计目标是支持多核实时系统的 WCET 静态分析，具体包括：
 
-### 构建 Docker 镜像
+1. 值分析(Value Analysis)：通过分析计算得到程序各个位置的寄存器以及内存的数据，并作为后续处理器行为缓存分析的输入。
+2. 控制流分析(Control Flow Analysis)：通过分析程序的控制流，得到程序可能的执行路径的约束条件，例如循环的迭代次数等。LLVM-TA+ 使用的是基于源代码的控制流分析，即通过 LLVM 的 SSA 表示来分析程序的控制流。
+3. 处理器行为分析(Processor Behavior Analysis)：通过控制流分析，可以得到程序的多个可能执行路径，而处理器行为分析则是分析这些路径在处理器上的执行情况，例如缓存的命中情况等，并根据这些计算出路径中基本块(Basic Block)的执行时间界限。
+4. 边界计算(Bound Calculation)：基于控制流分析以及处理器行为分析的结果，能够得到程序的 WCET。
+5. 生命周期分析(Life Cycle Analysis)：对于多核系统，需要分析任务的生命周期，以确定程序片段在处理器上执行的过程中可能涉及到的资源竞争情况。
+6. 迭代分析(Iterative Analysis)：由于初始情况下无法判断任务的生命周期，这对于多核系统的 WCET 分析是一个挑战，因此需要进行迭代分析，以逐步确定任务的生命周期，并确定程序片段之间的资源竞争情况。
+7. 共享缓存分析(Shared Cache Analysis)：多核系统中的共享缓存是一个重要的资源，对于 WCET 分析来说，需要分析任务在共享缓存上的访问情况，结合先前得到的资源竞争情况，以确定任务在共享缓存上的访问情况。
+8. 共享缓存的持久性分析(Persistent Analysis)
 
-本项目提供了两份 Docker 镜像构建文件，分别是基于 Arch 和 Ubuntu 22.04，请根据需要自行选择，构建命令为
+## 实现结果
 
-```bash
-docker build -t llvmtadocker:latest - < .devcontainer/Dockerfile
-```
+### 多核 WCET 静态分析
 
-需要注意的是，为了方便国内用户使用，构建过程会进行镜像的替换，如有需要替换为自己的镜像，请自行修改 [Dockerfile](.devcontainer/Dockerfile) 的内容。
+为了验证项目实现效果，我们使用了 [TACLeBench](https://github.com/tacle/tacle-bench) 作为我们的测试基准，其中包含了多个多核实时系统的测试用例，我们使用 LLVM-TA+ 对这些测试用例进行了分析，并在树莓派 4B 上进行了验证，实验结果表明 LLVM-TA+ 能够成功的对多核实时系统进行 WCET 静态分析，有关的参数设置如下：
 
-### 运行 Docker 容器
+<table align="center">
+<thead>
+<tr>
+<th align="center">参数</th>
+<th align="center">参数值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">L1 I-Cache 块大小</td>
+<td align="center">64B</td>
+</tr>
+<tr>
+<td align="center">L1 D-Cache 块大小</td>
+<td align="center">64B</td>
+</tr>
+<tr>
+<td align="center">L1 I-Cache 关联度</td>
+<td align="center">3</td>
+</tr>
+<tr>
+<td align="center">L1 D-Cache 关联度</td>
+<td align="center">2</td>
+</tr>
+<tr>
+<td align="center">L1 I-Cache 大小</td>
+<td align="center">48KB</td>
+</tr>
+<tr>
+<td align="center">L1 D-Cache 大小</td>
+<td align="center">32KB</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 块大小</td>
+<td align="center">64B</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 关联度</td>
+<td align="center">16</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 大小</td>
+<td align="center">1MB</td>
+</tr>
+<tr>
+<td align="center">Cache 替换策略</td>
+<td align="center">LRU</td>
+</tr>
+<tr>
+<td align="center">L1 Cache 命中延迟</td>
+<td align="center">4 Cycles</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 命中延迟</td>
+<td align="center">10 Cycles</td>
+</tr>
+<tr>
+<td align="center">L2 Cache 未命中延迟</td>
+<td align="center">130 Cycles</td>
+</tr>
+</tbody>
+</table>
 
-请在项目仓库根目录下执行如下命令
+为了评估 LLVM-TA+ 在多核上的分析，我们在树莓派 4B 上进行了试验，实验中在核心 1 上运行了一个固定的 ndes 任务作为干扰项，而在核心 2 上运行了我们的测试用例，实验结果如下：
 
-```bash
-docker run -i -d \
-    -v `pwd`:/workspaces/llvmta:rw \
-    -v `pwd`/build:/workspaces/llvmta/build:rw \
-    --name llvmta llvmtadocker:latest
-```
+<table align="center">
+<thead>
+<tr>
+<th align="center">任务</th>
+<th align="center">LLVM-TA+ 分析值(Cycle)</th>
+<th align="center">树莓派测量值(Cycle)</th>
+<th align="center">分析/测量</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">jfdctint</td>
+<td align="center">10055</td>
+<td align="center">7261</td>
+<td align="center">1.385</td>
+</tr>
+<tr>
+<td align="center">st</td>
+<td align="center">421293</td>
+<td align="center">249868</td>
+<td align="center">1.686</td>
+</tr>
+<tr>
+<td align="center">insertsort</td>
+<td align="center">3356</td>
+<td align="center">2166</td>
+<td align="center">1.549</td>
+</tr>
+<tr>
+<td align="center">ludcmp</td>
+<td align="center">9194</td>
+<td align="center">7127</td>
+<td align="center">1.290</td>
+</tr>
+<tr>
+<td align="center">cover</td>
+<td align="center">19926</td>
+<td align="center">11836</td>
+<td align="center">1.684</td>
+</tr>
+<tr>
+<td align="center">matmul</td>
+<td align="center">176059</td>
+<td align="center">134862</td>
+<td align="center">1.305</td>
+</tr>
+<tr>
+<td align="center">ndes</td>
+<td align="center">142202</td>
+<td align="center">102740</td>
+<td align="center">1.384</td>
+</tr>
+<tr>
+<td align="center">fdct</td>
+<td align="center">11390</td>
+<td align="center">6590</td>
+<td align="center">1.728</td>
+</tr>
+</tbody>
+</table>
 
-### 编译项目
+可以看到，LLVM-TA+ 的分析值与树莓派测量值的比值在 1.3 到 1.7 之间，这表明 LLVM-TA+ 能够较为准确的对多核实时系统进行 WCET 静态分析。
 
-使用如下命令进入容器
+### 对 WCET 上界的收紧
 
-```bash
-docker exec -it llvmta /bin/bash
-```
+为了验证 LLVM-TA+ 能够对 WCET 上界进行收紧，我们在上面任务中，同时对比了 LLVM-TA+ 和 [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta) 的分析结果，实验结果如下：
 
-> 需要注意的是，进入容器后默认用户为 root，为了避免权限问题，建议在容器中切换到普通用户进行编译，容器中自带一个名为 vscode 的普通用户，可以使用 `su vscode` 命令切换到该用户，并使用 `sudo chown -R vscode:vscode /workspaces/llvmta` 命令修改项目文件夹的权限
+<table align="center">
+<thead>
+<tr>
+<th align="center">任务</th>
+<th align="center">LLVM-TA+</th>
+<th align="center">LLVMTA</th>
+<th align="center">LLVM-TA+/LLVMTA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">jfdctint</td>
+<td align="center">10055</td>
+<td align="center">105783</td>
+<td align="center">0.095</td>
+</tr>
+<tr>
+<td align="center">st</td>
+<td align="center">421293</td>
+<td align="center">2979227</td>
+<td align="center">0.141</td>
+</tr>
+<tr>
+<td align="center">insertsort</td>
+<td align="center">3356</td>
+<td align="center">209482</td>
+<td align="center">0.016</td>
+</tr>
+<tr>
+<td align="center">ludcmp</td>
+<td align="center">9194</td>
+<td align="center">722084</td>
+<td align="center">0.013</td>
+</tr>
+<tr>
+<td align="center">cover</td>
+<td align="center">19926</td>
+<td align="center">61630</td>
+<td align="center">0.323</td>
+</tr>
+<tr>
+<td align="center">matmul</td>
+<td align="center">176059</td>
+<td align="center">1394651</td>
+<td align="center">0.126</td>
+</tr>
+<tr>
+<td align="center">ndes</td>
+<td align="center">142202</td>
+<td align="center">2378500</td>
+<td align="center">0.060</td>
+</tr>
+<tr>
+<td align="center">fdct</td>
+<td align="center">11390</td>
+<td align="center">75868</td>
+<td align="center">0.150</td>
+</tr>
+</tbody>
+</table>
 
-> 除此之外，你可能还需要参考 root 用户的一些环境变量，例如 $PATH，$LD_LIBRARY_PATH 等，避免编译出现问题
+可以发现，LLVM-TA+ 的分析值与 LLVMTA 的分析值相比，LLVM-TA+ 的分析值要小得多，这表明 LLVM-TA+ 能够对 WCET 上界进行收紧。
 
-然后按照以下步骤进行编译
+## 项目构建安装
 
-```bash
-cd /workspaces/llvmta
-./config.sh [dev|rel]
-cd build
-ninja -j $(nproc)
-```
+有关项目的构建请参考[安装文档](docs/INSTALL_zh.md)。
 
-其中 `./config.sh dev` 会使用 Debug 模式进行编译，而 `./config.sh rel` 则是以 Release 模式进行编译，请根据需要自行设置
+## 项目使用
 
-## 方法二：不使用 Docker
+有关项目的使用请参考[使用文档](docs/USAGE_zh.md)。
 
-对使用 Ubuntu 22.04 的用户，本项目提供了一个[脚本](./compile.sh)，可以使用该脚本进行快速的环境配置，运行完成后，使用 `source setup_env.sh` 来设定对应的环境变量，需要注意的是 `source setup_env.sh` 在每次重新打开终端后都需要重新执行
+# 致谢
 
-之后类似使用 Docker 的方法，进入 `build` 目录，使用 `ninja` 进行编译即可
-
-## 方法三：手动进行编译
-
-如果你不想使用 Docker，也不想使用脚本，那么你可以手动进行编译，具体步骤可以参考[脚本](./compile.sh)中的内容，这里对编译和运行过程需要的环境变量进行些许说明：
-
-- `GUROBI_HOME`：Gurobi 的安装路径，需要确保路径下有 `lib`，`bin` 和 `include` 三个文件夹
-- `LD_LIBRARY_PATH`：需要将 Gurobi 的 `lib` 文件夹路径添加到该环境变量中，同时对于使用 `LP_SOLVE` 的用户，也需要将 `lpsolve` 的 `lib` 文件夹路径添加到该环境变量中，或者可以创建一个软链接到 `/usr/lib` 中
-- `PATH`：需要将 Gurobi 的 `bin` 文件夹路径添加到该环境变量中，同时，请将项目编译后的 `build/bin` 文件夹路径添加到该环境变量中
-- `CPLUS_INCLUDE_PATH`：需要将 Gurobi 的 `bin` 文件夹路径添加到该环境变量中
-- `GRB_LICENSE_FILE`：请将 Gurobi 的许可文件路径添加到该环境变量中
-
-# 开发
-
-对于使用 VSCode 进行开发的用户，随项目提供有 `.vscode` 文件夹，其中包含了一些配置文件，可以帮助你更好的进行开发，请根据自己的编译环境选择合适的配置文件。
+1. [LLVMTA](https://gitlab.cs.uni-saarland.de/reineke/llvmta)
+2. [TACLeBench](https://github.com/tacle/tacle-bench)
