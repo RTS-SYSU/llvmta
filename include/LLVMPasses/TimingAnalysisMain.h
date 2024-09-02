@@ -63,6 +63,9 @@ class AddressInformation;
  *
  */
 class TimingAnalysisMain : public MachineFunctionPass {
+private:
+  std::map<std::string, int64_t> deadFunctionMap, periodFunctionMap;
+
 protected:
   typedef std::map<int64_t, std::queue<std::string>> CoreInfoMapping;
 

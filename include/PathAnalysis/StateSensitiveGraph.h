@@ -27,17 +27,24 @@
 #ifndef STATESENSITIVEGRAPH_H
 #define STATESENSITIVEGRAPH_H
 
+#include "Util/GlobalVars.h"
 #include "Util/Graph.h"
+#include "Util/Options.h"
+#include "Util/StatisticOutput.h"
 #include "Util/Util.h"
 
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
 #include "PathAnalysis/StateGraph.h"
 
 #include <fstream>
+#include <iomanip>
+#include <map>
+#include <regex>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
-//#define STOP_MOVE_MIDSTATES_THRESHOLD 100
+// #define STOP_MOVE_MIDSTATES_THRESHOLD 100
 #define STOP_MOVE_MIDSTATES_THRESHOLD 0
 
 namespace TimingAnalysisPass {
@@ -135,8 +142,223 @@ public:
   }
 
   void dump(std::ostream &mystream,
-            const std::map<std::string, double> *optTimesTaken,
-            bool f = true) const;
+            const std::map<std::string, double> *optTimesTaken) const;
+
+  void dumpfunction_(
+      const char *filename,
+      const std::map<std::string, std::vector<int>> &funtoinfor) const {
+    char title[512];
+    memset(title, 0, sizeof(title));
+
+    if (::isBCET) {
+      snprintf(title, sizeof(title), "BCET for core: %u, entry: %s",
+               ::currentCore, AnalysisEntryPoint.c_str());
+    } else {
+      snprintf(title, sizeof(title), "WCET for core %u, entry: %s",
+               ::currentCore, AnalysisEntryPoint.c_str());
+    }
+
+    auto &manager = StatisticOutputManager::getInstance();
+    manager.set_dump_file(filename);
+    auto &so = manager.insert((const char *)title,
+                              StatisticOutput(title, "Function Name", COL_LEN));
+
+    // size_t columnWidth = 29;
+    constexpr char *columnNames[] = {"Time",          "L1I$ Misses",
+                                     "L1D$ Misses",   "L2$ Misses",
+                                     "Stores To Bus", "Writebacks"};
+
+    char buf[10];
+    memset(buf, 0, sizeof(buf));
+
+    for (const auto &[funcName, values] : funtoinfor) {
+      if (values[0] == 0) {
+        continue;
+      }
+      size_t idx = 0;
+
+      for (const auto &value : values) {
+        so.update(funcName, columnNames[idx++], static_cast<uint64_t>(value));
+      }
+      // 如果数据列不足，填充空白
+      // for (size_t i = values.size(); i < columnNames.size(); ++i) {
+      //   mystream << "| " << std::setw(columnWidth - 1) << " ";
+      // }
+      // mystream << "|" << std::endl;
+    }
+
+    // so.dump(filename, "a");
+  };
+
+  void dumpfunction(const char *file,
+                    const std::map<std::string, double> *optTimesTaken) const {
+    std::ofstream myfile;
+    myfile.open("output_information.txt", std::ios_base::app);
+    this->dumpfunction(myfile, optTimesTaken);
+    // this->dumpfunction_(file, optTimesTaken);
+    myfile.close();
+  }
+
+  void dumpfunction(std::ostream &mystream,
+                    const std::map<std::string, double> *optTimesTaken) const {
+    std::set<unsigned> persistStatesAlreadyDumped;
+    std::string funcName = " ";
+    std::map<std::string, std::set<int>> functiontoid;
+    std::map<std::string, std::vector<int>> funtoinfor;
+
+    const std::function<void(unsigned, const std::set<unsigned> &)>
+        dumpPersistSuccessors =
+            [this, &persistStatesAlreadyDumped, &mystream, &funcName,
+             &functiontoid, &dumpPersistSuccessors](
+                unsigned currId, const std::set<unsigned> &statesLeavingBB) {
+              for (unsigned succId : graph.getSuccessors(currId)) {
+                if (persistStates.count(succId) > 0 &&
+                    persistStatesAlreadyDumped.count(succId) == 0) {
+                  functiontoid[funcName].insert(succId);
+                  persistStatesAlreadyDumped.insert(succId);
+                  if (statesLeavingBB.count(succId) == 0) {
+                    dumpPersistSuccessors(succId, statesLeavingBB);
+                  }
+                }
+              }
+            };
+    for (MachineFunction *currFunc :
+         machineFunctionCollector->getAllMachineFunctions()) {
+      funcName = currFunc->getName().str();
+      funtoinfor[funcName] = std::vector<int>(6, 0);
+      for (auto &currMBB : *currFunc) {
+        std::set<unsigned> statesLeavingBB;
+        const auto &callsites =
+            CallGraph::getGraph().getCallSitesInMBB(&currMBB);
+        for (auto callsite : callsites) {
+          if (callStates.count(callsite) > 0) {
+            auto &currentCallStates = callStates.at(callsite);
+            statesLeavingBB.insert(currentCallStates.begin(),
+                                   currentCallStates.end());
+            for (auto cSt : currentCallStates) {
+              functiontoid[funcName].insert(cSt);
+            }
+          }
+        }
+        for (auto ctxStMap : outStatesPerMBBPerContext.at(&currMBB)) {
+          auto &currentStates = ctxStMap.second;
+          statesLeavingBB.insert(currentStates.begin(), currentStates.end());
+          for (auto outSts : currentStates) {
+            functiontoid[funcName].insert(outSts);
+          }
+        }
+        for (auto ctxStMap : inStatesPerMBBPerContext.at(&currMBB)) {
+          for (auto inSts : ctxStMap.second) {
+            functiontoid[funcName].insert(inSts);
+            dumpPersistSuccessors(inSts, statesLeavingBB);
+          }
+        }
+        if (additionalStates.count(&currMBB) > 0) {
+          for (auto addSt : additionalStates.at(&currMBB)) {
+            functiontoid[funcName].insert(addSt);
+            dumpPersistSuccessors(addSt, statesLeavingBB);
+          }
+        }
+        for (auto callsite : callsites) {
+          if (callStates.count(callsite) > 0) {
+            for (auto &ctx2cSts : returnStates.at(callsite)) {
+              for (auto cSt : ctx2cSts.second) {
+                functiontoid[funcName].insert(cSt);
+                dumpPersistSuccessors(cSt, statesLeavingBB);
+              }
+            }
+          }
+        }
+      }
+    }
+    auto &completeGraph = graph.getVertices();
+    for (auto funtoid : functiontoid) {
+      for (auto &vtpair : completeGraph) {
+        // skip special vertex and its edges
+        if (vtpair.first == 0 || funtoid.second.count(vtpair.first) == 0)
+          continue;
+        auto &vt = std::get<1>(vtpair);
+        for (auto &vt_succ : vt.getSuccessors()) {
+          // skip edges to the special vertex
+          if (vt_succ == 0)
+            continue;
+
+          std::string weight;
+          bool emitComma = false;
+          std::pair<unsigned, unsigned> edge =
+              std::make_pair(vt.getId(), vt_succ);
+          for (auto &ccb : this->constructionCallbacks) {
+            if (emitComma) {
+              weight += ",\\n";
+            }
+            weight += ccb->getWeightDescr(edge.first, edge.second);
+            emitComma = true;
+          }
+          std::regex intRegex(R"(\b\d+\b)");
+          std::smatch match;
+          std::vector<int> integers;
+
+          std::string::const_iterator searchStart(weight.cbegin());
+          while (
+              std::regex_search(searchStart, weight.cend(), match, intRegex)) {
+            // 将匹配的整数字符串转换为整数并存入 vector
+            integers.push_back(std::stoi(match[0]));
+            // 更新搜索起点，继续查找下一个匹配项
+            searchStart = match.suffix().first;
+          }
+
+          if (optTimesTaken) {
+            Variable edgeVar =
+                Variable::getEdgeVar(Variable::Type::timesTaken, edge);
+            auto frequency = optTimesTaken->find(edgeVar.getName());
+            if (frequency != optTimesTaken->end() && frequency->second > 0) {
+              for (int i = 0; i < 6; i++) {
+                funtoinfor[funtoid.first][i] += integers[i] * frequency->second;
+              }
+            }
+          }
+        }
+      }
+    }
+    // 列宽
+    // size_t columnWidth = 29;
+    // std::vector<std::string> columnNames = {"Time",          "l1I$ Misses",
+    //                                         "l1D$ Misses",   "l2$ Misses",
+    //                                         "Stores To Bus", "writebacks"};
+    // // 打印分隔线
+    // auto printSeparator = [&mystream](size_t columnWidth, size_t numColumns)
+    // {
+    //   mystream << "+";
+    //   for (size_t i = 0; i < numColumns; ++i) {
+    //     mystream << std::string(columnWidth, '-') << "+";
+    //   }
+    //   mystream << std::endl;
+    // };
+    // printSeparator(columnWidth, columnNames.size() + 1);
+    // mystream << "| " << std::setw(29) << "Function Name";
+    // for (const auto &colName : columnNames) {
+    //   mystream << "| " << std::setw(columnWidth - 1) << colName;
+    // }
+    // mystream << "|" << std::endl;
+    // printSeparator(columnWidth, columnNames.size() + 1);
+    // for (const auto &[funcName, values] : funtoinfor) {
+    //   if (values[0] == 0) {
+    //     continue;
+    //   }
+    //   mystream << "| " << std::setw(29) << funcName;
+    //   for (const auto &value : values) {
+    //     mystream << "| " << std::setw(columnWidth - 1) << value;
+    //   }
+    //   // 如果数据列不足，填充空白
+    //   for (size_t i = values.size(); i < columnNames.size(); ++i) {
+    //     mystream << "| " << std::setw(columnWidth - 1) << " ";
+    //   }
+    //   mystream << "|" << std::endl;
+    // }
+    // printSeparator(columnWidth, columnNames.size() + 1);
+
+    this->dumpfunction_("output_information.txt", funtoinfor);
+  }
 
   void deleteMuArchInfo();
 
@@ -288,7 +510,6 @@ public:
    */
   std::map<const MachineBasicBlock *, std::set<unsigned>> additionalStates;
 
-public:
   /**
    * Map which contains all call states, separated by basic block and callsite
    * (MI).
@@ -309,7 +530,6 @@ public:
 
   std::ofstream debugDump;
 
-public:
   /**
    * Remember the IDs of states that should be marked
    * as persistent in the construction of the graph.
@@ -1655,8 +1875,8 @@ bool StateSensitiveGraph<MicroArchDom>::isDirectSuccessor(
 
 template <class MicroArchDom>
 void StateSensitiveGraph<MicroArchDom>::dump(
-    std::ostream &mystream, const std::map<std::string, double> *optTimesTaken,
-    bool f) const {
+    std::ostream &mystream,
+    const std::map<std::string, double> *optTimesTaken) const {
   if (!DumpVcgGraph) {
     int clusterNr = 0;
     mystream << "digraph WCET {\n    label = \"Microarchitectural State "
@@ -1807,7 +2027,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           }
         }
 
-        this->dumpEdge(mystream, edge, weight, onWCETPath, false);
+        this->dumpEdge(mystream, edge, weight, onWCETPath);
       }
     }
     mystream << "}\n}";
@@ -1968,10 +2188,17 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           }
         }
 
-        this->dumpEdge(mystream, edge, weight, onWCETPath, false);
+        this->dumpEdge(mystream, edge, weight, onWCETPath);
       }
     }
     mystream << "}\n}";
+  }
+  if (optTimesTaken) {
+    // std::ofstream myfile;
+    // myfile.open("output_information.txt", std::ios_base::app);
+    // this->dumpfunction(myfile, optTimesTaken);
+    // myfile.close();
+    this->dumpfunction("output_information.txt", optTimesTaken);
   }
 }
 

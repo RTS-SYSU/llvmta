@@ -3,7 +3,9 @@
         "core": 0,
         "tasks": [
             {
-                "function": "st"
+                "function": "ndes_start",
+                "deadline": 1000,
+                "period": 9300
             }
         ]
     },
@@ -11,7 +13,9 @@
         "core": 1,
         "tasks": [
             {
-                "function": "ndes"
+                "function": "fdct_start",
+                "deadline": 2000,
+                "period": 4995
             }
         ]
     }

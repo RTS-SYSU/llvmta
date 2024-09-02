@@ -4,12 +4,18 @@ pushd ..
 source setup_env.sh
 popd
 
+if [ $# -le 0 ];
+then
+    echo "Test case is not set, using default: \"test\""
+    testcases=../test
+else
+    testcases=$1
+fi
+
 pushd "../build" || echo "Unable to compile"
     echo "compiling..."
     ninja -j$(nproc) || exit
 popd || exit
-
-testcases=test
 
 WORKDIR=$(mktemp -d -p .)
 
@@ -26,7 +32,7 @@ clang -w -S -gline-tables-only -O0 -Xclang \
         -disable-O0-optnone -fno-builtin \
         -target arm -march=armv4t \
         -mfloat-abi=hard \
-        -emit-llvm ../${testcases}/*.c
+        -emit-llvm ${testcases}/*.c
 
 llvm-link *.ll ../libraries/arm/builtininteger.ll \
                    ../libraries/arm/builtinstd.ll \
