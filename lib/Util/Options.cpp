@@ -362,6 +362,18 @@ cl::opt<unsigned>
             cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
+    ILatency("ta-Icache-latency", cl::init(4),
+             cl::desc("The latency of the L1 I cache. (default '4', i.e. "
+                      "transferring a single word takes 5 cycles)"),
+             cl::cat(HardwareDescrCat));
+
+cl::opt<unsigned>
+    DLatency("ta-Dcache-latency", cl::init(4),
+             cl::desc("The latency of the L1 D cache. (default '4', i.e. "
+                      "transferring a single word takes 5 cycles)"),
+             cl::cat(HardwareDescrCat));
+
+cl::opt<unsigned>
     L2Latency("ta-L2-latency", cl::init(6),
               cl::desc("The latency of the L2 cache. (default '4', i.e. "
                        "transferring a single word takes 5 cycles)"),

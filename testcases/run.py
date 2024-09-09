@@ -23,11 +23,23 @@ parser = ArgumentParser('Run llvmta')
 parser.add_argument('-s', '--src', type=str, required=True, help='The C source file directory, e.g. ./path/to/test')
 parser.add_argument('-o', '--out', type=str, default='./out', help='The directory to store the result files')
 parser.add_argument('-t', '--tmp', type=str, default='./dirforgdb', help='The temporary directory to store the intermediate files')
-parser.add_argument('-lf', '--lower-loop-file', type=str, default='LLoopAnnotations.csv', help='The lower bound loop file, relative to the source directory')
-parser.add_argument('-uf', '--upper-loop-file', type=str, default='LoopAnnotations.csv', help='The upper bound loop file, relative to the source directory')
-parser.add_argument('-c', '--core-info', type=str, default='CoreInfo.json', help='The core info file, relative to the source directory')
-parser.add_argument('-n', '--num-cores', type=int, default=2, help='The number of cores to use')
+parser.add_argument('-lf', '--lower_loop_file', type=str, default='LLoopAnnotations.csv', help='The lower bound loop file, relative to the source directory')
+parser.add_argument('-uf', '--upper_loop_file', type=str, default='LoopAnnotations.csv', help='The upper bound loop file, relative to the source directory')
+parser.add_argument('-c', '--core_info', type=str, default='CoreInfo.json', help='The core info file, relative to the source directory')
+parser.add_argument('-n', '--num_cores', type=int, default=2, help='The number of cores to use')
 parser.add_argument('-p', action='store_true', help='Generate the proper LoopAnnotations.csv and LLoopAnnotations.csv files')
+parser.add_argument('--icache_line_size', type=int, default=64, help='The ICache Line Size, in bytes, default is 64')
+parser.add_argument('--icache_assoc', type=int, default=8, help='The ICache Associativity, default is 8')
+parser.add_argument('--icache_sets', type=int, default=64, help='The ICache Number of Sets, default is 64')
+parser.add_argument('--dcache_line_size', type=int, default=64, help='The DCache Line Size, in bytes, default is 64')
+parser.add_argument('--dcache_sets', type=int, default=64, help='The DCache Number of Sets, default is 64')
+parser.add_argument('--dcache_assoc', type=int, default=8, help='The DCache Associativity, default is 8')
+parser.add_argument('--l2_line_size', type=int, default=64, help='The L2 Cache Line Size, in bytes, default is 64')
+parser.add_argument('--l2_assoc', type=int, default=8, help='The L2 Cache Associativity, default is 8')
+parser.add_argument('--l2_sets', type=int, default=64, help='The L2 Cache Number of Sets, default is 64')
+parser.add_argument('--mem_latency', type=int, default=100, help='The memory latency, default is 100 cycles')
+parser.add_argument('--l2_latency', type=int, default=50, help='The L2 cache latency, default is 100 cycles')
+parser.add_argument('--l1_latency', type=int, default=10, help='The L1 cache latency, default is 10 cycles')
 
 args = parser.parse_args()
 
@@ -75,6 +87,19 @@ def handle_generate(args):
         "--shared-cache-Persistence-Analysis=false",
         "--ta-output-unknown-loops",
         "--ta-l2cache-persistence=elementwise",
+        f"--ta-icache-linesize={args.icache_line_size}",
+        f"--ta-icache-nsets={args.icache_sets}",
+        f"--ta-icache-assoc={args.icache_assoc}",
+        f"--ta-dcache-linesize={args.dcache_line_size}",
+        f"--ta-dcache-assoc={args.dcache_assoc}",
+        f"--ta-dcache-nsets={args.dcache_sets}",
+        f"--ta-l2cache-linesize={args.l2_line_size}",
+        f"--ta-l2cache-assoc={args.l2_assoc}",
+        f"--ta-l2cache-nsets={args.l2_sets}",
+        f"--ta-mem-latency={args.mem_latency}",
+        f"--ta-Icache-latency={args.l1_latency}",
+        f"--ta-Dcache-latency={args.l1_latency}",
+        f"--ta-L2-latency={args.l2_latency}",
         "-debug-only=",
         "optimized.ll"
     ]
@@ -194,6 +219,19 @@ def handle_run(args):
         f"--core-numbers={args.num_cores}",
         "--shared-cache-Persistence-Analysis=false",
         "--ta-l2cache-persistence=elementwise",
+        f"--ta-icache-linesize={args.icache_line_size}",
+        f"--ta-icache-nsets={args.icache_sets}",
+        f"--ta-icache-assoc={args.icache_assoc}",
+        f"--ta-dcache-linesize={args.dcache_line_size}",
+        f"--ta-dcache-assoc={args.dcache_assoc}",
+        f"--ta-dcache-nsets={args.dcache_sets}",
+        f"--ta-l2cache-linesize={args.l2_line_size}",
+        f"--ta-l2cache-assoc={args.l2_assoc}",
+        f"--ta-l2cache-nsets={args.l2_sets}",
+        f"--ta-mem-latency={args.mem_latency}",
+        f"--ta-Icache-latency={args.l1_latency}",
+        f"--ta-Dcache-latency={args.l1_latency}",
+        f"--ta-L2-latency={args.l2_latency}",
         "-debug-only=",
         "optimized.ll"
     ]

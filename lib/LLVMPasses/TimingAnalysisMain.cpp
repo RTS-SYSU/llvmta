@@ -388,6 +388,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   icacheConf.ASSOCIATIVITY = Iassoc;
   icacheConf.N_SETS = Insets;
   icacheConf.LEVEL = 1;
+  icacheConf.LATENCY = ILatency;
   icacheConf.checkParams();
 
   dcacheConf.LINE_SIZE = Dlinesize;
@@ -395,6 +396,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
   dcacheConf.N_SETS = Dnsets;
   dcacheConf.WRITEBACK = DataCacheWriteBack;
   dcacheConf.WRITEALLOCATE = DataCacheWriteAllocate;
+  icacheConf.LATENCY = DLatency;
   dcacheConf.LEVEL = 1;
   dcacheConf.checkParams();
 

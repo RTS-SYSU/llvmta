@@ -113,3 +113,5 @@ testcases/evaluations*/
 testcases/out.log
 testcases/dirforgdb
 thirdParty/*
+
+venv/*
