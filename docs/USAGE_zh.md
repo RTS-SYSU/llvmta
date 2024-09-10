@@ -76,6 +76,82 @@ cd testcases
 
 其中，`core` 表示核心编号，`tasks` 表示该核心上的任务，`function` 表示任务所在的函数名。
 
+## 系统信息获取
+
+### 缓存大小信息
+
+对于类 Unix 系统，大部分情况下都可以通过 `lscpu -C` 命令来获取系统的 Cache 信息，例如
+
+```bash
+$ lscpu -C
+NAME ONE-SIZE ALL-SIZE WAYS TYPE        LEVEL SETS PHY-LINE COHERENCY-SIZE
+L1d       32K     128K    8 Data            1   64        1             64
+L1i       64K     256K    8 Instruction     1  128        1             64
+L2         2M       2M   16 Unified         2 2048        1             64
+```
+
+表示当前的 CPU 有三级缓存，其中 L1-Cache 分为 D-Cache(数据缓存) 和 I-Cache(指令缓存)，L2-Cache 和 L3-Cache 为统一缓存，即数据和指令共享。
+
+其中的 `COHERENCY-SIZE` 表示缓存的一致性大小，即缓存行的大小，单位为字节，`WAYS` 表示组相联度，`SETS` 表示该级缓存的组数。
+
+在运行的时候，请在 `run.py` 的运行参数中加入对应的参数，例如对于上述的 Cache 信息，可以用 
+
+```bash
+./run.py -s <源代码所在目录> -o <输出文件目录> --icache_line_size 64 --dcache_line_size 64 --l2cache_line_size 64 --icache_assoc 8 --dcache_assoc 8 --l2cache_assoc 16 --icache_sets 128 --dcache_sets 64 --l2cache_sets 2048
+```
+
+如果 `lscpu -C` 无法获取 Cache 信息，可以通过查看 `/sys/devices/system/cpu/cpu0/cache` 目录下的文件来获取，如下
+
+```bash
+$ ls -l /sys/devices/system/cpu/cpu0/cache
+total 0
+drwxr-xr-x 2 root root    0 Sep  9 15:14 index0
+drwxr-xr-x 2 root root    0 Sep  9 15:14 index1
+drwxr-xr-x 2 root root    0 Sep  9 15:14 index2
+-rw-r--r-- 1 root root 4096 Sep  9 15:40 uevent
+```
+
+通常来说，对应的 `index0` 和 `index1` 目录下的文件为 L1-Cache 的信息，`index2` 为 L2-Cache 的信息，以此类推，具体查看文件内容如下
+
+```bash
+$ ls -l /sys/devices/system/cpu/cpu0/cache/index0
+total 0
+-r--r--r-- 1 root root 4096 Sep  9 15:14 coherency_line_size
+-r--r--r-- 1 root root 4096 Sep  9 15:14 id
+-r--r--r-- 1 root root 4096 Sep  9 15:14 level
+-r--r--r-- 1 root root 4096 Sep  9 15:14 number_of_sets
+-r--r--r-- 1 root root 4096 Sep  9 15:14 physical_line_partition
+-r--r--r-- 1 root root 4096 Sep  9 15:41 shared_cpu_list
+-r--r--r-- 1 root root 4096 Sep  9 15:14 shared_cpu_map
+-r--r--r-- 1 root root 4096 Sep  9 15:14 size
+-r--r--r-- 1 root root 4096 Sep  9 15:14 type
+-rw-r--r-- 1 root root 4096 Sep  9 15:41 uevent
+-r--r--r-- 1 root root 4096 Sep  9 15:14 ways_of_associativity
+```
+
+对应的 `size` 为缓存大小，`coherency_line_size` 为缓存行大小，`ways_of_associativity` 为组相联度，`number_of_sets` 为组数吗，`type` 为缓存类型。
+
+### 缓存内存延迟信息
+
+缓存以及内存的延迟信息可以 [lmbench](https://lmbench.sourceforge.net/) 工具来进行测试，具体的测试和使用方法请参考官方文档，这里需要注意的是，该工具默认测试结果的单位为 ns，而本项目需要的单位为 CPU 周期数，因而需要将测试结果转换为 CPU 周期数，为了确保转换的精准，请在测试时将 CPU 固定在最低频率，Linux 上可以通过设置 CPU 的 governor 为 `powersave` 来实现，具体方法如下
+
+```bash
+$ sudo cpufreq-set -g powersave
+```
+
+设置完成后，可以通过如下文件来查看 CPU 的 governor
+
+```bash
+$ cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
+powersave
+```
+
+测试完成后，终端会打印对应的内存延迟，请手动记录并转换为 CPU 周期数，然后在运行时加入对应的参数，例如，得到的内存延迟为 150 个 CPU 周期数，L1 缓存延迟为 4 个 CPU 周期数，L2 缓存延迟为 12 个 CPU 周期数，可以用如下命令来运行
+
+```bash
+./run.py -s <源代码所在目录> -o <输出文件目录> --icache_line_size 64 --dcache_line_size 64 --l2cache_line_size 64 --icache_assoc 8 --dcache_assoc 8 --l2cache_assoc 16 --icache_sets 128 --dcache_sets 64 --l2cache_sets 2048 --l1_latency 4 --l2_latency 12 --mem_latency 150
+```
+
 ## 使用
 
 为方便使用，本项目提供了一个[脚本](../testcases/run.py)，使用方法如下

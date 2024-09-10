@@ -116,7 +116,7 @@ enum class CompositionalAnalysisType {
           /// cache. This Cache is not analysed.
   DCACHE, /// Timing Analysis uses an always hit cache for the data cache. This
           /// Cache is not analysed.
-// jjy: 层2cache
+          // jjy: 层2cache
   L2CACHE,
   DRAMREFRESH,      /// Timing Analysis should analyse DRAM refreshes in a
                     /// compositional way.
@@ -254,6 +254,8 @@ extern llvm::cl::opt<bool> SPersistenceA;
  * File that record the running info.
  */
 extern llvm::cl::opt<std::string> coreInfo;
+
+extern llvm::cl::opt<unsigned> ILatency, DLatency;
 
 /**
  * Quiet mode: No output on console and no file output, except for the
