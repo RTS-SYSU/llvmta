@@ -230,6 +230,10 @@ LLVM-TA+ 的设计目标是支持多核实时系统的 WCET 静态分析，具�
 
 可以发现，LLVM-TA+ 的分析值与 LLVMTA 的分析值相比，LLVM-TA+ 的分析值要小得多，这表明 LLVM-TA+ 能够对 WCET 上界进行收紧。
 
+## 脚本使用
+
+为了方便评估本项目，我们提供了一些脚本来帮助评估本项目，这些脚本位于 `scripts` 目录下，每个脚本的使用方法可以在 [README](scripts/README_zh.md) 文件中找到。
+
 ## 项目构建安装
 
 有关项目的构建请参考[安装文档](docs/INSTALL_zh.md)。

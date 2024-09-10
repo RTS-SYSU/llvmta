@@ -244,6 +244,10 @@ To further verify that [LLVM-TA+](https://github.com/RTS-SYSU/llvmta) can tighte
 
 It is clearly that the analysis value of LLVM-TA+ is much smaller than that of LLVMTA, which indicates that LLVM-TA+ can tighten the WCET upper bound.
 
+## Scripts
+
+For easy evaluation of this project, we provide some scripts to help evaluate the project. The scripts are located in the `scripts` directory, and the usage of each script can be found in the [README](scripts/README.md) file.
+
 ## Installation
 
 For installation of the project, please refer to the [installation document](docs/INSTALL.md).
