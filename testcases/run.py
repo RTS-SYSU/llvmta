@@ -1,7 +1,11 @@
 #!/usr/bin/env python3
 
+
 import os
 import shutil
+import subprocess
+
+
 from argparse import ArgumentParser
 from pathlib import Path
 
@@ -130,10 +134,10 @@ def handle_generate(args):
         logger_error(f'Failed to run llvmta')
         exit(1)
     else:
-        shutil.copy('LoopAnnotations.csv', out_dir / 'LoopAnnotations.csv')
-        shutil.copy('LoopAnnotations.csv', out_dir / 'LLoopAnnotations.csv')
+        # shutil.copy('LoopAnnotations.csv', out_dir / 'LoopAnnotations.csv')
+        shutil.copy('LoopAnnotations.csv', 'LLoopAnnotations.csv')
 
-        with open(out_dir / 'LoopAnnotations.csv', 'r') as f:
+        with open('LoopAnnotations.csv', 'r') as f:
             data = f.readlines()
             
         output_data = list()
@@ -143,10 +147,10 @@ def handle_generate(args):
                 continue
             output_data.append(data[i])
             
-        with open(out_dir / 'LoopAnnotations.csv', 'w') as f:
+        with open('LoopAnnotations.csv', 'w') as f:
             f.writelines(output_data)
             
-        with open(out_dir / 'LLoopAnnotations.csv', 'r') as f:
+        with open('LLoopAnnotations.csv', 'r') as f:
             data = f.readlines()
         
         output_data = list()
@@ -156,12 +160,45 @@ def handle_generate(args):
                 continue
             output_data.append(data[i])
         
-        with open(out_dir / 'LLoopAnnotations.csv', 'w') as f:
+        with open('LLoopAnnotations.csv', 'w') as f:
             f.writelines(output_data)
             
         logger_success(f'Successfully ran llvmta')
+        # logger_success(f'Output LoopAnnotations.csv: {str(out_dir / "LoopAnnotations.csv")}')
+        # logger_success(f'Output LLoopAnnotations.csv: {str(out_dir / "LLoopAnnotations.csv")}')
+        
+        shutil.copy('LoopAnnotations.csv', src_dir / 'LoopAnnotations.csv')
+        shutil.copy('LoopAnnotations.csv', src_dir / 'LLoopAnnotations.csv')
+        
+        logger_info(f'Trying to find the loop bound...')
+        
+        p = subprocess.Popen(
+            [
+                'python3', 
+                'quickGetBound.py',
+                '-s',
+                f'{str(src_dir)}',
+            ], 
+            env = os.environ.copy(), 
+            cwd = pwd,
+            stdout = subprocess.PIPE,
+            stderr = subprocess.PIPE
+        )
+        
+        p.wait()
+        
+        if p.returncode != 0:
+            logger_error(f'Failed to find the loop bound')
+            logger_error(f'Please manually check the LoopAnnotations.csv and LLoopAnnotations.csv files')
+            logger_error(f'STDOUT: {p.stdout.read()}')
+            logger_error(f'STDERR: {p.stderr.read()}')
+        else:
+            logger_success(f'Successfully found the loop bound')
+        shutil.copy('LoopAnnotations.csv', out_dir / 'LoopAnnotations.csv')
+        shutil.copy('LoopAnnotations.csv', out_dir / 'LLoopAnnotations.csv')
         logger_success(f'Output LoopAnnotations.csv: {str(out_dir / "LoopAnnotations.csv")}')
         logger_success(f'Output LLoopAnnotations.csv: {str(out_dir / "LLoopAnnotations.csv")}')
+        
     os.chdir(pwd)
 
 def handle_run(args):

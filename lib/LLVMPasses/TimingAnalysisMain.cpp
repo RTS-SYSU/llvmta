@@ -44,6 +44,7 @@
 #include "Util/Statistics.h"
 #include "Util/Util.h"
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/DebugInfo/Symbolize/SymbolizableModule.h"
@@ -137,21 +138,31 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
     }
 
     for (json::Value &task : *functions) {
+      bool has_deadline = false, has_period = false;
       auto taskName = task.getAsObject()->get("function")->getAsString();
-      auto deadline = task.getAsObject()->get("deadline")->getAsInteger();
-      auto period = task.getAsObject()->get("period")->getAsInteger();
+      if (task.getAsObject()->get("deadline")) {
+        has_deadline = true;
+      }
+      if (task.getAsObject()->get("period")) {
+        has_period = true;
+      }
+      llvm::Optional<int64_t> deadline(-1), period(-1);
+      if (has_deadline)
+        deadline = task.getAsObject()->get("deadline")->getAsInteger();
+      if (has_period)
+        period = task.getAsObject()->get("period")->getAsInteger();
       if (!taskName) {
         fprintf(stderr, "Unable to get task name for core %lu, exit.", core);
         exit(1);
       }
-      if (!deadline) {
-        fprintf(stderr, "Unable to get deadline for core %lu, exit.", core);
-        exit(1);
-      }
-      if (!period) {
-        fprintf(stderr, "Unable to get period for core %lu, exit.", core);
-        exit(1);
-      }
+      // if (!deadline) {
+      //   fprintf(stderr, "Unable to get deadline for core %lu, exit.", core);
+      //   exit(1);
+      // }
+      // if (!period) {
+      //   fprintf(stderr, "Unable to get period for core %lu, exit.", core);
+      //   exit(1);
+      // }
       mp[core].push(taskName.getValue().str());
       this->deadFunctionMap[taskName.getValue().str()] = deadline.getValue();
       this->periodFunctionMap[taskName.getValue().str()] = period.getValue();
