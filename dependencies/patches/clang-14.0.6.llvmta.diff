@@ -1,0 +1,888 @@
+diff --color -uprN clang-14.0.6.src/include/clang/Lex/ModuleMap.h clang-14.0.6.src_latest/include/clang/Lex/ModuleMap.h
+--- clang-14.0.6.src/include/clang/Lex/ModuleMap.h	2022-06-23 00:46:24.000000000 +0800
++++ clang-14.0.6.src_latest/include/clang/Lex/ModuleMap.h	2024-09-25 23:31:57.822570147 +0800
+@@ -106,7 +106,7 @@ class ModuleMap {
+   llvm::DenseMap<const IdentifierInfo *, Module *> CachedModuleLoads;
+ 
+   /// Shadow modules created while building this module map.
+-  llvm::SmallVector<Module*, 2> ShadowModules;
++  llvm::SmallVector<Module *, 2> ShadowModules;
+ 
+   /// The number of modules we have created in total.
+   unsigned NumCreatedModules = 0;
+@@ -127,7 +127,7 @@ public:
+   /// Flags describing the role of a module header.
+   enum ModuleHeaderRole {
+     /// This header is normally included in the module.
+-    NormalHeader  = 0x0,
++    NormalHeader = 0x0,
+ 
+     /// This header is included but private.
+     PrivateHeader = 0x1,
+@@ -173,9 +173,7 @@ public:
+     ModuleHeaderRole getRole() const { return Storage.getInt(); }
+ 
+     /// Whether this header is available in the module.
+-    bool isAvailable() const {
+-      return getModule()->isAvailable();
+-    }
++    bool isAvailable() const { return getModule()->isAvailable(); }
+ 
+     /// Whether this header is accessible from the specified module.
+     bool isAccessibleFrom(Module *M) const {
+@@ -185,9 +183,7 @@ public:
+ 
+     // Whether this known header is valid (i.e., it has an
+     // associated module).
+-    explicit operator bool() const {
+-      return Storage.getPointer() != nullptr;
+-    }
++    explicit operator bool() const { return Storage.getPointer() != nullptr; }
+   };
+ 
+   using AdditionalModMapsSet = llvm::SmallPtrSet<const FileEntry *, 1>;
+@@ -203,11 +199,12 @@ private:
+   HeadersMap Headers;
+ 
+   /// Map from file sizes to modules with lazy header directives of that size.
+-  mutable llvm::DenseMap<off_t, llvm::TinyPtrVector<Module*>> LazyHeadersBySize;
++  mutable llvm::DenseMap<off_t, llvm::TinyPtrVector<Module *>>
++      LazyHeadersBySize;
+ 
+   /// Map from mtimes to modules with lazy header directives with those mtimes.
+-  mutable llvm::DenseMap<time_t, llvm::TinyPtrVector<Module*>>
+-              LazyHeadersByModTime;
++  mutable llvm::DenseMap<time_t, llvm::TinyPtrVector<Module *>>
++      LazyHeadersByModTime;
+ 
+   /// Mapping from directories with umbrella headers to the module
+   /// that is generated from the umbrella header.
+@@ -360,8 +357,9 @@ private:
+   ///
+   /// \param IntermediateDirs On success, contains the set of directories
+   /// searched before finding \p File.
+-  KnownHeader findHeaderInUmbrellaDirs(const FileEntry *File,
+-                    SmallVectorImpl<const DirectoryEntry *> &IntermediateDirs);
++  KnownHeader findHeaderInUmbrellaDirs(
++      const FileEntry *File,
++      SmallVectorImpl<const DirectoryEntry *> &IntermediateDirs);
+ 
+   /// Given that \p File is not in the Headers map, look it up within
+   /// umbrella directories and find or create a module for it.
+@@ -406,9 +404,7 @@ public:
+   }
+ 
+   /// Get the directory that contains Clang-supplied include files.
+-  const DirectoryEntry *getBuiltinDir() const {
+-    return BuiltinIncludeDir;
+-  }
++  const DirectoryEntry *getBuiltinDir() const { return BuiltinIncludeDir; }
+ 
+   /// Is this a compiler builtin header?
+   static bool isBuiltinHeader(StringRef FileName);
+@@ -663,8 +659,8 @@ public:
+ 
+   /// Adds this header to the given module.
+   /// \param Role The role of the header wrt the module.
+-  void addHeader(Module *Mod, Module::Header Header,
+-                 ModuleHeaderRole Role, bool Imported = false);
++  void addHeader(Module *Mod, Module::Header Header, ModuleHeaderRole Role,
++                 bool Imported = false);
+ 
+   /// Marks this header as being excluded from the given module.
+   void excludeHeader(Module *Mod, Module::Header Header);
+@@ -690,8 +686,8 @@ public:
+   ///
+   /// \returns true if an error occurred, false otherwise.
+   bool parseModuleMapFile(const FileEntry *File, bool IsSystem,
+-                          const DirectoryEntry *HomeDir,
+-                          FileID ID = FileID(), unsigned *Offset = nullptr,
++                          const DirectoryEntry *HomeDir, FileID ID = FileID(),
++                          unsigned *Offset = nullptr,
+                           SourceLocation ExternModuleLoc = SourceLocation());
+ 
+   /// Dump the contents of the module map, for debugging purposes.
+@@ -700,7 +696,7 @@ public:
+   using module_iterator = llvm::StringMap<Module *>::const_iterator;
+ 
+   module_iterator module_begin() const { return Modules.begin(); }
+-  module_iterator module_end()   const { return Modules.end(); }
++  module_iterator module_end() const { return Modules.end(); }
+   llvm::iterator_range<module_iterator> modules() const {
+     return {module_begin(), module_end()};
+   }
+diff --color -uprN clang-14.0.6.src/include/clang/Lex/Pragma.h clang-14.0.6.src_latest/include/clang/Lex/Pragma.h
+--- clang-14.0.6.src/include/clang/Lex/Pragma.h	2022-06-23 00:46:24.000000000 +0800
++++ clang-14.0.6.src_latest/include/clang/Lex/Pragma.h	2024-09-25 23:31:59.622569707 +0800
+@@ -18,6 +18,8 @@
+ #include "llvm/ADT/StringMap.h"
+ #include "llvm/ADT/StringRef.h"
+ #include <string>
++// Modified By Zeng-WCh
++#include <map>
+ 
+ namespace clang {
+ 
+@@ -25,33 +27,33 @@ class PragmaNamespace;
+ class Preprocessor;
+ class Token;
+ 
++/**
++ * Describes how the pragma was introduced, e.g., with \#pragma,
++ * _Pragma, or __pragma.
++ */
++enum PragmaIntroducerKind {
+   /**
+-   * Describes how the pragma was introduced, e.g., with \#pragma,
+-   * _Pragma, or __pragma.
++   * The pragma was introduced via \#pragma.
+    */
+-  enum PragmaIntroducerKind {
+-    /**
+-     * The pragma was introduced via \#pragma.
+-     */
+-    PIK_HashPragma,
+-
+-    /**
+-     * The pragma was introduced via the C99 _Pragma(string-literal).
+-     */
+-    PIK__Pragma,
+-
+-    /**
+-     * The pragma was introduced via the Microsoft
+-     * __pragma(token-string).
+-     */
+-    PIK___pragma
+-  };
+-
+-  /// Describes how and where the pragma was introduced.
+-  struct PragmaIntroducer {
+-    PragmaIntroducerKind Kind;
+-    SourceLocation Loc;
+-  };
++  PIK_HashPragma,
++
++  /**
++   * The pragma was introduced via the C99 _Pragma(string-literal).
++   */
++  PIK__Pragma,
++
++  /**
++   * The pragma was introduced via the Microsoft
++   * __pragma(token-string).
++   */
++  PIK___pragma
++};
++
++/// Describes how and where the pragma was introduced.
++struct PragmaIntroducer {
++  PragmaIntroducerKind Kind;
++  SourceLocation Loc;
++};
+ 
+ /// PragmaHandler - Instances of this interface defined to handle the various
+ /// pragmas that the language front-end uses.  Each handler optionally has a
+@@ -89,6 +91,16 @@ public:
+                     Token &FirstToken) override;
+ };
+ 
++// Modified By Zeng-WCh
++class LoopBoundPragmaHandler : public PragmaHandler {
++public:
++  static std::map<std::size_t, std::pair<std::size_t, std::size_t>> loc2bound;
++  LoopBoundPragmaHandler() : PragmaHandler("loopbound") {}
++
++  void HandlePragma(Preprocessor &PP, PragmaIntroducer Introducer,
++                    Token &Tok) override;
++};
++
+ /// PragmaNamespace - This PragmaHandler subdivides the namespace of pragmas,
+ /// allowing hierarchical pragmas to be defined.  Common examples of namespaces
+ /// are "\#pragma GCC", "\#pragma STDC", and "\#pragma omp", but any namespaces
+@@ -105,8 +117,7 @@ public:
+   /// specified name.  If not, return the handler for the null name if it
+   /// exists, otherwise return null.  If IgnoreNull is true (the default) then
+   /// the null handler isn't returned on failure to match.
+-  PragmaHandler *FindHandler(StringRef Name,
+-                             bool IgnoreNull = true) const;
++  PragmaHandler *FindHandler(StringRef Name, bool IgnoreNull = true) const;
+ 
+   /// AddPragma - Add a pragma to this namespace.
+   void AddPragma(PragmaHandler *Handler);
+diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/lib/Lex/Pragma.cpp
+--- clang-14.0.6.src/lib/Lex/Pragma.cpp	2022-06-23 00:46:24.000000000 +0800
++++ clang-14.0.6.src_latest/lib/Lex/Pragma.cpp	2024-09-25 23:32:00.202569566 +0800
+@@ -15,6 +15,7 @@
+ #include "clang/Basic/CLWarnings.h"
+ #include "clang/Basic/Diagnostic.h"
+ #include "clang/Basic/DiagnosticLex.h"
++#include "clang/Basic/DiagnosticParse.h"
+ #include "clang/Basic/FileManager.h"
+ #include "clang/Basic/IdentifierTable.h"
+ #include "clang/Basic/LLVM.h"
+@@ -99,8 +100,7 @@ void PragmaNamespace::AddPragma(PragmaHa
+ 
+ void PragmaNamespace::RemovePragmaHandler(PragmaHandler *Handler) {
+   auto I = Handlers.find(Handler->getName());
+-  assert(I != Handlers.end() &&
+-         "Handler not registered in this namespace");
++  assert(I != Handlers.end() && "Handler not registered in this namespace");
+   // Release ownership back to the caller.
+   I->getValue().release();
+   Handlers.erase(I);
+@@ -113,8 +113,8 @@ void PragmaNamespace::HandlePragma(Prepr
+   PP.LexUnexpandedToken(Tok);
+ 
+   // Get the handler for this token.  If there is no handler, ignore the pragma.
+-  PragmaHandler *Handler
+-    = FindHandler(Tok.getIdentifierInfo() ? Tok.getIdentifierInfo()->getName()
++  PragmaHandler *Handler =
++      FindHandler(Tok.getIdentifierInfo() ? Tok.getIdentifierInfo()->getName()
+                                           : StringRef(),
+                   /*IgnoreNull=*/false);
+   if (!Handler) {
+@@ -180,8 +180,8 @@ void Preprocessor::HandlePragmaDirective
+   PragmaHandlers->HandlePragma(*this, Introducer, Tok);
+ 
+   // If the pragma handler didn't read the rest of the line, consume it now.
+-  if ((CurTokenLexer && CurTokenLexer->isParsingPreprocessorDirective())
+-   || (CurPPLexer && CurPPLexer->ParsingPreprocessorDirective))
++  if ((CurTokenLexer && CurTokenLexer->isParsingPreprocessorDirective()) ||
++      (CurPPLexer && CurPPLexer->ParsingPreprocessorDirective))
+     DiscardUntilEndOfDirective();
+ }
+ 
+@@ -228,8 +228,7 @@ void Preprocessor::Handle_Pragma(Token &
+     // Skip bad tokens, and the ')', if present.
+     if (Tok.isNot(tok::r_paren) && Tok.isNot(tok::eof))
+       Lex(Tok);
+-    while (Tok.isNot(tok::r_paren) &&
+-           !Tok.isAtStartOfLine() &&
++    while (Tok.isNot(tok::r_paren) && !Tok.isAtStartOfLine() &&
+            Tok.isNot(tok::eof))
+       Lex(Tok);
+     if (Tok.is(tok::r_paren))
+@@ -296,7 +295,7 @@ void Preprocessor::Handle_Pragma(Token &
+     StrVal.erase(0, 2 + NumDChars);
+     StrVal.erase(StrVal.size() - 1 - NumDChars);
+   } else {
+-    assert(StrVal[0] == '"' && StrVal[StrVal.size()-1] == '"' &&
++    assert(StrVal[0] == '"' && StrVal[StrVal.size() - 1] == '"' &&
+            "Invalid string token!");
+ 
+     // Remove escaped quotes and escapes.
+@@ -316,7 +315,7 @@ void Preprocessor::Handle_Pragma(Token &
+   StrVal[0] = ' ';
+ 
+   // Replace the terminating quote with a \n.
+-  StrVal[StrVal.size()-1] = '\n';
++  StrVal[StrVal.size() - 1] = '\n';
+ 
+   // Plop the string (including the newline and trailing null) into a buffer
+   // where we can lex it.
+@@ -434,12 +433,15 @@ void Preprocessor::HandlePragmaPoison()
+     // This avoids errors on code like:
+     //   #pragma GCC poison X
+     //   #pragma GCC poison X
+-    if (CurPPLexer) CurPPLexer->LexingRawMode = true;
++    if (CurPPLexer)
++      CurPPLexer->LexingRawMode = true;
+     LexUnexpandedToken(Tok);
+-    if (CurPPLexer) CurPPLexer->LexingRawMode = false;
++    if (CurPPLexer)
++      CurPPLexer->LexingRawMode = false;
+ 
+     // If we reached the end of line, we're done.
+-    if (Tok.is(tok::eod)) return;
++    if (Tok.is(tok::eod))
++      return;
+ 
+     // Can only poison identifiers.
+     if (Tok.isNot(tok::raw_identifier)) {
+@@ -452,7 +454,8 @@ void Preprocessor::HandlePragmaPoison()
+     IdentifierInfo *II = LookUpIdentifierInfo(Tok);
+ 
+     // Already poisoned.
+-    if (II->isPoisoned()) continue;
++    if (II->isPoisoned())
++      continue;
+ 
+     // If this is a macro identifier, emit a warning.
+     if (isMacroDefined(II))
+@@ -593,7 +596,7 @@ void Preprocessor::HandlePragmaDependenc
+ 
+     // Remove the trailing ' ' if present.
+     if (!Message.empty())
+-      Message.erase(Message.end()-1);
++      Message.erase(Message.end() - 1);
+     Diag(*FilenameTok, diag::pp_out_of_date_dependency) << Message;
+   }
+ }
+@@ -608,7 +611,7 @@ IdentifierInfo *Preprocessor::ParsePragm
+   Lex(Tok);
+   if (Tok.isNot(tok::l_paren)) {
+     Diag(PragmaTok.getLocation(), diag::err_pragma_push_pop_macro_malformed)
+-      << getSpelling(PragmaTok);
++        << getSpelling(PragmaTok);
+     return nullptr;
+   }
+ 
+@@ -616,7 +619,7 @@ IdentifierInfo *Preprocessor::ParsePragm
+   Lex(Tok);
+   if (Tok.isNot(tok::string_literal)) {
+     Diag(PragmaTok.getLocation(), diag::err_pragma_push_pop_macro_malformed)
+-      << getSpelling(PragmaTok);
++        << getSpelling(PragmaTok);
+     return nullptr;
+   }
+ 
+@@ -632,11 +635,11 @@ IdentifierInfo *Preprocessor::ParsePragm
+   Lex(Tok);
+   if (Tok.isNot(tok::r_paren)) {
+     Diag(PragmaTok.getLocation(), diag::err_pragma_push_pop_macro_malformed)
+-      << getSpelling(PragmaTok);
++        << getSpelling(PragmaTok);
+     return nullptr;
+   }
+ 
+-  assert(StrVal[0] == '"' && StrVal[StrVal.size()-1] == '"' &&
++  assert(StrVal[0] == '"' && StrVal[StrVal.size() - 1] == '"' &&
+          "Invalid string token!");
+ 
+   // Create a Token from the string.
+@@ -658,7 +661,8 @@ IdentifierInfo *Preprocessor::ParsePragm
+ void Preprocessor::HandlePragmaPushMacro(Token &PushMacroTok) {
+   // Parse the pragma directive and get the macro IdentifierInfo*.
+   IdentifierInfo *IdentInfo = ParsePragmaPushOrPopMacro(PushMacroTok);
+-  if (!IdentInfo) return;
++  if (!IdentInfo)
++    return;
+ 
+   // Get the MacroInfo associated with IdentInfo.
+   MacroInfo *MI = getMacroInfo(IdentInfo);
+@@ -683,11 +687,12 @@ void Preprocessor::HandlePragmaPopMacro(
+ 
+   // Parse the pragma directive and get the macro IdentifierInfo*.
+   IdentifierInfo *IdentInfo = ParsePragmaPushOrPopMacro(PopMacroTok);
+-  if (!IdentInfo) return;
++  if (!IdentInfo)
++    return;
+ 
+   // Find the vector<MacroInfo*> associated with the macro.
+   llvm::DenseMap<IdentifierInfo *, std::vector<MacroInfo *>>::iterator iter =
+-    PragmaPushMacroInfo.find(IdentInfo);
++      PragmaPushMacroInfo.find(IdentInfo);
+   if (iter != PragmaPushMacroInfo.end()) {
+     // Forget the MacroInfo currently associated with IdentInfo.
+     if (MacroInfo *MI = getMacroInfo(IdentInfo)) {
+@@ -709,7 +714,7 @@ void Preprocessor::HandlePragmaPopMacro(
+       PragmaPushMacroInfo.erase(iter);
+   } else {
+     Diag(MessageLoc, diag::warn_pragma_pop_macro_no_push)
+-      << IdentInfo->getName();
++        << IdentInfo->getName();
+   }
+ }
+ 
+@@ -771,12 +776,10 @@ void Preprocessor::HandlePragmaIncludeAl
+   // they're both of the same type (angled vs non-angled)
+   StringRef OriginalSource = SourceFileName;
+ 
+-  bool SourceIsAngled =
+-    GetIncludeFilenameSpelling(SourceFilenameTok.getLocation(),
+-                                SourceFileName);
+-  bool ReplaceIsAngled =
+-    GetIncludeFilenameSpelling(ReplaceFilenameTok.getLocation(),
+-                                ReplaceFileName);
++  bool SourceIsAngled = GetIncludeFilenameSpelling(
++      SourceFilenameTok.getLocation(), SourceFileName);
++  bool ReplaceIsAngled = GetIncludeFilenameSpelling(
++      ReplaceFilenameTok.getLocation(), ReplaceFileName);
+   if (!SourceFileName.empty() && !ReplaceFileName.empty() &&
+       (SourceIsAngled != ReplaceIsAngled)) {
+     unsigned int DiagID;
+@@ -786,8 +789,7 @@ void Preprocessor::HandlePragmaIncludeAl
+       DiagID = diag::warn_pragma_include_alias_mismatch_quote;
+ 
+     Diag(SourceFilenameTok.getLocation(), DiagID)
+-      << SourceFileName
+-      << ReplaceFileName;
++        << SourceFileName << ReplaceFileName;
+ 
+     return;
+   }
+@@ -819,12 +821,12 @@ static bool LexModuleNameComponent(
+   return false;
+ }
+ 
+-static bool LexModuleName(
+-    Preprocessor &PP, Token &Tok,
+-    llvm::SmallVectorImpl<std::pair<IdentifierInfo *, SourceLocation>>
+-        &ModuleName) {
++static bool
++LexModuleName(Preprocessor &PP, Token &Tok,
++              llvm::SmallVectorImpl<std::pair<IdentifierInfo *, SourceLocation>>
++                  &ModuleName) {
+   while (true) {
+-    std::pair<IdentifierInfo*, SourceLocation> NameComponent;
++    std::pair<IdentifierInfo *, SourceLocation> NameComponent;
+     if (LexModuleNameComponent(PP, Tok, NameComponent, ModuleName.empty()))
+       return true;
+     ModuleName.push_back(NameComponent);
+@@ -852,8 +854,7 @@ void Preprocessor::HandlePragmaModuleBui
+   CurLexer->LexingRawMode = true;
+ 
+   auto TryConsumeIdentifier = [&](StringRef Ident) -> bool {
+-    if (Tok.getKind() != tok::raw_identifier ||
+-        Tok.getRawIdentifier() != Ident)
++    if (Tok.getKind() != tok::raw_identifier || Tok.getRawIdentifier() != Ident)
+       return false;
+     CurLexer->Lex(Tok);
+     return true;
+@@ -955,7 +956,7 @@ void Preprocessor::AddPragmaHandler(Stri
+     if (PragmaHandler *Existing = PragmaHandlers->FindHandler(Namespace)) {
+       InsertNS = Existing->getIfNamespace();
+       assert(InsertNS != nullptr && "Cannot have a pragma namespace and pragma"
+-             " handler with the same name!");
++                                    " handler with the same name!");
+     } else {
+       // Otherwise, this namespace doesn't exist yet, create and insert the
+       // handler for it.
+@@ -1130,7 +1131,7 @@ struct PragmaDebugHandler : public Pragm
+             SourceRange(Tok.getLocation(), Identifier.getLocation()));
+         DumpAnnot.setAnnotationValue(DumpII);
+         PP.DiscardUntilEndOfDirective();
+-        PP.EnterToken(DumpAnnot, /*IsReinject*/false);
++        PP.EnterToken(DumpAnnot, /*IsReinject*/ false);
+       } else {
+         PP.Diag(Identifier, diag::warn_pragma_debug_missing_argument)
+             << II->getName();
+@@ -1234,11 +1235,10 @@ struct PragmaDebugHandler : public Pragm
+         }
+       } else {
+         PP.Diag(Tok, diag::warn_pragma_debug_unexpected_command)
+-          << DumpII->getName();
++            << DumpII->getName();
+       }
+     } else {
+-      PP.Diag(Tok, diag::warn_pragma_debug_unexpected_command)
+-        << II->getName();
++      PP.Diag(Tok, diag::warn_pragma_debug_unexpected_command) << II->getName();
+     }
+ 
+     PPCallbacks *Callbacks = PP.getPPCallbacks();
+@@ -1252,7 +1252,7 @@ struct PragmaDebugHandler : public Pragm
+ 
+     if (Tok.isNot(tok::eod)) {
+       PP.Diag(Tok, diag::ext_pp_extra_tokens_at_eol)
+-        << "pragma clang __debug captured";
++          << "pragma clang __debug captured";
+       return;
+     }
+ 
+@@ -1269,14 +1269,14 @@ struct PragmaDebugHandler : public Pragm
+ 
+ // Disable MSVC warning about runtime stack overflow.
+ #ifdef _MSC_VER
+-    #pragma warning(disable : 4717)
++#pragma warning(disable : 4717)
+ #endif
+   static void DebugOverflowStack(void (*P)() = nullptr) {
+-    void (*volatile Self)(void(*P)()) = DebugOverflowStack;
+-    Self(reinterpret_cast<void(*)()>(Self));
++    void (*volatile Self)(void (*P)()) = DebugOverflowStack;
++    Self(reinterpret_cast<void (*)()>(Self));
+   }
+ #ifdef _MSC_VER
+-    #pragma warning(default : 4717)
++#pragma warning(default : 4717)
+ #endif
+ };
+ 
+@@ -1355,11 +1355,11 @@ public:
+       // special case for it.
+       PP.getDiagnostics().setSeverityForAll(Flavor, SV, DiagLoc);
+     } else
+-      unknownDiag = PP.getDiagnostics().setSeverityForGroup(Flavor, Group, SV,
+-                                                            DiagLoc);
++      unknownDiag =
++          PP.getDiagnostics().setSeverityForGroup(Flavor, Group, SV, DiagLoc);
+     if (unknownDiag)
+       PP.Diag(StringLoc, diag::warn_pragma_diagnostic_unknown_warning)
+-        << WarningName;
++          << WarningName;
+     else if (Callbacks)
+       Callbacks->PragmaDiagnostic(DiagLoc, Namespace, SV, WarningName);
+   }
+@@ -1559,7 +1559,8 @@ struct PragmaExecCharsetHandler : public
+ 
+         // MSVC supports either of these, but nothing else.
+         if (ExecCharset != "UTF-8" && ExecCharset != "utf-8") {
+-          PP.Diag(Tok, diag::warn_pragma_exec_charset_push_invalid) << ExecCharset;
++          PP.Diag(Tok, diag::warn_pragma_exec_charset_push_invalid)
++              << ExecCharset;
+           return;
+         }
+       }
+@@ -1582,7 +1583,8 @@ struct PragmaExecCharsetHandler : public
+ 
+     PP.Lex(Tok);
+     if (Tok.isNot(tok::eod))
+-      PP.Diag(Tok, diag::ext_pp_extra_tokens_at_eol) << "pragma execution_character_set";
++      PP.Diag(Tok, diag::ext_pp_extra_tokens_at_eol)
++          << "pragma execution_character_set";
+   }
+ };
+ 
+@@ -1614,15 +1616,15 @@ private:
+   const PPCallbacks::PragmaMessageKind Kind;
+   const StringRef Namespace;
+ 
+-  static const char* PragmaKind(PPCallbacks::PragmaMessageKind Kind,
++  static const char *PragmaKind(PPCallbacks::PragmaMessageKind Kind,
+                                 bool PragmaNameOnly = false) {
+     switch (Kind) {
+-      case PPCallbacks::PMK_Message:
+-        return PragmaNameOnly ? "message" : "pragma message";
+-      case PPCallbacks::PMK_Warning:
+-        return PragmaNameOnly ? "warning" : "pragma warning";
+-      case PPCallbacks::PMK_Error:
+-        return PragmaNameOnly ? "error" : "pragma error";
++    case PPCallbacks::PMK_Message:
++      return PragmaNameOnly ? "message" : "pragma message";
++    case PPCallbacks::PMK_Warning:
++      return PragmaNameOnly ? "warning" : "pragma warning";
++    case PPCallbacks::PMK_Error:
++      return PragmaNameOnly ? "error" : "pragma error";
+     }
+     llvm_unreachable("Unknown PragmaMessageKind!");
+   }
+@@ -1663,7 +1665,7 @@ public:
+         PP.Diag(Tok.getLocation(), diag::err_pragma_message_malformed) << Kind;
+         return;
+       }
+-      PP.Lex(Tok);  // eat the r_paren.
++      PP.Lex(Tok); // eat the r_paren.
+     }
+ 
+     if (Tok.isNot(tok::eod)) {
+@@ -1673,8 +1675,9 @@ public:
+ 
+     // Output the message.
+     PP.Diag(MessageLoc, (Kind == PPCallbacks::PMK_Error)
+-                          ? diag::err_pragma_message
+-                          : diag::warn_pragma_message) << MessageString;
++                            ? diag::err_pragma_message
++                            : diag::warn_pragma_message)
++        << MessageString;
+ 
+     // If the pragma is lexically sound, notify any interested PPCallbacks.
+     if (PPCallbacks *Callbacks = PP.getPPCallbacks())
+@@ -1705,7 +1708,7 @@ struct PragmaModuleImportHandler : publi
+     // If we have a non-empty module path, load the named module.
+     Module *Imported =
+         PP.getModuleLoader().loadModule(ImportLoc, ModuleName, Module::Hidden,
+-                                      /*IsInclusionDirective=*/false);
++                                        /*IsInclusionDirective=*/false);
+     if (!Imported)
+       return;
+ 
+@@ -1743,8 +1746,8 @@ struct PragmaModuleBeginHandler : public
+     StringRef Current = PP.getLangOpts().CurrentModule;
+     if (ModuleName.front().first->getName() != Current) {
+       PP.Diag(ModuleName.front().second, diag::err_pp_module_begin_wrong_module)
+-        << ModuleName.front().first << (ModuleName.size() > 1)
+-        << Current.empty() << Current;
++          << ModuleName.front().first << (ModuleName.size() > 1)
++          << Current.empty() << Current;
+       return;
+     }
+ 
+@@ -1754,14 +1757,15 @@ struct PragmaModuleBeginHandler : public
+     Module *M = HSI.lookupModule(Current, ModuleName.front().second);
+     if (!M) {
+       PP.Diag(ModuleName.front().second,
+-              diag::err_pp_module_begin_no_module_map) << Current;
++              diag::err_pp_module_begin_no_module_map)
++          << Current;
+       return;
+     }
+     for (unsigned I = 1; I != ModuleName.size(); ++I) {
+       auto *NewM = M->findOrInferSubmodule(ModuleName[I].first->getName());
+       if (!NewM) {
+         PP.Diag(ModuleName[I].second, diag::err_pp_module_begin_no_submodule)
+-          << M->getFullModuleName() << ModuleName[I].first;
++            << M->getFullModuleName() << ModuleName[I].first;
+         return;
+       }
+       M = NewM;
+@@ -1771,12 +1775,12 @@ struct PragmaModuleBeginHandler : public
+     if (Preprocessor::checkModuleIsAvailable(
+             PP.getLangOpts(), PP.getTargetInfo(), PP.getDiagnostics(), M)) {
+       PP.Diag(BeginLoc, diag::note_pp_module_begin_here)
+-        << M->getTopLevelModuleName();
++          << M->getTopLevelModuleName();
+       return;
+     }
+ 
+     // Enter the scope of the submodule.
+-    PP.EnterSubmodule(M, BeginLoc, /*ForPragma*/true);
++    PP.EnterSubmodule(M, BeginLoc, /*ForPragma*/ true);
+     PP.EnterAnnotationToken(SourceRange(BeginLoc, ModuleName.back().second),
+                             tok::annot_module_begin, M);
+   }
+@@ -1794,7 +1798,7 @@ struct PragmaModuleEndHandler : public P
+     if (Tok.isNot(tok::eod))
+       PP.Diag(Tok, diag::ext_pp_extra_tokens_at_eol) << "pragma";
+ 
+-    Module *M = PP.LeaveSubmodule(/*ForPragma*/true);
++    Module *M = PP.LeaveSubmodule(/*ForPragma*/ true);
+     if (M)
+       PP.EnterAnnotationToken(SourceRange(Loc), tok::annot_module_end, M);
+     else
+@@ -1981,7 +1985,8 @@ struct PragmaAssumeNonNullHandler : publ
+ /// \endcode
+ ///
+ /// \note This is
+-/// <a href="http://msdn.microsoft.com/en-us/library/b6xkz944(v=vs.80).aspx">editor-only</a>
++/// <a
++/// href="http://msdn.microsoft.com/en-us/library/b6xkz944(v=vs.80).aspx">editor-only</a>
+ /// pragma, just skipped by compiler.
+ struct PragmaRegionHandler : public PragmaHandler {
+   PragmaRegionHandler(const char *pragma) : PragmaHandler(pragma) {}
+@@ -2121,6 +2126,79 @@ struct PragmaFinalHandler : public Pragm
+ 
+ } // namespace
+ 
++// Modified by Zeng-WCh
++/// This is a pragma for loop annotation
++/// use like this:
++/// \code
++/// #pragma loopbound min 10 max 10
++/// for (int i = 0; i < 10; i++) {
++///  // do something
++/// }
++/// \endcode
++/// Note that this is only for annotation, the actual loop can be any loop
++namespace clang {
++std::map<std::size_t, std::pair<std::size_t, std::size_t>>
++    LoopBoundPragmaHandler::loc2bound = {};
++void LoopBoundPragmaHandler::HandlePragma(Preprocessor &PP,
++                                          PragmaIntroducer Introducer,
++                                          Token &Tok) {
++  // SourceLocation loc = Tok.getLocation();
++  // identifier, identifier, numeric_constant, identifier, numeric_constant
++
++  SourceLocation loc = Tok.getLocation();
++
++  // We need the lineno of the pragma
++  auto lineno = PP.getSourceManager().getExpansionLineNumber(loc);
++
++  std::string val;
++  std::size_t min = 0, max = 0;
++  bool has_max = false, has_min = false;
++  bool fill_min = false;
++  // eat the identifier, which is the \"loopbound\" keyword
++  PP.Lex(Tok);
++  // clang will make the end of a pragma is tok_eod
++  while (!Tok.is(tok::eod)) {
++    if (has_max && has_min) {
++      PP.Diag(Tok, diag::warn_pragma_comment_ignored);
++      return;
++    }
++    if (Tok.isNot(tok::identifier)) {
++      PP.Diag(Tok, diag::warn_pragma_comment_ignored);
++      return;
++    }
++
++    val = PP.getSpelling(Tok);
++
++    if (val == "min") {
++      fill_min = true;
++      has_min = true;
++    } else if (val == "max") {
++      fill_min = false;
++      has_max = true;
++    } else {
++      llvm_unreachable("Invalid loopbound pragma");
++    }
++
++    // eat the numeric_constant
++    PP.Lex(Tok);
++    if (Tok.isNot(tok::numeric_constant)) {
++      PP.Diag(Tok, diag::warn_pragma_comment_ignored);
++      return;
++    }
++    if (fill_min) {
++      min = std::stoul(PP.getSpelling(Tok));
++    } else {
++      max = std::stoul(PP.getSpelling(Tok));
++    }
++    PP.Lex(Tok);
++  };
++
++  // fprintf(stderr, "Line: %d, min: %lu, max: %lu\n", lineno, min, max);
++
++  loc2bound[lineno] = std::make_pair(min, max);
++}
++} // namespace clang
++
+ /// RegisterBuiltinPragmas - Install the standard preprocessor pragmas:
+ /// \#pragma GCC poison/system_header/dependency and \#pragma once.
+ void Preprocessor::RegisterBuiltinPragmas() {
+@@ -2130,15 +2208,18 @@ void Preprocessor::RegisterBuiltinPragma
+   AddPragmaHandler(new PragmaPopMacroHandler());
+   AddPragmaHandler(new PragmaMessageHandler(PPCallbacks::PMK_Message));
+ 
++  // Modified By Zeng-WCh
++  AddPragmaHandler(new LoopBoundPragmaHandler());
++
+   // #pragma GCC ...
+   AddPragmaHandler("GCC", new PragmaPoisonHandler());
+   AddPragmaHandler("GCC", new PragmaSystemHeaderHandler());
+   AddPragmaHandler("GCC", new PragmaDependencyHandler());
+   AddPragmaHandler("GCC", new PragmaDiagnosticHandler("GCC"));
+-  AddPragmaHandler("GCC", new PragmaMessageHandler(PPCallbacks::PMK_Warning,
+-                                                   "GCC"));
+-  AddPragmaHandler("GCC", new PragmaMessageHandler(PPCallbacks::PMK_Error,
+-                                                   "GCC"));
++  AddPragmaHandler("GCC",
++                   new PragmaMessageHandler(PPCallbacks::PMK_Warning, "GCC"));
++  AddPragmaHandler("GCC",
++                   new PragmaMessageHandler(PPCallbacks::PMK_Error, "GCC"));
+   // #pragma clang ...
+   AddPragmaHandler("clang", new PragmaPoisonHandler());
+   AddPragmaHandler("clang", new PragmaSystemHeaderHandler());
+diff --color -uprN clang-14.0.6.src/tools/driver/driver.cpp clang-14.0.6.src_latest/tools/driver/driver.cpp
+--- clang-14.0.6.src/tools/driver/driver.cpp	2022-06-23 00:46:24.000000000 +0800
++++ clang-14.0.6.src_latest/tools/driver/driver.cpp	2024-09-25 23:32:00.742569426 +0800
+@@ -24,6 +24,7 @@
+ #include "clang/Frontend/SerializedDiagnosticPrinter.h"
+ #include "clang/Frontend/TextDiagnosticPrinter.h"
+ #include "clang/Frontend/Utils.h"
++#include "clang/Lex/Pragma.h"
+ #include "llvm/ADT/ArrayRef.h"
+ #include "llvm/ADT/SmallString.h"
+ #include "llvm/ADT/SmallVector.h"
+@@ -50,6 +51,10 @@
+ #include <memory>
+ #include <set>
+ #include <system_error>
++
++// Modified by Zeng-WCh
++#include <iostream>
++
+ using namespace clang;
+ using namespace clang::driver;
+ using namespace llvm::opt;
+@@ -67,7 +72,7 @@ std::string GetExecutablePath(const char
+ 
+   // This just needs to be some symbol in the binary; C++ doesn't
+   // allow taking the address of ::main however.
+-  void *P = (void*) (intptr_t) GetExecutablePath;
++  void *P = (void *)(intptr_t)GetExecutablePath;
+   return llvm::sys::fs::getMainExecutable(Argv0, P);
+ }
+ 
+@@ -104,26 +109,24 @@ static const char *GetStableCStr(std::se
+ /// \param Edit - The override command to perform.
+ /// \param SavedStrings - Set to use for storing string representations.
+ static void ApplyOneQAOverride(raw_ostream &OS,
+-                               SmallVectorImpl<const char*> &Args,
++                               SmallVectorImpl<const char *> &Args,
+                                StringRef Edit,
+                                std::set<std::string> &SavedStrings) {
+   // This does not need to be efficient.
+ 
+   if (Edit[0] == '^') {
+-    const char *Str =
+-      GetStableCStr(SavedStrings, Edit.substr(1));
++    const char *Str = GetStableCStr(SavedStrings, Edit.substr(1));
+     OS << "### Adding argument " << Str << " at beginning\n";
+     Args.insert(Args.begin() + 1, Str);
+   } else if (Edit[0] == '+') {
+-    const char *Str =
+-      GetStableCStr(SavedStrings, Edit.substr(1));
++    const char *Str = GetStableCStr(SavedStrings, Edit.substr(1));
+     OS << "### Adding argument " << Str << " at end\n";
+     Args.push_back(Str);
+   } else if (Edit[0] == 's' && Edit[1] == '/' && Edit.endswith("/") &&
+              Edit.slice(2, Edit.size() - 1).contains('/')) {
+     StringRef MatchPattern = Edit.substr(2).split('/').first;
+     StringRef ReplPattern = Edit.substr(2).split('/').second;
+-    ReplPattern = ReplPattern.slice(0, ReplPattern.size()-1);
++    ReplPattern = ReplPattern.slice(0, ReplPattern.size() - 1);
+ 
+     for (unsigned i = 1, e = Args.size(); i != e; ++i) {
+       // Ignore end-of-line response file markers
+@@ -159,9 +162,8 @@ static void ApplyOneQAOverride(raw_ostre
+       if (A == nullptr)
+         continue;
+       if (A[0] == '-' && A[1] == 'O' &&
+-          (A[2] == '\0' ||
+-           (A[3] == '\0' && (A[2] == 's' || A[2] == 'z' ||
+-                             ('0' <= A[2] && A[2] <= '9'))))) {
++          (A[2] == '\0' || (A[3] == '\0' && (A[2] == 's' || A[2] == 'z' ||
++                                             ('0' <= A[2] && A[2] <= '9'))))) {
+         OS << "### Deleting argument " << Args[i] << '\n';
+         Args.erase(Args.begin() + i);
+       } else
+@@ -176,7 +178,7 @@ static void ApplyOneQAOverride(raw_ostre
+ 
+ /// ApplyQAOverride - Apply a comma separate list of edits to the
+ /// input argument lists. See ApplyOneQAOverride.
+-static void ApplyQAOverride(SmallVectorImpl<const char*> &Args,
++static void ApplyQAOverride(SmallVectorImpl<const char *> &Args,
+                             const char *OverrideStr,
+                             std::set<std::string> &SavedStrings) {
+   raw_ostream *OS = &llvm::errs();
+@@ -227,10 +229,10 @@ static void insertTargetAndModeArgs(cons
+   }
+ 
+   if (NameParts.TargetIsValid) {
+-    const char *arr[] = {"-target", GetStableCStr(SavedStrings,
+-                                                  NameParts.TargetPrefix)};
+-    ArgVector.insert(ArgVector.begin() + InsertionPoint,
+-                     std::begin(arr), std::end(arr));
++    const char *arr[] = {"-target",
++                         GetStableCStr(SavedStrings, NameParts.TargetPrefix)};
++    ArgVector.insert(ArgVector.begin() + InsertionPoint, std::begin(arr),
++                     std::end(arr));
+   }
+ }
+ 
+@@ -448,8 +450,8 @@ int main(int Argc, const char **Argv) {
+   IntrusiveRefCntPtr<DiagnosticOptions> DiagOpts =
+       CreateAndPopulateDiagOpts(Args);
+ 
+-  TextDiagnosticPrinter *DiagClient
+-    = new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
++  TextDiagnosticPrinter *DiagClient =
++      new TextDiagnosticPrinter(llvm::errs(), &*DiagOpts);
+   FixupDiagPrefixExeName(DiagClient, Path);
+ 
+   IntrusiveRefCntPtr<DiagnosticIDs> DiagID(new DiagnosticIDs());
+@@ -491,7 +493,7 @@ int main(int Argc, const char **Argv) {
+     // Force a crash to test the diagnostics.
+     if (TheDriver.GenReproducer) {
+       Diags.Report(diag::err_drv_force_crash)
+-        << !::getenv("FORCE_CLANG_DIAGNOSTICS_CRASH");
++          << !::getenv("FORCE_CLANG_DIAGNOSTICS_CRASH");
+ 
+       // Pretend that every command failed.
+       FailingCommands.clear();
+@@ -556,5 +558,14 @@ int main(int Argc, const char **Argv) {
+ 
+   // If we have multiple failing commands, we return the result of the first
+   // failing command.
++
++  // Modified By Zeng-WCh
++  auto &loc2bound = LoopBoundPragmaHandler::loc2bound;
++  for (auto it = loc2bound.begin(); it != loc2bound.end(); ++it) {
++    std::cout << "We get a loop at line: " << it->first
++              << " with annotation: min " << it->second.first
++              << " max: " << it->second.second << "\n";
++  }
++
+   return Res;
+ }
