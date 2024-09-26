@@ -1,6 +1,6 @@
 diff --color -uprN clang-14.0.6.src/include/clang/Lex/ModuleMap.h clang-14.0.6.src_latest/include/clang/Lex/ModuleMap.h
 --- clang-14.0.6.src/include/clang/Lex/ModuleMap.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/include/clang/Lex/ModuleMap.h	2024-09-25 23:31:57.822570147 +0800
++++ clang-14.0.6.src_latest/include/clang/Lex/ModuleMap.h	2024-09-26 13:06:31.367784311 +0800
 @@ -106,7 +106,7 @@ class ModuleMap {
    llvm::DenseMap<const IdentifierInfo *, Module *> CachedModuleLoads;
  
@@ -113,17 +113,19 @@ diff --color -uprN clang-14.0.6.src/include/clang/Lex/ModuleMap.h clang-14.0.6.s
    }
 diff --color -uprN clang-14.0.6.src/include/clang/Lex/Pragma.h clang-14.0.6.src_latest/include/clang/Lex/Pragma.h
 --- clang-14.0.6.src/include/clang/Lex/Pragma.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/include/clang/Lex/Pragma.h	2024-09-25 23:31:59.622569707 +0800
-@@ -18,6 +18,8 @@
++++ clang-14.0.6.src_latest/include/clang/Lex/Pragma.h	2024-09-26 13:58:15.086725039 +0800
+@@ -18,6 +18,10 @@
  #include "llvm/ADT/StringMap.h"
  #include "llvm/ADT/StringRef.h"
  #include <string>
 +// Modified By Zeng-WCh
 +#include <map>
++#include <vector>
++// End of modification
  
  namespace clang {
  
-@@ -25,33 +27,33 @@ class PragmaNamespace;
+@@ -25,33 +29,33 @@ class PragmaNamespace;
  class Preprocessor;
  class Token;
  
@@ -182,24 +184,31 @@ diff --color -uprN clang-14.0.6.src/include/clang/Lex/Pragma.h clang-14.0.6.src_
  
  /// PragmaHandler - Instances of this interface defined to handle the various
  /// pragmas that the language front-end uses.  Each handler optionally has a
-@@ -89,6 +91,16 @@ public:
+@@ -89,6 +93,23 @@ public:
                      Token &FirstToken) override;
  };
  
 +// Modified By Zeng-WCh
 +class LoopBoundPragmaHandler : public PragmaHandler {
 +public:
-+  static std::map<std::size_t, std::pair<std::size_t, std::size_t>> loc2bound;
++  typedef struct bound {
++    uint64_t lower, upper;
++
++    bound(uint64_t l = 0, uint64_t u = 0) : lower(l), upper(u) {}
++  } bound;
++  static std::map<std::size_t, std::vector<bound>> loc2bound;
 +  LoopBoundPragmaHandler() : PragmaHandler("loopbound") {}
 +
 +  void HandlePragma(Preprocessor &PP, PragmaIntroducer Introducer,
 +                    Token &Tok) override;
 +};
 +
++// End of modification
++
  /// PragmaNamespace - This PragmaHandler subdivides the namespace of pragmas,
  /// allowing hierarchical pragmas to be defined.  Common examples of namespaces
  /// are "\#pragma GCC", "\#pragma STDC", and "\#pragma omp", but any namespaces
-@@ -105,8 +117,7 @@ public:
+@@ -105,8 +126,7 @@ public:
    /// specified name.  If not, return the handler for the null name if it
    /// exists, otherwise return null.  If IgnoreNull is true (the default) then
    /// the null handler isn't returned on failure to match.
@@ -211,7 +220,7 @@ diff --color -uprN clang-14.0.6.src/include/clang/Lex/Pragma.h clang-14.0.6.src_
    void AddPragma(PragmaHandler *Handler);
 diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/lib/Lex/Pragma.cpp
 --- clang-14.0.6.src/lib/Lex/Pragma.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/lib/Lex/Pragma.cpp	2024-09-25 23:32:00.202569566 +0800
++++ clang-14.0.6.src_latest/lib/Lex/Pragma.cpp	2024-09-26 13:58:28.097203243 +0800
 @@ -15,6 +15,7 @@
  #include "clang/Basic/CLWarnings.h"
  #include "clang/Basic/Diagnostic.h"
@@ -650,7 +659,7 @@ diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/l
  /// pragma, just skipped by compiler.
  struct PragmaRegionHandler : public PragmaHandler {
    PragmaRegionHandler(const char *pragma) : PragmaHandler(pragma) {}
-@@ -2121,6 +2126,79 @@ struct PragmaFinalHandler : public Pragm
+@@ -2121,6 +2126,88 @@ struct PragmaFinalHandler : public Pragm
  
  } // namespace
  
@@ -665,7 +674,7 @@ diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/l
 +/// \endcode
 +/// Note that this is only for annotation, the actual loop can be any loop
 +namespace clang {
-+std::map<std::size_t, std::pair<std::size_t, std::size_t>>
++std::map<std::size_t, std::vector<LoopBoundPragmaHandler::bound>>
 +    LoopBoundPragmaHandler::loc2bound = {};
 +void LoopBoundPragmaHandler::HandlePragma(Preprocessor &PP,
 +                                          PragmaIntroducer Introducer,
@@ -723,14 +732,23 @@ diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/l
 +
 +  // fprintf(stderr, "Line: %d, min: %lu, max: %lu\n", lineno, min, max);
 +
-+  loc2bound[lineno] = std::make_pair(min, max);
++  if (min > max) {
++    // Just swap for now
++    std::swap(min, max);
++  }
++
++  if (loc2bound.find(lineno) == loc2bound.end()) {
++    loc2bound[lineno] = {};
++  }
++  loc2bound[lineno].emplace_back(bound(min, max));
 +}
 +} // namespace clang
++// end of modification
 +
  /// RegisterBuiltinPragmas - Install the standard preprocessor pragmas:
  /// \#pragma GCC poison/system_header/dependency and \#pragma once.
  void Preprocessor::RegisterBuiltinPragmas() {
-@@ -2130,15 +2208,18 @@ void Preprocessor::RegisterBuiltinPragma
+@@ -2130,15 +2217,18 @@ void Preprocessor::RegisterBuiltinPragma
    AddPragmaHandler(new PragmaPopMacroHandler());
    AddPragmaHandler(new PragmaMessageHandler(PPCallbacks::PMK_Message));
  
@@ -755,7 +773,7 @@ diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/l
    AddPragmaHandler("clang", new PragmaSystemHeaderHandler());
 diff --color -uprN clang-14.0.6.src/tools/driver/driver.cpp clang-14.0.6.src_latest/tools/driver/driver.cpp
 --- clang-14.0.6.src/tools/driver/driver.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/tools/driver/driver.cpp	2024-09-25 23:32:00.742569426 +0800
++++ clang-14.0.6.src_latest/tools/driver/driver.cpp	2024-09-26 14:23:41.212107795 +0800
 @@ -24,6 +24,7 @@
  #include "clang/Frontend/SerializedDiagnosticPrinter.h"
  #include "clang/Frontend/TextDiagnosticPrinter.h"
@@ -871,18 +889,23 @@ diff --color -uprN clang-14.0.6.src/tools/driver/driver.cpp clang-14.0.6.src_lat
  
        // Pretend that every command failed.
        FailingCommands.clear();
-@@ -556,5 +558,14 @@ int main(int Argc, const char **Argv) {
+@@ -554,6 +556,19 @@ int main(int Argc, const char **Argv) {
+     Res = 1;
+ #endif
  
-   // If we have multiple failing commands, we return the result of the first
-   // failing command.
-+
 +  // Modified By Zeng-WCh
 +  auto &loc2bound = LoopBoundPragmaHandler::loc2bound;
 +  for (auto it = loc2bound.begin(); it != loc2bound.end(); ++it) {
-+    std::cout << "We get a loop at line: " << it->first
-+              << " with annotation: min " << it->second.first
-+              << " max: " << it->second.second << "\n";
++    std::cout << "We get " << it->second.size() << " loop(s) at line "
++              << it->first << ":\n";
++    for (auto it1 = it->second.begin(); it1 != it->second.end(); ++it1) {
++      std::cout << "\t" << it->second.end() - it1
++                << ": with bound: min: " << it1->lower << " max: " << it1->upper
++                << '\n';
++    }
 +  }
++  // end of modification
 +
+   // If we have multiple failing commands, we return the result of the first
+   // failing command.
    return Res;
- }
