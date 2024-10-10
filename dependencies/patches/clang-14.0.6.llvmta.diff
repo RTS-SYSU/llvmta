@@ -1,6 +1,6 @@
-diff --color -uprN clang-14.0.6.src/include/clang/Lex/ModuleMap.h clang-14.0.6.src_latest/include/clang/Lex/ModuleMap.h
+diff --color -uprN clang-14.0.6.src/include/clang/Lex/ModuleMap.h clang-14.0.6.src.patched/include/clang/Lex/ModuleMap.h
 --- clang-14.0.6.src/include/clang/Lex/ModuleMap.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/include/clang/Lex/ModuleMap.h	2024-09-26 13:06:31.367784311 +0800
++++ clang-14.0.6.src.patched/include/clang/Lex/ModuleMap.h	2024-10-09 16:17:31.003878655 +0800
 @@ -106,7 +106,7 @@ class ModuleMap {
    llvm::DenseMap<const IdentifierInfo *, Module *> CachedModuleLoads;
  
@@ -111,9 +111,9 @@ diff --color -uprN clang-14.0.6.src/include/clang/Lex/ModuleMap.h clang-14.0.6.s
    llvm::iterator_range<module_iterator> modules() const {
      return {module_begin(), module_end()};
    }
-diff --color -uprN clang-14.0.6.src/include/clang/Lex/Pragma.h clang-14.0.6.src_latest/include/clang/Lex/Pragma.h
+diff --color -uprN clang-14.0.6.src/include/clang/Lex/Pragma.h clang-14.0.6.src.patched/include/clang/Lex/Pragma.h
 --- clang-14.0.6.src/include/clang/Lex/Pragma.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/include/clang/Lex/Pragma.h	2024-09-26 13:58:15.086725039 +0800
++++ clang-14.0.6.src.patched/include/clang/Lex/Pragma.h	2024-10-09 16:17:31.003878655 +0800
 @@ -18,6 +18,10 @@
  #include "llvm/ADT/StringMap.h"
  #include "llvm/ADT/StringRef.h"
@@ -218,9 +218,9 @@ diff --color -uprN clang-14.0.6.src/include/clang/Lex/Pragma.h clang-14.0.6.src_
  
    /// AddPragma - Add a pragma to this namespace.
    void AddPragma(PragmaHandler *Handler);
-diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/lib/Lex/Pragma.cpp
+diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src.patched/lib/Lex/Pragma.cpp
 --- clang-14.0.6.src/lib/Lex/Pragma.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/lib/Lex/Pragma.cpp	2024-09-26 13:58:28.097203243 +0800
++++ clang-14.0.6.src.patched/lib/Lex/Pragma.cpp	2024-10-09 16:17:31.003878655 +0800
 @@ -15,6 +15,7 @@
  #include "clang/Basic/CLWarnings.h"
  #include "clang/Basic/Diagnostic.h"
@@ -771,9 +771,9 @@ diff --color -uprN clang-14.0.6.src/lib/Lex/Pragma.cpp clang-14.0.6.src_latest/l
    // #pragma clang ...
    AddPragmaHandler("clang", new PragmaPoisonHandler());
    AddPragmaHandler("clang", new PragmaSystemHeaderHandler());
-diff --color -uprN clang-14.0.6.src/tools/driver/driver.cpp clang-14.0.6.src_latest/tools/driver/driver.cpp
+diff --color -uprN clang-14.0.6.src/tools/driver/driver.cpp clang-14.0.6.src.patched/tools/driver/driver.cpp
 --- clang-14.0.6.src/tools/driver/driver.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src_latest/tools/driver/driver.cpp	2024-09-26 14:23:41.212107795 +0800
++++ clang-14.0.6.src.patched/tools/driver/driver.cpp	2024-10-10 15:15:16.688904905 +0800
 @@ -24,6 +24,7 @@
  #include "clang/Frontend/SerializedDiagnosticPrinter.h"
  #include "clang/Frontend/TextDiagnosticPrinter.h"
@@ -889,21 +889,22 @@ diff --color -uprN clang-14.0.6.src/tools/driver/driver.cpp clang-14.0.6.src_lat
  
        // Pretend that every command failed.
        FailingCommands.clear();
-@@ -554,6 +556,19 @@ int main(int Argc, const char **Argv) {
+@@ -554,6 +556,20 @@ int main(int Argc, const char **Argv) {
      Res = 1;
  #endif
  
 +  // Modified By Zeng-WCh
-+  auto &loc2bound = LoopBoundPragmaHandler::loc2bound;
-+  for (auto it = loc2bound.begin(); it != loc2bound.end(); ++it) {
-+    std::cout << "We get " << it->second.size() << " loop(s) at line "
-+              << it->first << ":\n";
-+    for (auto it1 = it->second.begin(); it1 != it->second.end(); ++it1) {
-+      std::cout << "\t" << it->second.end() - it1
-+                << ": with bound: min: " << it1->lower << " max: " << it1->upper
-+                << '\n';
-+    }
-+  }
++  // auto &loc2bound = LoopBoundPragmaHandler::loc2bound;
++  // for (auto it = loc2bound.begin(); it != loc2bound.end(); ++it) {
++  //   std::cout << "We get " << it->second.size() << " loop(s) at line "
++  //             << it->first << ":\n";
++  //   for (auto it1 = it->second.begin(); it1 != it->second.end(); ++it1) {
++  //     std::cout << "\t" << it->second.end() - it1
++  //               << ": with bound: min: " << it1->lower << " max: " <<
++  //               it1->upper
++  //               << '\n';
++  //   }
++  // }
 +  // end of modification
 +
    // If we have multiple failing commands, we return the result of the first
