@@ -16,6 +16,7 @@ extern uint64_t L2MISS;
 extern uint64_t BOUND;
 extern unsigned currentCore;
 extern TimingAnalysisPass::AddressInformation *glAddrInfo;
+extern llvm::Module *ModulePtr;
 
 #define COL_LEN 0
 

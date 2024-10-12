@@ -21,6 +21,7 @@ uint64_t STBUS = 0;
 uint64_t BOUND = 0;
 unsigned currentCore = 0;
 TimingAnalysisPass::AddressInformation *glAddrInfo = NULL;
+llvm::Module *ModulePtr = nullptr;
 
 unsigned getbound(const MachineBasicBlock *MBB,
                   const TimingAnalysisPass::Context &ctx) {

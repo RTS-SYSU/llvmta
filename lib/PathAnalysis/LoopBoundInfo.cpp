@@ -40,6 +40,7 @@
 #include "llvm/CodeGen/MachineInstr.h"
 
 #include "llvm/CodeGen/MachineLoopInfo.h"
+#include "llvm/IR/Metadata.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_os_ostream.h"
 
@@ -48,6 +49,7 @@
 #include <cstddef>
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -720,6 +722,7 @@ unsigned LoopBoundInfoPass::getLoopBoundNoCtx(
 
 unsigned LoopBoundInfoPass::getUpperLoopBound(const llvm::MachineLoop *Loop,
                                               const Context &Ctx) const {
+  this->currentRequestLowerBound = false;
   if (Ctx.isEmpty()) {
     return getLoopBoundNoCtx(Loop, UpperLoopBoundsCtx, ManualUpperLoopBounds,
                              ManualUpperLoopBoundsNoCtx);
@@ -730,6 +733,7 @@ unsigned LoopBoundInfoPass::getUpperLoopBound(const llvm::MachineLoop *Loop,
 
 unsigned LoopBoundInfoPass::getLowerLoopBound(const llvm::MachineLoop *Loop,
                                               const Context &Ctx) const {
+  this->currentRequestLowerBound = true;
   if (Ctx.isEmpty()) {
     return getLoopBoundNoCtx(Loop, LowerLoopBoundsCtx, ManualLowerLoopBounds,
                              ManualLowerLoopBoundsNoCtx);
@@ -758,6 +762,20 @@ unsigned LoopBoundInfoPass::getLoopBound(
   if (ManualLoopBoundsNoCtx.count(Loop) > 0) {
     Bound = ManualLoopBoundsNoCtx.at(Loop);
     FoundBoundManual = true;
+  }
+
+  if (currentRequestLowerBound) {
+    if (MetaLowerLoopBounds.count(Loop) > 0) {
+      unsigned MetaBounds = MetaLowerLoopBounds.at(Loop);
+      Bound = MetaBounds;
+      FoundBoundManual = true;
+    }
+  } else {
+    if (MetaUpperLoopBounds.count(Loop) > 0) {
+      unsigned MetaBounds = MetaUpperLoopBounds.at(Loop);
+      Bound = MetaBounds;
+      FoundBoundManual = true;
+    }
   }
 
   if (ManualLoopBounds.count(Loop) > 0) {
@@ -1132,6 +1150,81 @@ void LoopBoundInfoPass::parseManualLoopBounds(
         "Manual Loopbounds should define type in (ContextSensitive, Normal)");
   }
   File.close();
+}
+
+void LoopBoundInfoPass::extractLoopAnnotationsFromMetaData(Module *M) {
+  DEBUG_WITH_TYPE("loopbound",
+                  dbgs() << "## Using clang metadata for loop bounds\n");
+  for (const auto *Loop : MaLoops) {
+    // Get Loop Function
+    auto FuncName = Loop->getHeader()->getParent()->getName().str();
+    unsigned LineNo = 0;
+    if (Loop->getHeader()->front().getDebugLoc() &&
+        Loop->getHeader()->front().getDebugLoc().getLine() != 0) {
+      LineNo = Loop->getHeader()->front().getDebugLoc().getLine();
+    }
+
+    if (LineNo == 0) {
+      for (auto &CurrentInstr : *Loop->getHeader()) {
+        if (CurrentInstr.getDebugLoc() &&
+            CurrentInstr.getDebugLoc().getLine() != 0) {
+          LineNo = CurrentInstr.getDebugLoc().getLine();
+          break;
+        }
+      }
+    }
+
+    if (LineNo == 0) {
+      // Try to get from mid-end
+      if (LoopMapping.count(Loop) > 0) {
+        auto *Irloop = LoopMapping.at(Loop);
+        auto *Irinstr = Irloop->getHeader()->getTerminator();
+        if (Irinstr != nullptr && Irinstr->getDebugLoc().getLine() != 0) {
+          LineNo = Irinstr->getDebugLoc().getLine();
+        }
+      }
+    }
+
+    if (LineNo == 0) {
+      errs() << "Could not get line number for loop: " << *Loop << "\n";
+      continue;
+    }
+
+    std::stringstream ss;
+    ss << FuncName << ".loop.near.line." << LineNo;
+
+    // llvm::outs() << "Trying to get: " << ss.str() << "\n";
+
+    auto *MD = M->getNamedMetadata(ss.str());
+    if (MD == nullptr) {
+      continue;
+    }
+    assert(MD->getNumOperands() == 1 && "Invalid number of operands");
+    auto *BoundMD = MD->getOperand(0);
+    assert(BoundMD->getNumOperands() == 2 && "Invalid number of operands");
+
+    auto LowerBound =
+        cast<llvm::ConstantAsMetadata>(BoundMD->getOperand(0).get())
+            ->getValue()
+            ->getUniqueInteger()
+            .getZExtValue();
+    auto UpperBound =
+        cast<llvm::ConstantAsMetadata>(BoundMD->getOperand(1).get())
+            ->getValue()
+            ->getUniqueInteger()
+            .getZExtValue();
+    // llvm::outs() << getLoopDesc(Loop) << " Lower Bound: " << LowerBound
+    // << " Upper Bound: " << UpperBound << "\n";
+    DEBUG_WITH_TYPE("loopbound", dbgs()
+                                     << "Loop: " << getLoopDesc(Loop) << "\n");
+    DEBUG_WITH_TYPE("loopbound", dbgs()
+                                     << "Lower Bound: " << LowerBound << "\n");
+    DEBUG_WITH_TYPE("loopbound", dbgs()
+                                     << "Upper Bound: " << UpperBound << "\n");
+    // Add bounds to manual bounds
+    MetaLowerLoopBounds.insert(std::make_pair(Loop, LowerBound));
+    MetaUpperLoopBounds.insert(std::make_pair(Loop, UpperBound));
+  }
 }
 } // namespace TimingAnalysisPass
 

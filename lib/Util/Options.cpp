@@ -604,9 +604,16 @@ cl::opt<unsigned>
 
 // User-provided annotations
 
+// Modified By Zeng-WCh
+cl::opt<bool> UseMetaDataAsAnnotation(
+    "ta-use-metadata-as-loop-annotation", cl::init(false),
+    cl::desc("Use metadata as loop annotation"), cl::cat(LLVMTACat));
+// End Modification
+
 cl::list<std::string> ManualLoopBounds(
     "ta-loop-bounds-file", cl::ZeroOrMore,
-    cl::desc("Takes the file with the given name and uses the loop bounds in "
+    cl::desc("Takes the file with the given name and uses the loop "
+             "bounds in "
              "it for the analysis (default: no file given)"),
     cl::cat(LLVMTACat));
 

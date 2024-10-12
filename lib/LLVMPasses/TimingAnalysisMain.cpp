@@ -119,14 +119,15 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
 
   json::Array *cores = jsondata->getAsArray();
   if (!cores) {
-    fprintf(stderr, "File should be an array of cores, exit.",
+    fprintf(stderr, "File(%s) should be an array of cores, exit.",
             fileName.c_str());
     exit(1);
   }
   for (json::Value &e : *cores) {
     json::Object *obj = e.getAsObject();
     if (!obj) {
-      fprintf(stderr, "Core info shoule be an object, exit.", fileName.c_str());
+      fprintf(stderr, "Core info(%s) shoule be an object, exit.",
+              fileName.c_str());
       exit(1);
     }
     int64_t core = obj->getInteger("core").getValue();
@@ -192,6 +193,7 @@ TimingAnalysisMain::getNextFunction(unsigned int core) {
 bool TimingAnalysisMain::doFinalization(Module &M) {
   // do File parsing
   parseCoreInfo(coreInfo);
+  ::ModulePtr = &M;
 
   ofstream Myfile;
 
@@ -361,6 +363,13 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
     Myfile.close();
     return;
   }
+
+  if (UseMetaDataAsAnnotation) {
+    // Use the metadata as loop annotation
+    assert(::ModulePtr && "Module not set");
+    LoopBoundInfo->extractLoopAnnotationsFromMetaData(::ModulePtr);
+  }
+
   for (auto BoundsFile : ManuallowerLoopBounds) {
     LoopBoundInfo->parseManualLowerLoopBounds(BoundsFile.c_str());
   }
