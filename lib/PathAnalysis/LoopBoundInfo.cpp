@@ -29,6 +29,7 @@
 #include "AnalysisFramework/CallGraph.h"
 #include "LLVMPasses/MachineFunctionCollector.h"
 #include "LLVMPasses/TimingAnalysisMain.h"
+#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 #include "Util/Util.h"
 
@@ -1155,13 +1156,30 @@ void LoopBoundInfoPass::parseManualLoopBounds(
 void LoopBoundInfoPass::extractLoopAnnotationsFromMetaData(Module *M) {
   DEBUG_WITH_TYPE("loopbound",
                   dbgs() << "## Using clang metadata for loop bounds\n");
+
   for (const auto *Loop : MaLoops) {
+    // First try to get from metadatas
+    unsigned LineNo = 0;
+    auto *MidIRLoop = LoopMapping.at(Loop);
+    auto *Irinstr = MidIRLoop->getHeader()->getTerminator();
+    if (Irinstr) {
+      auto *Meta = Irinstr->getMetadata("loop.src.loc");
+      if (Meta) {
+        assert(Meta->getNumOperands() == 1 && "Invalid number of operands");
+        auto *Loc = cast<ConstantAsMetadata>(Meta->getOperand(0).get());
+        LineNo = cast<ConstantInt>(Loc->getValue())->getZExtValue();
+      }
+    }
+
+    llvm::outs() << "Get From metadata: " << LineNo << "\n";
+
     // Get Loop Function
     auto FuncName = Loop->getHeader()->getParent()->getName().str();
-    unsigned LineNo = 0;
-    if (Loop->getHeader()->front().getDebugLoc() &&
-        Loop->getHeader()->front().getDebugLoc().getLine() != 0) {
-      LineNo = Loop->getHeader()->front().getDebugLoc().getLine();
+    if (LineNo == 0) {
+      if (Loop->getHeader()->front().getDebugLoc() &&
+          Loop->getHeader()->front().getDebugLoc().getLine() != 0) {
+        LineNo = Loop->getHeader()->front().getDebugLoc().getLine();
+      }
     }
 
     if (LineNo == 0) {
@@ -1192,6 +1210,8 @@ void LoopBoundInfoPass::extractLoopAnnotationsFromMetaData(Module *M) {
 
     std::stringstream ss;
     ss << FuncName << ".loop.near.line." << LineNo;
+
+    // llvm::outs() << "[DEBUG]: " << ss.str() << '\n';
 
     // llvm::outs() << "Trying to get: " << ss.str() << "\n";
 
