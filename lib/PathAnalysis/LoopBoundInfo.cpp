@@ -1171,7 +1171,7 @@ void LoopBoundInfoPass::extractLoopAnnotationsFromMetaData(Module *M) {
       }
     }
 
-    llvm::outs() << "Get From metadata: " << LineNo << "\n";
+    // llvm::outs() << "Get From metadata: " << LineNo << "\n";
 
     // Get Loop Function
     auto FuncName = Loop->getHeader()->getParent()->getName().str();
