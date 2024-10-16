@@ -354,6 +354,12 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   LoopBoundInfo->computeLoopBoundFromCVDomain(*CvAnaInfo);
 
+  if (UseMetaDataAsAnnotation) {
+    // Use the metadata as loop annotation
+    assert(::ModulePtr && "Module not set");
+    LoopBoundInfo->extractLoopAnnotationsFromMetaData(::ModulePtr);
+  }
+
   if (OutputLoopAnnotationFile) {
     ofstream Myfile2;
     Myfile.open("CtxSensLoopAnnotations.csv", ios_base::app);
@@ -362,12 +368,6 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
     Myfile2.close();
     Myfile.close();
     return;
-  }
-
-  if (UseMetaDataAsAnnotation) {
-    // Use the metadata as loop annotation
-    assert(::ModulePtr && "Module not set");
-    LoopBoundInfo->extractLoopAnnotationsFromMetaData(::ModulePtr);
   }
 
   for (auto BoundsFile : ManuallowerLoopBounds) {

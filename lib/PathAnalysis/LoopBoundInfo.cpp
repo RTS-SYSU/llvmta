@@ -1163,6 +1163,26 @@ void LoopBoundInfoPass::extractLoopAnnotationsFromMetaData(Module *M) {
     auto *MidIRLoop = LoopMapping.at(Loop);
     auto *Irinstr = MidIRLoop->getHeader()->getTerminator();
     if (Irinstr) {
+      auto *LoopMeta = Irinstr->getMetadata("loop.bound.annotation");
+      if (LoopMeta) {
+        assert(LoopMeta->getNumOperands() == 2 && "Invalid number of operands");
+        auto LowerBound =
+            cast<ConstantAsMetadata>(LoopMeta->getOperand(0).get())
+                ->getValue()
+                ->getUniqueInteger()
+                .getZExtValue();
+        auto UpperBound =
+            cast<ConstantAsMetadata>(LoopMeta->getOperand(1).get())
+                ->getValue()
+                ->getUniqueInteger()
+                .getZExtValue();
+        // llvm::outs() << "Get From metadata: " << LowerBound << " " <<
+        // UpperBound
+        //              << "\n";
+        this->MetaLowerLoopBounds.insert(std::make_pair(Loop, LowerBound));
+        this->MetaUpperLoopBounds.insert(std::make_pair(Loop, UpperBound));
+        continue;
+      }
       auto *Meta = Irinstr->getMetadata("loop.src.loc");
       if (Meta) {
         assert(Meta->getNumOperands() == 1 && "Invalid number of operands");
