@@ -1,11 +1,9 @@
 # LLVM-TA+
 
-<!-- # SWARM is a WCET Analyzer for Real-time Multicore
-# TRACE is a Real-time Analyzer for Core Execution
-# MACAW is A Core Analyzer for WCET
-# SSWAT is a Strengthened WCET Analysis Tool for Multi-core Systems
-# META is a worst case Execution Time Analysis tool
-MWCETA -->
+<p align="center">
+    <img src="./assets/LLVM-TA+.png" alt="LLVM-TA+" width=30%></>
+</p>
+
 <p align="center">
     <a href="https://github.com/RTS-SYSU" rel="nofollow">
         <img src="https://img.shields.io/badge/RTS-SYSU-brightgreen.svg">

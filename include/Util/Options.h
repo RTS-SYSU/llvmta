@@ -243,6 +243,10 @@ enum class ArrivalCurveIlpObjectiveType { VARIANT1, VARIANT2, COMBINED };
 
 // Global options
 
+// Modified By Zeng-WCh
+extern llvm::cl::opt<bool> UseMetaDataAsAnnotation;
+// End Modification
+
 /**
  * TODO
  */

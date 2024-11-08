@@ -29,6 +29,7 @@
 #include "AnalysisFramework/CallGraph.h"
 #include "LLVMPasses/MachineFunctionCollector.h"
 #include "LLVMPasses/TimingAnalysisMain.h"
+#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 #include "Util/Util.h"
 
@@ -40,6 +41,7 @@
 #include "llvm/CodeGen/MachineInstr.h"
 
 #include "llvm/CodeGen/MachineLoopInfo.h"
+#include "llvm/IR/Metadata.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_os_ostream.h"
 
@@ -48,6 +50,7 @@
 #include <cstddef>
 #include <fstream>
 #include <memory>
+#include <sstream>
 #include <utility>
 #include <vector>
 
@@ -720,6 +723,7 @@ unsigned LoopBoundInfoPass::getLoopBoundNoCtx(
 
 unsigned LoopBoundInfoPass::getUpperLoopBound(const llvm::MachineLoop *Loop,
                                               const Context &Ctx) const {
+  this->currentRequestLowerBound = false;
   if (Ctx.isEmpty()) {
     return getLoopBoundNoCtx(Loop, UpperLoopBoundsCtx, ManualUpperLoopBounds,
                              ManualUpperLoopBoundsNoCtx);
@@ -730,6 +734,7 @@ unsigned LoopBoundInfoPass::getUpperLoopBound(const llvm::MachineLoop *Loop,
 
 unsigned LoopBoundInfoPass::getLowerLoopBound(const llvm::MachineLoop *Loop,
                                               const Context &Ctx) const {
+  this->currentRequestLowerBound = true;
   if (Ctx.isEmpty()) {
     return getLoopBoundNoCtx(Loop, LowerLoopBoundsCtx, ManualLowerLoopBounds,
                              ManualLowerLoopBoundsNoCtx);
@@ -758,6 +763,20 @@ unsigned LoopBoundInfoPass::getLoopBound(
   if (ManualLoopBoundsNoCtx.count(Loop) > 0) {
     Bound = ManualLoopBoundsNoCtx.at(Loop);
     FoundBoundManual = true;
+  }
+
+  if (currentRequestLowerBound) {
+    if (MetaLowerLoopBounds.count(Loop) > 0) {
+      unsigned MetaBounds = MetaLowerLoopBounds.at(Loop);
+      Bound = MetaBounds;
+      FoundBoundManual = true;
+    }
+  } else {
+    if (MetaUpperLoopBounds.count(Loop) > 0) {
+      unsigned MetaBounds = MetaUpperLoopBounds.at(Loop);
+      Bound = MetaBounds;
+      FoundBoundManual = true;
+    }
   }
 
   if (ManualLoopBounds.count(Loop) > 0) {
@@ -896,53 +915,75 @@ void LoopBoundInfoPass::dumpNonBoundLoops(
     DEBUG_WITH_TYPE("loopdump",
                     dbgs() << "[LFunc]: " << Header->getParent()->getName()
                            << "\n");
-    if (!Header->empty() && !Header->front().isTransient() &&
-        !(Header->front().mayLoad() || Header->front().mayStore()) &&
-        Header->front().getDebugLoc() &&
-        Header->front().getDebugLoc().getLine() != 0) {
-      auto DbgLoc = Header->front().getDebugLoc();
-      std::string Filename = getFilenameFromDebugLoc(DbgLoc);
-      LoopInfo << "in file " << Filename;
-      LoopInfo << " near line " << DbgLoc.getLine() << "|";
-    } else {
-      bool Unknown = true;
-      for (auto &CurrInstr : *Header) {
-        if (CurrInstr.isTransient() || CurrInstr.mayLoad() ||
-            CurrInstr.mayStore()) {
-          continue;
-        }
-        if (CurrInstr.getDebugLoc() && CurrInstr.getDebugLoc().getLine() != 0) {
-          std::string Filename =
-              getFilenameFromDebugLoc(CurrInstr.getDebugLoc());
-          LoopInfo << "in file " << Filename;
-          LoopInfo << " near line " << CurrInstr.getDebugLoc().getLine() << "|";
-          Unknown = false;
-          break;
-        }
+    bool found = false;
+    if (::ModulePtr) {
+      // get from metadata
+      auto &BrInstr = LoopMap.second->getHeader()->back();
+      auto *MD = BrInstr.getMetadata("loop.src.loc");
+      if (MD) {
+        auto Loc = cast<ConstantAsMetadata>(MD->getOperand(0))
+                       ->getValue()
+                       ->getUniqueInteger()
+                       .getZExtValue();
+        auto FileName = cast<MDString>(MD->getOperand(1))->getString().str();
+        LoopInfo << "in file " << FileName;
+        LoopInfo << " near line " << Loc << "|";
+        // llvm::outs() << "Loc: " << Loc << "\n";
+        found = true;
       }
-      if (Unknown) {
-        // Try to get information from the middle-end loops
-        if (LoopMapping.count(LoopMap.first) > 0) {
-          std::cout << "Trying to get info from middle-end loops\n";
-          const auto *Irloop = LoopMapping.at(LoopMap.first);
-          auto *Irinstr = Irloop->getHeader()->getTerminator();
-          if (Irinstr != nullptr && Irinstr->getDebugLoc() &&
-              Irinstr->getDebugLoc().getLine() != 0) {
+    }
+    if (!found) {
+      if (!Header->empty() && !Header->front().isTransient() &&
+          !(Header->front().mayLoad() || Header->front().mayStore()) &&
+          Header->front().getDebugLoc() &&
+          Header->front().getDebugLoc().getLine() != 0) {
+        auto DbgLoc = Header->front().getDebugLoc();
+        std::string Filename = getFilenameFromDebugLoc(DbgLoc);
+        LoopInfo << "in file " << Filename;
+        LoopInfo << " near line " << DbgLoc.getLine() << "|";
+      } else {
+        bool Unknown = true;
+        for (auto &CurrInstr : *Header) {
+          if (CurrInstr.isTransient() || CurrInstr.mayLoad() ||
+              CurrInstr.mayStore()) {
+            continue;
+          }
+          if (CurrInstr.getDebugLoc() &&
+              CurrInstr.getDebugLoc().getLine() != 0) {
             std::string Filename =
-                getFilenameFromDebugLoc(Irinstr->getDebugLoc());
+                getFilenameFromDebugLoc(CurrInstr.getDebugLoc());
             LoopInfo << "in file " << Filename;
-            LoopInfo << " near line " << Irinstr->getDebugLoc().getLine()
+            LoopInfo << " near line " << CurrInstr.getDebugLoc().getLine()
                      << "|";
             Unknown = false;
-          } else {
-            assert(Irinstr != nullptr && "IR Instr is nullptr");
-            assert(Irinstr->getDebugLoc() && "Could not get DebugLoc from IR");
-            assert(false);
+            break;
           }
         }
-        // If still unknown
         if (Unknown) {
-          LoopInfo << "in file UNKNOWN near line 0|";
+          // Try to get information from the middle-end loops
+          if (LoopMapping.count(LoopMap.first) > 0) {
+            std::cout << "Trying to get info from middle-end loops\n";
+            const auto *Irloop = LoopMapping.at(LoopMap.first);
+            auto *Irinstr = Irloop->getHeader()->getTerminator();
+            if (Irinstr != nullptr && Irinstr->getDebugLoc() &&
+                Irinstr->getDebugLoc().getLine() != 0) {
+              std::string Filename =
+                  getFilenameFromDebugLoc(Irinstr->getDebugLoc());
+              LoopInfo << "in file " << Filename;
+              LoopInfo << " near line " << Irinstr->getDebugLoc().getLine()
+                       << "|";
+              Unknown = false;
+            } else {
+              assert(Irinstr != nullptr && "IR Instr is nullptr");
+              assert(Irinstr->getDebugLoc() &&
+                     "Could not get DebugLoc from IR");
+              assert(false);
+            }
+          }
+          // If still unknown
+          if (Unknown) {
+            LoopInfo << "in file UNKNOWN near line 0|";
+          }
         }
       }
     }
@@ -1132,6 +1173,120 @@ void LoopBoundInfoPass::parseManualLoopBounds(
         "Manual Loopbounds should define type in (ContextSensitive, Normal)");
   }
   File.close();
+}
+
+void LoopBoundInfoPass::extractLoopAnnotationsFromMetaData(Module *M) {
+  DEBUG_WITH_TYPE("loopbound",
+                  dbgs() << "## Using clang metadata for loop bounds\n");
+
+  for (const auto *Loop : MaLoops) {
+    // First try to get from metadatas
+    unsigned LineNo = 0;
+    auto *MidIRLoop = LoopMapping.at(Loop);
+    auto *Irinstr = MidIRLoop->getHeader()->getTerminator();
+    if (Irinstr) {
+      auto *LoopMeta = Irinstr->getMetadata("loop.bound.annotation");
+      if (LoopMeta) {
+        assert(LoopMeta->getNumOperands() == 2 && "Invalid number of operands");
+        auto LowerBound =
+            cast<ConstantAsMetadata>(LoopMeta->getOperand(0).get())
+                ->getValue()
+                ->getUniqueInteger()
+                .getZExtValue();
+        auto UpperBound =
+            cast<ConstantAsMetadata>(LoopMeta->getOperand(1).get())
+                ->getValue()
+                ->getUniqueInteger()
+                .getZExtValue();
+        // llvm::outs() << "Get From metadata: " << LowerBound << " " <<
+        // UpperBound
+        //              << "\n";
+        this->MetaLowerLoopBounds.insert(std::make_pair(Loop, LowerBound));
+        this->MetaUpperLoopBounds.insert(std::make_pair(Loop, UpperBound));
+        continue;
+      }
+      auto *Meta = Irinstr->getMetadata("loop.src.loc");
+      if (Meta) {
+        assert(Meta->getNumOperands() == 2 && "Invalid number of operands");
+        auto *Loc = cast<ConstantAsMetadata>(Meta->getOperand(0).get());
+        LineNo = cast<ConstantInt>(Loc->getValue())->getZExtValue();
+      }
+    }
+
+    // llvm::outs() << "Get From metadata: " << LineNo << "\n";
+
+    // Get Loop Function
+    auto FuncName = Loop->getHeader()->getParent()->getName().str();
+    if (LineNo == 0) {
+      if (Loop->getHeader()->front().getDebugLoc() &&
+          Loop->getHeader()->front().getDebugLoc().getLine() != 0) {
+        LineNo = Loop->getHeader()->front().getDebugLoc().getLine();
+      }
+    }
+
+    if (LineNo == 0) {
+      for (auto &CurrentInstr : *Loop->getHeader()) {
+        if (CurrentInstr.getDebugLoc() &&
+            CurrentInstr.getDebugLoc().getLine() != 0) {
+          LineNo = CurrentInstr.getDebugLoc().getLine();
+          break;
+        }
+      }
+    }
+
+    if (LineNo == 0) {
+      // Try to get from mid-end
+      if (LoopMapping.count(Loop) > 0) {
+        auto *Irloop = LoopMapping.at(Loop);
+        auto *Irinstr = Irloop->getHeader()->getTerminator();
+        if (Irinstr != nullptr && Irinstr->getDebugLoc().getLine() != 0) {
+          LineNo = Irinstr->getDebugLoc().getLine();
+        }
+      }
+    }
+
+    if (LineNo == 0) {
+      errs() << "Could not get line number for loop: " << *Loop << "\n";
+      continue;
+    }
+
+    std::stringstream ss;
+    ss << FuncName << ".loop.near.line." << LineNo;
+
+    // llvm::outs() << "[DEBUG]: " << ss.str() << '\n';
+
+    // llvm::outs() << "Trying to get: " << ss.str() << "\n";
+
+    auto *MD = M->getNamedMetadata(ss.str());
+    if (MD == nullptr) {
+      continue;
+    }
+    assert(MD->getNumOperands() == 1 && "Invalid number of operands");
+    auto *BoundMD = MD->getOperand(0);
+    assert(BoundMD->getNumOperands() == 2 && "Invalid number of operands");
+
+    auto LowerBound =
+        cast<llvm::ConstantAsMetadata>(BoundMD->getOperand(0).get())
+            ->getValue()
+            ->getUniqueInteger()
+            .getZExtValue();
+    auto UpperBound =
+        cast<llvm::ConstantAsMetadata>(BoundMD->getOperand(1).get())
+            ->getValue()
+            ->getUniqueInteger()
+            .getZExtValue();
+    // llvm::outs() << getLoopDesc(Loop) << " Lower Bound: " << LowerBound
+    // << " Upper Bound: " << UpperBound << "\n";
+    DEBUG_WITH_TYPE("loopbound", dbgs()
+                                     << "Loop: " << getLoopDesc(Loop) << "\n");
+    DEBUG_WITH_TYPE("loopbound", dbgs()
+                                     << "Lower Bound: " << LowerBound << "\n");
+    DEBUG_WITH_TYPE("loopbound", dbgs()
+                                     << "Upper Bound: " << UpperBound << "\n");
+    // Add bounds to manual bounds
+    MetaLowerLoopBounds.insert(std::make_pair(Loop, LowerBound));
+    MetaUpperLoopBounds.insert(std::make_pair(Loop, UpperBound));
+  }
 }
 } // namespace TimingAnalysisPass
 

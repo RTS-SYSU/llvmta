@@ -50,6 +50,16 @@ namespace TimingAnalysisPass {
  * respectively.
  */
 class LoopBoundInfoPass : public llvm::MachineFunctionPass {
+private:
+  // This is a quite ugly hack
+  // but it does work
+  // maybe later we can find a better solution.
+  // for `mutable` see:
+  // https://en.cppreference.com/w/cpp/language/cv
+  // but we only use it because it can be used in const functions
+  // while retaining the ability to change the value.
+  // that why I say it is an ugly hack.
+  mutable bool currentRequestLowerBound = false;
 
 public:
   static char ID;
@@ -391,6 +401,12 @@ private:
   std::unordered_map<const llvm::MachineLoop *,
                      std::unordered_map<Context, unsigned>>
       ManualLowerLoopBounds;
+
+  std::unordered_map<const llvm::MachineLoop *, unsigned> MetaUpperLoopBounds;
+  std::unordered_map<const llvm::MachineLoop *, unsigned> MetaLowerLoopBounds;
+
+public:
+  void extractLoopAnnotationsFromMetaData(Module *);
 };
 
 extern LoopBoundInfoPass *LoopBoundInfo;

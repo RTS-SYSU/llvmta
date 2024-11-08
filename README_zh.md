@@ -1,8 +1,20 @@
 # LLVM-TA+
 
-[![](https://img.shields.io/badge/RTS-SYSU-brightgreen.svg)](https://github.com/RTS-SYSU)
-[![](https://img.shields.io/badge/LLVM-TA+-blue.svg)](https://github.com/RTS-SYSU/llvmta)
-[![](https://img.shields.io/badge/Multi_Core-WCET_Analysis-yellowgreen.svg)](https://github.com/RTS-SYSU/llvmta)
+<p align="center">
+    <img src="./assets/LLVM-TA+.png" alt="LLVM-TA+" width=30%></>
+</p>
+
+<p align="center">
+    <a href="https://github.com/RTS-SYSU" rel="nofollow">
+        <img src="https://img.shields.io/badge/RTS-SYSU-brightgreen.svg">
+    </a>
+    <a href="https://github.com/RTS-SYSU/llvmta" rel="nofollow">
+        <img src="https://img.shields.io/badge/LLVM-TA+-blue.svg">
+    </a>
+    <a href="https://github.com/RTS-SYSU/llvmta" rel="nofollow">
+        <img src="https://img.shields.io/badge/Multi_Core-WCET_Analysis-yellowgreen.svg">
+    </a>
+</p>
 
 <p align="center">
     <a href="README.md">English</a> | <a href="README_zh.md">中文</a>

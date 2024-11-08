@@ -44,6 +44,7 @@
 #include "Util/Statistics.h"
 #include "Util/Util.h"
 
+#include "llvm/ADT/Optional.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/DebugInfo/Symbolize/SymbolizableModule.h"
@@ -118,14 +119,15 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
 
   json::Array *cores = jsondata->getAsArray();
   if (!cores) {
-    fprintf(stderr, "File should be an array of cores, exit.",
+    fprintf(stderr, "File(%s) should be an array of cores, exit.",
             fileName.c_str());
     exit(1);
   }
   for (json::Value &e : *cores) {
     json::Object *obj = e.getAsObject();
     if (!obj) {
-      fprintf(stderr, "Core info shoule be an object, exit.", fileName.c_str());
+      fprintf(stderr, "Core info(%s) shoule be an object, exit.",
+              fileName.c_str());
       exit(1);
     }
     int64_t core = obj->getInteger("core").getValue();
@@ -137,21 +139,31 @@ void TimingAnalysisMain::parseCoreInfo(const std::string &fileName) {
     }
 
     for (json::Value &task : *functions) {
+      bool has_deadline = false, has_period = false;
       auto taskName = task.getAsObject()->get("function")->getAsString();
-      auto deadline = task.getAsObject()->get("deadline")->getAsInteger();
-      auto period = task.getAsObject()->get("period")->getAsInteger();
+      if (task.getAsObject()->get("deadline")) {
+        has_deadline = true;
+      }
+      if (task.getAsObject()->get("period")) {
+        has_period = true;
+      }
+      llvm::Optional<int64_t> deadline(-1), period(-1);
+      if (has_deadline)
+        deadline = task.getAsObject()->get("deadline")->getAsInteger();
+      if (has_period)
+        period = task.getAsObject()->get("period")->getAsInteger();
       if (!taskName) {
         fprintf(stderr, "Unable to get task name for core %lu, exit.", core);
         exit(1);
       }
-      if (!deadline) {
-        fprintf(stderr, "Unable to get deadline for core %lu, exit.", core);
-        exit(1);
-      }
-      if (!period) {
-        fprintf(stderr, "Unable to get period for core %lu, exit.", core);
-        exit(1);
-      }
+      // if (!deadline) {
+      //   fprintf(stderr, "Unable to get deadline for core %lu, exit.", core);
+      //   exit(1);
+      // }
+      // if (!period) {
+      //   fprintf(stderr, "Unable to get period for core %lu, exit.", core);
+      //   exit(1);
+      // }
       mp[core].push(taskName.getValue().str());
       this->deadFunctionMap[taskName.getValue().str()] = deadline.getValue();
       this->periodFunctionMap[taskName.getValue().str()] = period.getValue();
@@ -181,6 +193,7 @@ TimingAnalysisMain::getNextFunction(unsigned int core) {
 bool TimingAnalysisMain::doFinalization(Module &M) {
   // do File parsing
   parseCoreInfo(coreInfo);
+  ::ModulePtr = &M;
 
   ofstream Myfile;
 
@@ -341,6 +354,12 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
 
   LoopBoundInfo->computeLoopBoundFromCVDomain(*CvAnaInfo);
 
+  if (UseMetaDataAsAnnotation) {
+    // Use the metadata as loop annotation
+    assert(::ModulePtr && "Module not set");
+    LoopBoundInfo->extractLoopAnnotationsFromMetaData(::ModulePtr);
+  }
+
   if (OutputLoopAnnotationFile) {
     ofstream Myfile2;
     Myfile.open("CtxSensLoopAnnotations.csv", ios_base::app);
@@ -350,6 +369,7 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
     Myfile.close();
     return;
   }
+
   for (auto BoundsFile : ManuallowerLoopBounds) {
     LoopBoundInfo->parseManualLowerLoopBounds(BoundsFile.c_str());
   }

@@ -28,11 +28,23 @@ WORKDIR=dirforgdb
 cd "$WORKDIR" || exit
 # chmod 0744 "$WORKDIR" || exit
 
+# For RISC-V, uncomment the following line
+# clang -w -S -gline-tables-only -O0 -Xclang \
+#         -disable-O0-optnone -fno-builtin \
+#         -target riscv32 -march=rv32imfd \
+#         -mfloat-abi=hard \
+#         -emit-llvm ${testcases}/*.c
+
 clang -w -S -gline-tables-only -O0 -Xclang \
         -disable-O0-optnone -fno-builtin \
         -target arm -march=armv4t \
         -mfloat-abi=hard \
         -emit-llvm ${testcases}/*.c
+
+# For RISC-V, uncomment the following line
+# llvm-link *.ll ../libraries/riscv/builtininteger.ll \
+#                    ../libraries/riscv/builtinstd.ll \
+#                    -o unoptimized.ll
 
 llvm-link *.ll ../libraries/arm/builtininteger.ll \
                    ../libraries/arm/builtinstd.ll \
