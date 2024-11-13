@@ -1,6 +1,6 @@
 diff --color -uprN clang-14.0.6.src/include/clang/AST/Stmt.h clang-14.0.6.src.patched/include/clang/AST/Stmt.h
 --- clang-14.0.6.src/include/clang/AST/Stmt.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/include/clang/AST/Stmt.h	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/include/clang/AST/Stmt.h	2024-11-12 13:24:23.346651843 +0800
 @@ -71,10 +71,10 @@ public:
    enum StmtClass {
      NoStmtClass = 0,
@@ -643,7 +643,7 @@ diff --color -uprN clang-14.0.6.src/include/clang/AST/Stmt.h clang-14.0.6.src.pa
                                            unsigned NumCaptures);
 diff --color -uprN clang-14.0.6.src/include/clang/Basic/TokenKinds.def clang-14.0.6.src.patched/include/clang/Basic/TokenKinds.def
 --- clang-14.0.6.src/include/clang/Basic/TokenKinds.def	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/include/clang/Basic/TokenKinds.def	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/include/clang/Basic/TokenKinds.def	2024-11-12 13:24:23.346651843 +0800
 @@ -896,6 +896,7 @@ ANNOTATION(module_end)
  // Annotation for a header_name token that has been looked up and transformed
  // into the name of a header unit.
@@ -654,7 +654,7 @@ diff --color -uprN clang-14.0.6.src/include/clang/Basic/TokenKinds.def clang-14.
  #undef ANNOTATION
 diff --color -uprN clang-14.0.6.src/include/clang/Parse/Parser.h clang-14.0.6.src.patched/include/clang/Parse/Parser.h
 --- clang-14.0.6.src/include/clang/Parse/Parser.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/include/clang/Parse/Parser.h	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/include/clang/Parse/Parser.h	2024-11-12 13:24:23.346651843 +0800
 @@ -31,27 +31,27 @@
  #include <stack>
  
@@ -1860,7 +1860,7 @@ diff --color -uprN clang-14.0.6.src/include/clang/Parse/Parser.h clang-14.0.6.sr
  #endif
 diff --color -uprN clang-14.0.6.src/include/clang/Sema/Ownership.h clang-14.0.6.src.patched/include/clang/Sema/Ownership.h
 --- clang-14.0.6.src/include/clang/Sema/Ownership.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/include/clang/Sema/Ownership.h	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/include/clang/Sema/Ownership.h	2024-11-12 13:24:23.346651843 +0800
 @@ -38,101 +38,95 @@ class Stmt;
  class TemplateName;
  class TemplateParameterList;
@@ -2360,7 +2360,7 @@ diff --color -uprN clang-14.0.6.src/include/clang/Sema/Ownership.h clang-14.0.6.
  #endif // LLVM_CLANG_SEMA_OWNERSHIP_H
 diff --color -uprN clang-14.0.6.src/include/clang/Sema/Sema.h clang-14.0.6.src.patched/include/clang/Sema/Sema.h
 --- clang-14.0.6.src/include/clang/Sema/Sema.h	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/include/clang/Sema/Sema.h	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/include/clang/Sema/Sema.h	2024-11-12 13:24:23.346651843 +0800
 @@ -43,6 +43,7 @@
  #include "clang/Basic/OpenCLOptions.h"
  #include "clang/Basic/OpenMPKinds.h"
@@ -7759,7 +7759,7 @@ diff --color -uprN clang-14.0.6.src/include/clang/Sema/Sema.h clang-14.0.6.src.p
  /// RAII object that enters a new expression evaluation context.
 diff --color -uprN clang-14.0.6.src/lib/AST/Stmt.cpp clang-14.0.6.src.patched/lib/AST/Stmt.cpp
 --- clang-14.0.6.src/lib/AST/Stmt.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/lib/AST/Stmt.cpp	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/lib/AST/Stmt.cpp	2024-11-12 13:24:23.346651843 +0800
 @@ -51,7 +51,7 @@ static struct StmtClassNameTable {
    const char *Name;
    unsigned Counter;
@@ -8427,7 +8427,7 @@ diff --color -uprN clang-14.0.6.src/lib/AST/Stmt.cpp clang-14.0.6.src.patched/li
    // -----------------------------------------------------------
 diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patched/lib/CodeGen/CGStmt.cpp
 --- clang-14.0.6.src/lib/CodeGen/CGStmt.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/lib/CodeGen/CGStmt.cpp	2024-10-16 14:21:37.279542599 +0800
++++ clang-14.0.6.src.patched/lib/CodeGen/CGStmt.cpp	2024-11-12 13:29:22.971029954 +0800
 @@ -24,6 +24,7 @@
  #include "clang/Basic/PrettyStackTrace.h"
  #include "clang/Basic/SourceManager.h"
@@ -8518,7 +8518,17 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
 -    EmitIndirectGotoStmt(cast<IndirectGotoStmt>(*S)); break;
 +    EmitIndirectGotoStmt(cast<IndirectGotoStmt>(*S));
 +    break;
-+
+ 
+-  case Stmt::IfStmtClass:      EmitIfStmt(cast<IfStmt>(*S));              break;
+-  case Stmt::WhileStmtClass:   EmitWhileStmt(cast<WhileStmt>(*S), Attrs); break;
+-  case Stmt::DoStmtClass:      EmitDoStmt(cast<DoStmt>(*S), Attrs);       break;
+-  case Stmt::ForStmtClass:     EmitForStmt(cast<ForStmt>(*S), Attrs);     break;
+-
+-  case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
+-
+-  case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
+-  case Stmt::GCCAsmStmtClass:  // Intentional fall-through.
+-  case Stmt::MSAsmStmtClass:   EmitAsmStmt(cast<AsmStmt>(*S));            break;
 +  case Stmt::IfStmtClass:
 +    EmitIfStmt(cast<IfStmt>(*S));
 +    break;
@@ -8535,17 +8545,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
 +  case Stmt::ReturnStmtClass:
 +    EmitReturnStmt(cast<ReturnStmt>(*S));
 +    break;
- 
--  case Stmt::IfStmtClass:      EmitIfStmt(cast<IfStmt>(*S));              break;
--  case Stmt::WhileStmtClass:   EmitWhileStmt(cast<WhileStmt>(*S), Attrs); break;
--  case Stmt::DoStmtClass:      EmitDoStmt(cast<DoStmt>(*S), Attrs);       break;
--  case Stmt::ForStmtClass:     EmitForStmt(cast<ForStmt>(*S), Attrs);     break;
--
--  case Stmt::ReturnStmtClass:  EmitReturnStmt(cast<ReturnStmt>(*S));      break;
--
--  case Stmt::SwitchStmtClass:  EmitSwitchStmt(cast<SwitchStmt>(*S));      break;
--  case Stmt::GCCAsmStmtClass:  // Intentional fall-through.
--  case Stmt::MSAsmStmtClass:   EmitAsmStmt(cast<AsmStmt>(*S));            break;
++
 +  case Stmt::SwitchStmtClass:
 +    EmitSwitchStmt(cast<SwitchStmt>(*S));
 +    break;
@@ -8680,7 +8680,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
        std::swap(Executed, Skipped);
  
      // If the skipped block has no labels in it, just emit the executed block.
-@@ -905,10 +924,102 @@ void CodeGenFunction::EmitWhileStmt(cons
+@@ -905,10 +924,119 @@ void CodeGenFunction::EmitWhileStmt(cons
    // a branch, try to erase it.
    if (!EmitBoolCondBranch)
      SimplifyForwardingBlocks(LoopHeader.getBlock());
@@ -8701,11 +8701,28 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
 +    auto LineNo =
 +        getContext().getSourceManager().getExpansionLineNumber(S.getBeginLoc());
 +    auto &Module = CGM.getModule();
++    auto SrcFileL = getContext()
++                        .getSourceManager()
++                        .getFilename(S.getBeginLoc())
++                        .rsplit('.');
++    auto SrcFileWithoutExtL = SrcFileL.first.rsplit('/');
++    std::string SrcFileWithoutExt;
++
++    if (SrcFileWithoutExtL.second.empty()) {
++      SrcFileWithoutExt = SrcFileWithoutExtL.first.str();
++    } else {
++      SrcFileWithoutExt = SrcFileWithoutExtL.second.str();
++    }
++
++    auto SrcFile = SrcFileWithoutExt + SrcFileL.second.str();
++
 +    // LastInstr.addAnnotationMetadata(ss.str());
 +    LastInstr.setMetadata(
 +        "loop.src.loc",
-+        llvm::MDNode::get(Module.getContext(), {llvm::ConstantAsMetadata::get(
-+                                                   Builder.getInt64(LineNo))}));
++        llvm::MDNode::get(
++            Module.getContext(),
++            {llvm::ConstantAsMetadata::get(Builder.getInt64(LineNo)),
++             llvm::MDString::get(Builder.getContext(), SrcFile)}));
 +  }
 +
 +  auto *Bound = S.getBound();
@@ -8783,7 +8800,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    JumpDest LoopExit = getJumpDestInCurrentScope("do.end");
    JumpDest LoopCond = getJumpDestInCurrentScope("do.cond");
  
-@@ -967,6 +1078,87 @@ void CodeGenFunction::EmitDoStmt(const D
+@@ -967,6 +1095,104 @@ void CodeGenFunction::EmitDoStmt(const D
    // emitting a branch, try to erase it.
    if (!EmitBoolCondBranch)
      SimplifyForwardingBlocks(LoopCond.getBlock());
@@ -8804,11 +8821,28 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
 +    auto LineNo =
 +        getContext().getSourceManager().getExpansionLineNumber(S.getBeginLoc());
 +    auto &Module = CGM.getModule();
++    auto SrcFileL = getContext()
++                        .getSourceManager()
++                        .getFilename(S.getBeginLoc())
++                        .rsplit('.');
++    auto SrcFileWithoutExtL = SrcFileL.first.rsplit('/');
++    std::string SrcFileWithoutExt;
++
++    if (SrcFileWithoutExtL.second.empty()) {
++      SrcFileWithoutExt = SrcFileWithoutExtL.first.str();
++    } else {
++      SrcFileWithoutExt = SrcFileWithoutExtL.second.str();
++    }
++
++    auto SrcFile = SrcFileWithoutExt + SrcFileL.second.str();
++
 +    // LastInstr.addAnnotationMetadata(ss.str());
 +    LastInstr.setMetadata(
 +        "loop.src.loc",
-+        llvm::MDNode::get(Module.getContext(), {llvm::ConstantAsMetadata::get(
-+                                                   Builder.getInt64(LineNo))}));
++        llvm::MDNode::get(
++            Module.getContext(),
++            {llvm::ConstantAsMetadata::get(Builder.getInt64(LineNo)),
++             llvm::MDString::get(Builder.getContext(), SrcFile)}));
 +  }
 +
 +  auto *Bound = S.getBound();
@@ -8871,7 +8905,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  }
  
  void CodeGenFunction::EmitForStmt(const ForStmt &S,
-@@ -1083,11 +1275,76 @@ void CodeGenFunction::EmitForStmt(const
+@@ -1083,11 +1309,93 @@ void CodeGenFunction::EmitForStmt(const
  
    // Emit the fall-through block.
    EmitBlock(LoopExit.getBlock(), true);
@@ -8892,11 +8926,28 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
 +    auto LineNo =
 +        getContext().getSourceManager().getExpansionLineNumber(S.getBeginLoc());
 +    auto &Module = CGM.getModule();
++    auto SrcFileL = getContext()
++                        .getSourceManager()
++                        .getFilename(S.getBeginLoc())
++                        .rsplit('.');
++    auto SrcFileWithoutExtL = SrcFileL.first.rsplit('/');
++    std::string SrcFileWithoutExt;
++
++    if (SrcFileWithoutExtL.second.empty()) {
++      SrcFileWithoutExt = SrcFileWithoutExtL.first.str();
++    } else {
++      SrcFileWithoutExt = SrcFileWithoutExtL.second.str();
++    }
++
++    auto SrcFile = SrcFileWithoutExt + SrcFileL.second.str();
++
 +    // LastInstr.addAnnotationMetadata(ss.str());
 +    LastInstr.setMetadata(
 +        "loop.src.loc",
-+        llvm::MDNode::get(Module.getContext(), {llvm::ConstantAsMetadata::get(
-+                                                   Builder.getInt64(LineNo))}));
++        llvm::MDNode::get(
++            Module.getContext(),
++            {llvm::ConstantAsMetadata::get(Builder.getInt64(LineNo)),
++             llvm::MDString::get(Builder.getContext(), SrcFile)}));
 +  }
 +
 +  auto *Bound = S.getBound();
@@ -8951,7 +9002,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    JumpDest LoopExit = getJumpDestInCurrentScope("for.end");
  
    LexicalScope ForScope(*this, S.getSourceRange());
-@@ -1306,12 +1563,11 @@ void CodeGenFunction::EmitReturnStmt(con
+@@ -1306,12 +1614,11 @@ void CodeGenFunction::EmitReturnStmt(con
                                  /*isInit*/ true);
        break;
      case TEK_Aggregate:
@@ -8969,7 +9020,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
        break;
      }
    }
-@@ -1420,9 +1676,9 @@ void CodeGenFunction::EmitCaseStmtRange(
+@@ -1420,9 +1727,9 @@ void CodeGenFunction::EmitCaseStmtRange(
  
    // Emit range check.
    llvm::Value *Diff =
@@ -8981,7 +9032,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  
    llvm::MDNode *Weights = nullptr;
    if (SwitchWeights) {
-@@ -1465,7 +1721,7 @@ void CodeGenFunction::EmitCaseStmt(const
+@@ -1465,7 +1772,7 @@ void CodeGenFunction::EmitCaseStmt(const
    }
  
    llvm::ConstantInt *CaseVal =
@@ -8990,7 +9041,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    if (SwitchLikelihood)
      SwitchLikelihood->push_back(Stmt::getLikelihood(Attrs));
  
-@@ -1519,7 +1775,7 @@ void CodeGenFunction::EmitCaseStmt(const
+@@ -1519,7 +1826,7 @@ void CodeGenFunction::EmitCaseStmt(const
    while (NextCase && NextCase->getRHS() == nullptr) {
      CurCase = NextCase;
      llvm::ConstantInt *CaseVal =
@@ -8999,7 +9050,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  
      if (SwitchWeights)
        SwitchWeights->push_back(getProfileCount(NextCase));
-@@ -1592,10 +1848,9 @@ void CodeGenFunction::EmitDefaultStmt(co
+@@ -1592,10 +1899,9 @@ void CodeGenFunction::EmitDefaultStmt(co
  /// true.
  ///
  enum CSFC_Result { CSFC_Failure, CSFC_FallThrough, CSFC_Success };
@@ -9013,7 +9064,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    // If this is a null statement, just succeed.
    if (!S)
      return Case ? CSFC_Success : CSFC_FallThrough;
-@@ -1641,7 +1896,8 @@ static CSFC_Result CollectStatementsForC
+@@ -1641,7 +1947,8 @@ static CSFC_Result CollectStatementsForC
          HadSkippedDecl |= CodeGenFunction::mightAddDeclToScope(*I);
  
          switch (CollectStatementsForCase(*I, Case, FoundCase, ResultStmts)) {
@@ -9023,7 +9074,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
          case CSFC_Success:
            // A successful result means that either 1) that the statement doesn't
            // have the case and is skippable, or 2) does contain the case value
-@@ -1688,7 +1944,8 @@ static CSFC_Result CollectStatementsForC
+@@ -1688,7 +1995,8 @@ static CSFC_Result CollectStatementsForC
        AnyDecls |= CodeGenFunction::mightAddDeclToScope(*I);
  
        switch (CollectStatementsForCase(*I, nullptr, FoundCase, ResultStmts)) {
@@ -9033,7 +9084,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
        case CSFC_FallThrough:
          // A fallthrough result means that the statement was simple and just
          // included in ResultStmt, keep adding them afterwards.
-@@ -1735,7 +1992,8 @@ static CSFC_Result CollectStatementsForC
+@@ -1735,7 +2043,8 @@ static CSFC_Result CollectStatementsForC
  
    // Otherwise, we want to include this statement.  Everything is cool with that
    // so long as it doesn't contain a break out of the switch we're in.
@@ -9043,7 +9094,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  
    // Otherwise, everything is great.  Include the statement and tell the caller
    // that we fall through and include the next statement as well.
-@@ -1747,11 +2005,11 @@ static CSFC_Result CollectStatementsForC
+@@ -1747,11 +2056,11 @@ static CSFC_Result CollectStatementsForC
  /// then invoke CollectStatementsForCase to find the list of statements to emit
  /// for a switch on constant.  See the comment above CollectStatementsForCase
  /// for more details.
@@ -9060,7 +9111,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    // First step, find the switch case that is being branched to.  We can do this
    // efficiently by scanning the SwitchCase list.
    const SwitchCase *Case = S.getSwitchCaseList();
-@@ -1768,7 +2026,8 @@ static bool FindCaseStatementsForValue(c
+@@ -1768,7 +2077,8 @@ static bool FindCaseStatementsForValue(c
      // Check to see if this case is the one we're looking for.
      const CaseStmt *CS = cast<CaseStmt>(Case);
      // Don't handle case ranges yet.
@@ -9070,7 +9121,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  
      // If we found our case, remember it as 'case'.
      if (CS->getLHS()->EvaluateKnownConstInt(C) == ConstantCondValue)
-@@ -1795,8 +2054,8 @@ static bool FindCaseStatementsForValue(c
+@@ -1795,8 +2105,8 @@ static bool FindCaseStatementsForValue(c
    //     case 4: ...
    bool FoundCase = false;
    ResultCase = Case;
@@ -9081,7 +9132,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
           FoundCase;
  }
  
-@@ -1867,7 +2126,7 @@ void CodeGenFunction::EmitSwitchStmt(con
+@@ -1867,7 +2177,7 @@ void CodeGenFunction::EmitSwitchStmt(con
    // emit the live case statement (if any) of the switch.
    llvm::APSInt ConstantCondValue;
    if (ConstantFoldsToSimpleInteger(S.getCond(), ConstantCondValue)) {
@@ -9090,7 +9141,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      const SwitchCase *Case = nullptr;
      if (FindCaseStatementsForValue(S, ConstantCondValue, CaseStmts,
                                     getContext(), Case)) {
-@@ -1923,8 +2182,7 @@ void CodeGenFunction::EmitSwitchStmt(con
+@@ -1923,8 +2233,7 @@ void CodeGenFunction::EmitSwitchStmt(con
      // Walk the SwitchCase list to find how many there are.
      uint64_t DefaultCount = 0;
      unsigned NumCases = 0;
@@ -9100,7 +9151,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
           Case = Case->getNextSwitchCase()) {
        if (isa<DefaultStmt>(Case))
          DefaultCount = getProfileCount(Case);
-@@ -1970,7 +2228,7 @@ void CodeGenFunction::EmitSwitchStmt(con
+@@ -1970,7 +2279,7 @@ void CodeGenFunction::EmitSwitchStmt(con
      if (ConditionScope.requiresCleanups()) {
        EmitBlock(DefaultBlock);
  
@@ -9109,7 +9160,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      } else {
        DefaultBlock->replaceAllUsesWith(SwitchExit.getBlock());
        delete DefaultBlock;
-@@ -2022,9 +2280,9 @@ void CodeGenFunction::EmitSwitchStmt(con
+@@ -2022,9 +2331,9 @@ void CodeGenFunction::EmitSwitchStmt(con
    CaseRangeBlock = SavedCRBlock;
  }
  
@@ -9122,7 +9173,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    std::string Result;
  
    while (*Constraint) {
-@@ -2060,7 +2318,8 @@ SimplifyConstraint(const char *Constrain
+@@ -2060,7 +2369,8 @@ SimplifyConstraint(const char *Constrain
               "Must pass output names to constraints with a symbolic name");
        unsigned Index;
        bool result = Target.resolveSymbolicName(Constraint, *OutCons, Index);
@@ -9132,7 +9183,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
        Result += llvm::utostr(Index);
        break;
      }
-@@ -2097,8 +2356,7 @@ AddVariableConstraints(const std::string
+@@ -2097,8 +2407,7 @@ AddVariableConstraints(const std::string
    // We're using validateOutputConstraint here because we only care if
    // this is a register constraint.
    TargetInfo::ConstraintInfo Info(Constraint, "");
@@ -9142,7 +9193,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      CGM.ErrorUnsupported(&Stmt, "__asm__");
      return Constraint;
    }
-@@ -2109,7 +2367,7 @@ AddVariableConstraints(const std::string
+@@ -2109,7 +2418,7 @@ AddVariableConstraints(const std::string
    return (EarlyClobber ? "&{" : "{") + Register.str() + "}";
  }
  
@@ -9151,7 +9202,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      const TargetInfo::ConstraintInfo &Info, LValue InputValue,
      QualType InputType, std::string &ConstraintStr, SourceLocation Loc) {
    if (Info.allowsRegister() || !Info.allowsMemory()) {
-@@ -2188,7 +2446,8 @@ static llvm::MDNode *getAsmSrcLocInfo(co
+@@ -2188,7 +2497,8 @@ static llvm::MDNode *getAsmSrcLocInfo(co
      // Add the location of the start of each subsequent line of the asm to the
      // MDNode.
      for (unsigned i = 0, e = StrVal.size() - 1; i != e; ++i) {
@@ -9161,7 +9212,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
        SourceLocation LineLoc = Str->getLocationOfByte(
            i + 1, SM, LangOpts, CGF.getTarget(), &StartToken, &ByteOffset);
        Locs.push_back(llvm::ConstantAsMetadata::get(
-@@ -2253,7 +2512,8 @@ static void UpdateAsmCallInst(llvm::Call
+@@ -2253,7 +2563,8 @@ static void UpdateAsmCallInst(llvm::Call
      RegResults.push_back(&Result);
    } else {
      for (unsigned i = 0, e = ResultRegTypes.size(); i != e; ++i) {
@@ -9171,7 +9222,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
        RegResults.push_back(Tmp);
      }
    }
-@@ -2272,7 +2532,8 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2272,7 +2583,8 @@ void CodeGenFunction::EmitAsmStmt(const
      if (const GCCAsmStmt *GAS = dyn_cast<GCCAsmStmt>(&S))
        Name = GAS->getOutputName(i);
      TargetInfo::ConstraintInfo Info(S.getOutputConstraint(i), Name);
@@ -9181,7 +9232,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      assert(IsValid && "Failed to parse output constraint");
      OutputConstraintInfos.push_back(Info);
    }
-@@ -2283,8 +2544,9 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2283,8 +2595,9 @@ void CodeGenFunction::EmitAsmStmt(const
        Name = GAS->getInputName(i);
      TargetInfo::ConstraintInfo Info(S.getInputConstraint(i), Name);
      bool IsValid =
@@ -9193,7 +9244,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      InputConstraintInfos.push_back(Info);
    }
  
-@@ -2296,14 +2558,14 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2296,14 +2609,14 @@ void CodeGenFunction::EmitAsmStmt(const
    std::vector<llvm::Type *> ResultTruncRegTypes;
    std::vector<llvm::Type *> ArgTypes;
    std::vector<llvm::Type *> ArgElemTypes;
@@ -9212,7 +9263,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  
    // Keep track of out constraints for tied input operand.
    std::vector<std::string> OutputConstraints;
-@@ -2331,10 +2593,9 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2331,10 +2644,9 @@ void CodeGenFunction::EmitAsmStmt(const
      OutExpr = OutExpr->IgnoreParenNoopCasts(getContext());
  
      std::string GCCReg;
@@ -9226,7 +9277,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      // Give an error on multiple outputs to same physreg.
      if (!GCCReg.empty() && !PhysRegOutputs.insert(GCCReg).second)
        CGM.Error(S.getAsmLoc(), "multiple outputs to hard register: " + GCCReg);
-@@ -2347,8 +2608,8 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2347,8 +2659,8 @@ void CodeGenFunction::EmitAsmStmt(const
      // If this is a register output, then make the inline asm return it
      // by-value.  If this is a memory result, return the value by-reference.
      QualType QTy = OutExpr->getType();
@@ -9237,7 +9288,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      if (!Info.allowsMemory() && IsScalarOrAggregate) {
  
        Constraints += "=" + OutputConstraint;
-@@ -2356,7 +2617,8 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2356,7 +2668,8 @@ void CodeGenFunction::EmitAsmStmt(const
        ResultRegDests.push_back(Dest);
  
        llvm::Type *Ty = ConvertTypeForMem(QTy);
@@ -9247,7 +9298,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
            (getTargetHooks().isScalarizableAsmOperand(*this, Ty) ||
             Ty->isAggregateType());
  
-@@ -2389,9 +2651,8 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2389,9 +2702,8 @@ void CodeGenFunction::EmitAsmStmt(const
            ResultRegTypes.back() = ConvertType(InputTy);
          }
        }
@@ -9259,7 +9310,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
          ResultRegTypes.back() = AdjTy;
        else {
          CGM.getDiags().Report(S.getAsmLoc(),
-@@ -2429,13 +2690,12 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2429,13 +2741,12 @@ void CodeGenFunction::EmitAsmStmt(const
        const Expr *InputExpr = S.getOutputExpr(i);
        llvm::Value *Arg;
        llvm::Type *ArgElemType;
@@ -9279,7 +9330,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
          Arg = Builder.CreateBitCast(Arg, AdjTy);
  
        // Update largest vector width for any vector types.
-@@ -2489,7 +2749,7 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2489,7 +2800,7 @@ void CodeGenFunction::EmitAsmStmt(const
          InputConstraint, *InputExpr->IgnoreParenNoopCasts(getContext()),
          getTarget(), CGM, S, false /* No EarlyClobber */);
  
@@ -9288,7 +9339,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      llvm::Value *Arg;
      llvm::Type *ArgElemType;
      std::tie(Arg, ArgElemType) = EmitAsmInput(Info, InputExpr, Constraints);
-@@ -2522,9 +2782,8 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2522,9 +2833,8 @@ void CodeGenFunction::EmitAsmStmt(const
        // Deal with the tied operands' constraint code in adjustInlineAsmType.
        ReplaceConstraint = OutputConstraints[Output];
      }
@@ -9300,7 +9351,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
        Arg = Builder.CreateBitCast(Arg, AdjTy);
      else
        CGM.getDiags().Report(S.getAsmLoc(), diag::err_asm_invalid_type_in_input)
-@@ -2554,7 +2813,7 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2554,7 +2864,7 @@ void CodeGenFunction::EmitAsmStmt(const
    SmallVector<llvm::BasicBlock *, 16> Transfer;
    llvm::BasicBlock *Fallthrough = nullptr;
    bool IsGCCAsmGoto = false;
@@ -9309,7 +9360,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      IsGCCAsmGoto = GS->isAsmGoto();
      if (IsGCCAsmGoto) {
        for (const auto *E : GS->labels()) {
-@@ -2638,7 +2897,7 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2638,7 +2948,7 @@ void CodeGenFunction::EmitAsmStmt(const
      ResultType = llvm::StructType::get(getLLVMContext(), ResultRegTypes);
  
    llvm::FunctionType *FTy =
@@ -9318,7 +9369,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  
    bool HasSideEffect = S.isVolatile() || S.getNumOutputs() == 0;
  
-@@ -2646,13 +2905,13 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2646,13 +2956,13 @@ void CodeGenFunction::EmitAsmStmt(const
        CGM.getCodeGenOpts().getInlineAsmDialect() == CodeGenOptions::IAD_ATT
            ? llvm::InlineAsm::AD_ATT
            : llvm::InlineAsm::AD_Intel;
@@ -9335,7 +9386,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    if (IsGCCAsmGoto) {
      llvm::CallBrInst *Result =
          Builder.CreateCallBr(IA, Fallthrough, Transfer, Args);
-@@ -2693,13 +2952,14 @@ void CodeGenFunction::EmitAsmStmt(const
+@@ -2693,13 +3003,14 @@ void CodeGenFunction::EmitAsmStmt(const
          Tmp = Builder.CreateFPTrunc(Tmp, TruncTy);
        else if (TruncTy->isPointerTy() && Tmp->getType()->isIntegerTy()) {
          uint64_t ResSize = CGM.getDataLayout().getTypeSizeInBits(TruncTy);
@@ -9355,7 +9406,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
          Tmp = Builder.CreateTrunc(Tmp, TruncTy);
        } else if (TruncTy->isIntegerTy()) {
          Tmp = Builder.CreateZExtOrTrunc(Tmp, TruncTy);
-@@ -2740,7 +3000,7 @@ LValue CodeGenFunction::InitCapturedStru
+@@ -2740,7 +3051,7 @@ LValue CodeGenFunction::InitCapturedStru
  
    // Initialize the captured struct.
    LValue SlotLV =
@@ -9364,7 +9415,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
  
    RecordDecl::field_iterator CurField = RD->field_begin();
    for (CapturedStmt::const_capture_init_iterator I = S.capture_init_begin(),
-@@ -2759,8 +3019,8 @@ LValue CodeGenFunction::InitCapturedStru
+@@ -2759,8 +3070,8 @@ LValue CodeGenFunction::InitCapturedStru
  
  /// Generate an outlined function for the body of a CapturedStmt, store any
  /// captured variables into the captured struct, and call the outlined function.
@@ -9375,7 +9426,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    LValue CapStruct = InitCapturedStruct(S);
  
    // Emit the CapturedDecl
-@@ -2783,8 +3043,9 @@ Address CodeGenFunction::GenerateCapture
+@@ -2783,8 +3094,9 @@ Address CodeGenFunction::GenerateCapture
  /// Creates the outlined function for a CapturedStmt.
  llvm::Function *
  CodeGenFunction::GenerateCapturedStmtFunction(const CapturedStmt &S) {
@@ -9387,7 +9438,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
    const CapturedDecl *CD = S.getCapturedDecl();
    const RecordDecl *RD = S.getCapturedRecordDecl();
    SourceLocation Loc = S.getBeginLoc();
-@@ -2797,12 +3058,12 @@ CodeGenFunction::GenerateCapturedStmtFun
+@@ -2797,12 +3109,12 @@ CodeGenFunction::GenerateCapturedStmtFun
  
    // Create the function declaration.
    const CGFunctionInfo &FuncInfo =
@@ -9406,7 +9457,7 @@ diff --color -uprN clang-14.0.6.src/lib/CodeGen/CGStmt.cpp clang-14.0.6.src.patc
      F->addFnAttr(llvm::Attribute::NoUnwind);
 diff --color -uprN clang-14.0.6.src/lib/Parse/ParsePragma.cpp clang-14.0.6.src.patched/lib/Parse/ParsePragma.cpp
 --- clang-14.0.6.src/lib/Parse/ParsePragma.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/lib/Parse/ParsePragma.cpp	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/lib/Parse/ParsePragma.cpp	2024-11-12 13:24:23.357485188 +0800
 @@ -11,21 +11,40 @@
  //===----------------------------------------------------------------------===//
  
@@ -10350,7 +10401,7 @@ diff --color -uprN clang-14.0.6.src/lib/Parse/ParsePragma.cpp clang-14.0.6.src.p
 \ No newline at end of file
 diff --color -uprN clang-14.0.6.src/lib/Parse/ParseStmt.cpp clang-14.0.6.src.patched/lib/Parse/ParseStmt.cpp
 --- clang-14.0.6.src/lib/Parse/ParseStmt.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/lib/Parse/ParseStmt.cpp	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/lib/Parse/ParseStmt.cpp	2024-11-12 13:24:23.357485188 +0800
 @@ -154,7 +154,7 @@ public:
  private:
    Token NextToken;
@@ -10981,7 +11032,7 @@ diff --color -uprN clang-14.0.6.src/lib/Parse/ParseStmt.cpp clang-14.0.6.src.pat
      return;
 diff --color -uprN clang-14.0.6.src/lib/Sema/Sema.cpp clang-14.0.6.src.patched/lib/Sema/Sema.cpp
 --- clang-14.0.6.src/lib/Sema/Sema.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/lib/Sema/Sema.cpp	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/lib/Sema/Sema.cpp	2024-11-12 13:24:23.357485188 +0800
 @@ -21,6 +21,7 @@
  #include "clang/AST/Expr.h"
  #include "clang/AST/ExprCXX.h"
@@ -11671,7 +11722,7 @@ diff --color -uprN clang-14.0.6.src/lib/Sema/Sema.cpp clang-14.0.6.src.patched/l
 \ No newline at end of file
 diff --color -uprN clang-14.0.6.src/lib/Sema/SemaStmt.cpp clang-14.0.6.src.patched/lib/Sema/SemaStmt.cpp
 --- clang-14.0.6.src/lib/Sema/SemaStmt.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/lib/Sema/SemaStmt.cpp	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/lib/Sema/SemaStmt.cpp	2024-11-12 13:24:23.357485188 +0800
 @@ -59,7 +59,6 @@ StmtResult Sema::ActOnExprStmt(ExprResul
    return StmtResult(FE.getAs<Stmt>());
  }
@@ -13967,7 +14018,7 @@ diff --color -uprN clang-14.0.6.src/lib/Sema/SemaStmt.cpp clang-14.0.6.src.patch
  }
 diff --color -uprN clang-14.0.6.src/lib/Serialization/ASTWriterStmt.cpp clang-14.0.6.src.patched/lib/Serialization/ASTWriterStmt.cpp
 --- clang-14.0.6.src/lib/Serialization/ASTWriterStmt.cpp	2022-06-23 00:46:24.000000000 +0800
-+++ clang-14.0.6.src.patched/lib/Serialization/ASTWriterStmt.cpp	2024-10-15 22:26:42.633881938 +0800
++++ clang-14.0.6.src.patched/lib/Serialization/ASTWriterStmt.cpp	2024-11-12 13:24:23.357485188 +0800
 @@ -11,15 +11,15 @@
  ///
  //===----------------------------------------------------------------------===//
