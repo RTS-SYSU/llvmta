@@ -370,6 +370,16 @@ void TimingAnalysisMain::dispatchValueAnalysis() {
     return;
   }
 
+  if (DumpMetaInfo) {
+    ofstream Upper, Lower;
+    Upper.open("UpperBound.csv", ios_base::trunc);
+    Lower.open("LowerBound.csv", ios_base::trunc);
+    LoopBoundInfo->dumpLoopAnnotationsFromMetaData(Lower, Upper);
+    Upper.close();
+    Lower.close();
+    return;
+  }
+
   for (auto BoundsFile : ManuallowerLoopBounds) {
     LoopBoundInfo->parseManualLowerLoopBounds(BoundsFile.c_str());
   }

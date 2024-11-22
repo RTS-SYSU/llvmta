@@ -150,7 +150,9 @@ getclang() {
         wget https://github.com/llvm/llvm-project/releases/download/llvmorg-14.0.6/$CLANG_VER.src.tar.xz
         tar -xf $CLANG_VER.src.tar.xz
         rm $CLANG_VER.src.tar.xz
-        cd ..
+        cd $CLANG_VER.src
+        patch -p1 < ../../dependencies/patches/$CLANG_VER.llvmta.diff
+        cd ../..
         break
         ;;
       [Nn]*) break ;;

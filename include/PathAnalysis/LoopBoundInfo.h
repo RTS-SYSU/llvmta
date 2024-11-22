@@ -407,6 +407,8 @@ private:
 
 public:
   void extractLoopAnnotationsFromMetaData(Module *);
+  void dumpLoopAnnotationsFromMetaData(std::ostream &Lower,
+                                       std::ostream &Upper);
 };
 
 extern LoopBoundInfoPass *LoopBoundInfo;

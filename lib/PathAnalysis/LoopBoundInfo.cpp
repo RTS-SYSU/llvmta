@@ -883,6 +883,131 @@ void LoopBoundInfoPass::dumpNonUpperBoundLoops(std::ostream &Mystream,
                     &TimingAnalysisPass::LoopBoundInfoPass::getUpperLoopBound);
 }
 
+void LoopBoundInfoPass::dumpLoopAnnotationsFromMetaData(std::ostream &Lower,
+                                                        std::ostream &Upper) {
+  DEBUG_WITH_TYPE("loopdump", dbgs() << "Beginning loop dump\n");
+  CallGraph &Cg = CallGraph::getGraph();
+  raw_os_ostream LowerStream(Lower);
+  raw_os_ostream UpperStream(Upper);
+  LowerStream << "# Type: Normal\n";
+  UpperStream << "# Type: Normal\n";
+  for (auto LoopMap : LoopMapping) {
+    uint64_t upper = 0, lower = 0;
+    std::string LoopInfoString;
+    raw_string_ostream LoopInfo(LoopInfoString);
+    auto *Header = LoopMap.first->getHeader();
+    if (!Cg.reachableFromEntryPoint(Header->getParent())) {
+      continue;
+    }
+    DEBUG_WITH_TYPE("loopdump", dbgs() << "[Loop]: " << *LoopMap.first);
+    LoopInfo << Header->getParent()->getName() << "|";
+    LoopInfo << "Loop ";
+    DEBUG_WITH_TYPE("loopdump",
+                    dbgs() << "[LFunc]: " << Header->getParent()->getName()
+                           << "\n");
+    bool found = false;
+    if (::ModulePtr) {
+      // get from metadata
+      auto &BrInstr = LoopMap.second->getHeader()->back();
+      auto *MD = BrInstr.getMetadata("loop.src.loc");
+      if (MD) {
+        auto Loc = cast<ConstantAsMetadata>(MD->getOperand(0))
+                       ->getValue()
+                       ->getUniqueInteger()
+                       .getZExtValue();
+        auto FileName = cast<MDString>(MD->getOperand(1))->getString().str();
+        LoopInfo << "in file " << FileName;
+        LoopInfo << " near line " << Loc << "|";
+        // llvm::outs() << "Loc: " << Loc << "\n";
+        found = true;
+      }
+
+      auto *BoundMd = BrInstr.getMetadata("loop.bound.annotation");
+
+      if (BoundMd) {
+        assert(BoundMd->getNumOperands() == 2);
+        upper = cast<ConstantAsMetadata>(BoundMd->getOperand(1))
+                    ->getValue()
+                    ->getUniqueInteger()
+                    .getZExtValue();
+        lower = cast<ConstantAsMetadata>(BoundMd->getOperand(0))
+                    ->getValue()
+                    ->getUniqueInteger()
+                    .getZExtValue();
+
+        if (lower > upper) {
+          std::swap(lower, upper);
+        }
+      }
+    } else {
+      llvm::errs()
+          << "ModulePtr is nullptr, you should probably not use this method\n";
+      exit(1);
+    }
+
+    if (!found) {
+      if (!Header->empty() && !Header->front().isTransient() &&
+          !(Header->front().mayLoad() || Header->front().mayStore()) &&
+          Header->front().getDebugLoc() &&
+          Header->front().getDebugLoc().getLine() != 0) {
+        auto DbgLoc = Header->front().getDebugLoc();
+        std::string Filename = getFilenameFromDebugLoc(DbgLoc);
+        LoopInfo << "in file " << Filename;
+        LoopInfo << " near line " << DbgLoc.getLine() << "|";
+      } else {
+        bool Unknown = true;
+        for (auto &CurrInstr : *Header) {
+          if (CurrInstr.isTransient() || CurrInstr.mayLoad() ||
+              CurrInstr.mayStore()) {
+            continue;
+          }
+          if (CurrInstr.getDebugLoc() &&
+              CurrInstr.getDebugLoc().getLine() != 0) {
+            std::string Filename =
+                getFilenameFromDebugLoc(CurrInstr.getDebugLoc());
+            LoopInfo << "in file " << Filename;
+            LoopInfo << " near line " << CurrInstr.getDebugLoc().getLine()
+                     << "|";
+            Unknown = false;
+            break;
+          }
+        }
+        if (Unknown) {
+          // Try to get information from the middle-end loops
+          if (LoopMapping.count(LoopMap.first) > 0) {
+            std::cout << "Trying to get info from middle-end loops\n";
+            const auto *Irloop = LoopMapping.at(LoopMap.first);
+            auto *Irinstr = Irloop->getHeader()->getTerminator();
+            if (Irinstr != nullptr && Irinstr->getDebugLoc() &&
+                Irinstr->getDebugLoc().getLine() != 0) {
+              std::string Filename =
+                  getFilenameFromDebugLoc(Irinstr->getDebugLoc());
+              LoopInfo << "in file " << Filename;
+              LoopInfo << " near line " << Irinstr->getDebugLoc().getLine()
+                       << "|";
+              Unknown = false;
+            } else {
+              assert(Irinstr != nullptr && "IR Instr is nullptr");
+              assert(Irinstr->getDebugLoc() &&
+                     "Could not get DebugLoc from IR");
+              assert(false);
+            }
+          }
+          // If still unknown
+          if (Unknown) {
+            LoopInfo << "in file UNKNOWN near line 0|";
+          }
+        }
+      }
+    }
+
+    LoopInfo << getLoopDesc(LoopMap.first) << "|";
+
+    UpperStream << LoopInfoString << upper << "\n";
+    LowerStream << LoopInfoString << lower << "\n";
+  }
+}
+
 void LoopBoundInfoPass::dumpNonLowerBoundLoops(std::ostream &Mystream,
                                                std::ostream &Mystream2) const {
   dumpNonBoundLoops(Mystream, Mystream2,

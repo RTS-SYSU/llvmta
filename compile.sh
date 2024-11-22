@@ -139,7 +139,6 @@ cmake \
     -DLLVM_EXTERNAL_CLANG_SOURCE_DIR=../dependencies/$CLANG_VER.src \
     -DLLVM_EXTERNAL_LLVMTA_SOURCE_DIR=.. \
     -DLLVM_EXTERNAL_PROJECTS="llvmta" \
-    -DLLVM_BUILD_LLVM_DYLIB=ON \
     -GNinja \
     ../dependencies/$LLVM_VER.src | tee -a $log_file
 mv compile_commands.json ../compile_commands.json

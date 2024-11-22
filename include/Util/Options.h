@@ -42,6 +42,10 @@ enum class GetEdges_method : char;
 }
 using TimingAnalysisPass::GetEdges_method;
 
+// Modified
+extern llvm::cl::opt<bool> DumpMetaInfo;
+// End of modification
+
 /**
  * The available analysis types
  */
