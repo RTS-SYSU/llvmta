@@ -33,7 +33,6 @@
 #include "Memory/Classification.h"
 #include "Memory/SetWiseCountingPersistence.h"
 #include "Memory/progana/Lattice.h"
-#include "Memory/util/CacheUtils.h"
 #include "Memory/util/ImplicitSet.h"
 
 namespace TimingAnalysisPass {
@@ -50,7 +49,6 @@ namespace cache {
 template <CacheTraits *T>
 class ElementWiseCountingPersistence : public progana::JoinSemiLattice {
   typedef ElementWiseCountingPersistence<T> Self;
-  // bool isl2;
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
@@ -87,11 +85,11 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-/// assumeAnEmptyCache)
+///assumeAnEmptyCache)
 template <CacheTraits *T>
 inline ElementWiseCountingPersistence<T>::ElementWiseCountingPersistence(
     bool assumeAnEmptyCache __attribute__((unused)))
-    : ele2conflicts(){}
+    : ele2conflicts() {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T>
@@ -114,15 +112,14 @@ UpdateReport *ElementWiseCountingPersistence<T>::potentialUpdate(
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-/// Classification assumption)
+///Classification assumption)
 template <CacheTraits *T>
 UpdateReport *ElementWiseCountingPersistence<T>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,
     bool wantReport, const Classification assumption __attribute__((unused))) {
-  TagType tag;
-  tag = getTag<T>(addr);
+  TagType tag = getTag<T>(addr);
   ele2conflicts[tag] =
-      SetWiseCountingPersistence<T>(addr.getAsInterval().lower(), false);
+      SetWiseCountingPersistence<T>(addr.getAsInterval().lower());
   for (auto &e2c : ele2conflicts) {
     e2c.second.update(addr, load_store, Deps);
   }

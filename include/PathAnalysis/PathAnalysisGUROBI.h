@@ -59,8 +59,6 @@ public:
   virtual bool hasSolution();
   virtual BoundItv getSolution();
   virtual bool isSolutionBound();
-  void dumpinfp(std::string outputFileName, const VarCoeffVector &obj,
-                std::string info) {}
 
 private:
   /**

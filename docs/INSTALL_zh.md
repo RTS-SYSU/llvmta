@@ -7,8 +7,8 @@
 构建前，请将本仓库完整下载并进入到仓库根目录中，可以使用如下的命令来实现
 
 ```bash
-git clone https://github.com/RTS-SYSU/llvmta
-cd llvmta
+git clone https://github.com/RTS-SYSU/LLVM-TA-
+cd LLVM-TA-
 ```
 
 ## 方法一：使用 Docker
@@ -33,7 +33,7 @@ docker build -t llvmtadocker:latest - < .devcontainer/Dockerfile
 docker run -i -d \
     -v `pwd`:/workspaces/llvmta:rw \
     -v `pwd`/build:/workspaces/llvmta/build:rw \
-    --name llvmta llvmtadocker:latest
+    --name LLVM-TA- llvmtadocker:latest
 ```
 
 ### 编译项目
@@ -41,7 +41,7 @@ docker run -i -d \
 使用如下命令进入容器
 
 ```bash
-docker exec -it llvmta /bin/bash
+docker exec -it LLVM-TA- /bin/bash
 ```
 
 > 需要注意的是，进入容器后默认用户为 root，为了避免权限问题，建议在容器中切换到普通用户进行编译，容器中自带一个名为 vscode 的普通用户，可以使用 `su vscode` 命令切换到该用户，并使用 `sudo chown -R vscode:vscode /workspaces/llvmta` 命令修改项目文件夹的权限
@@ -57,7 +57,7 @@ cd build
 ninja -j $(nproc)
 ```
 
-其中 `./config.sh dev` 会使用 Debug 模式进行编译，而 `./config.sh rel` 则是以 Release 模式进行编译，请根据需要自行设置
+其中 `./config.sh dev` 会使用 Debug 模式进行编译，而 `./config.sh rel` 则是以 Release 模式进行编译，请根据需要自行设置。另外可以根据自己电脑配置选择编译核心数量，上述编译指令占用全部核心可能影响编译期间使用。
 
 ## 方法二：不使用 Docker
 

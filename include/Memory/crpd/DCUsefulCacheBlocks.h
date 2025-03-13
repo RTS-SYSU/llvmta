@@ -52,7 +52,6 @@ class DCUsefulCacheBlocks : public progana::JoinSemiLattice {
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
-  // bool isl2;
 
   typedef typename CacheTraits::WayType WayType;
   typedef typename CacheTraits::TagType TagType;
@@ -95,8 +94,7 @@ public:
  * assumeAnEmptyCache)
  */
 template <CacheTraits *T>
-inline DCUsefulCacheBlocks<T>::DCUsefulCacheBlocks(bool)
-    : accessedTags() {}
+inline DCUsefulCacheBlocks<T>::DCUsefulCacheBlocks(bool) : accessedTags() {}
 /**
  * \see  dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
  */
@@ -130,7 +128,7 @@ UpdateReport *DCUsefulCacheBlocks<T>::update(const AbstractAddress addr,
   const auto &MustCache =
       std::get<0>(*AddInfo).getTagsWithMaxMaxAge(T->ASSOCIATIVITY - 1);
 
-  TagType tag =getTag<T>(addr);
+  TagType tag = getTag<T>(addr);
 
   DEBUG_WITH_TYPE("dcucb", dbgs() << "Update with Address " << tag << "\n";);
 

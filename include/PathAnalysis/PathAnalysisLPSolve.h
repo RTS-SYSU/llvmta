@@ -30,7 +30,6 @@
 #include "LLVMPasses/TimingAnalysisMain.h"
 #include "PathAnalysis/PathAnalysis.h"
 #include "PathAnalysis/Variable.h"
-#include "Util/GlobalVars.h"
 #include "Util/Graph.h"
 #include "Util/Util.h"
 
@@ -54,32 +53,6 @@ public:
   virtual bool hasSolution();
   virtual BoundItv getSolution();
   virtual bool isSolutionBound();
-  // MISS信息输出改动标记
-  void dumpinfp(std::string outputFileName, const VarCoeffVector &obj,
-                std::string info) {
-    int res = 0;
-    REAL *row = new REAL[var2idMap.size()];
-    assert(row != nullptr && "Not enough space to dump results");
-    get_variables(lp, row);
-    for (auto &V : obj) {
-      res += V.second * row[getVarId(V.first) - 1];
-    }
-    std::ofstream myfile;
-    myfile.open(outputFileName, std::ios_base::app);
-    myfile << info << " : " << res << '\n';
-    myfile.close();
-    if (info == "IMISS") {
-      ::IMISS += res;
-    } else if (info == "DMISS") {
-      ::DMISS += res;
-    } else if (info == "L2MISS") {
-      ::L2MISS += res;
-    } else {
-      ::STBUS += res;
-    }
-
-    delete[] row;
-  }
 
 protected:
   virtual void buildModel();

@@ -33,18 +33,14 @@
 
 #include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineModuleInfo.h"
-#include "llvm/CodeGen/StackProtector.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/CommandLine.h"
 
 #include "AnalysisFramework/AnalysisResults.h"
 #include "Util/Options.h"
 
-#include "Util/muticoreinfo.h"
 #include <iostream>
 #include <map>
-#include <queue>
-#include <string>
 
 using namespace llvm;
 
@@ -63,29 +59,15 @@ class AddressInformation;
  *
  */
 class TimingAnalysisMain : public MachineFunctionPass {
-private:
-  std::map<std::string, int64_t> deadFunctionMap, periodFunctionMap;
-
-protected:
-  typedef std::map<int64_t, std::queue<std::string>> CoreInfoMapping;
-
-  CoreInfoMapping mp;
-
-protected:
-  void parseCoreInfo(const std::string &);
 
 public:
-  unsigned int coreNum = 0;
   static char ID;
-  uint64_t BCETtime = 0;
-  uint64_t WCETtime = 0;
-
   TimingAnalysisMain(TargetMachine &TM);
 
   /**
    * This is a dummy function.
    */
-  bool runOnMachineFunction(MachineFunction &F) override;
+  bool runOnMachineFunction(MachineFunction &F);
 
   /**
    * @brief
@@ -97,9 +79,9 @@ public:
    * @return true
    * @return false
    */
-  virtual bool doFinalization(Module &M) override;
+  virtual bool doFinalization(Module &M);
 
-  virtual llvm::StringRef getPassName() const override {
+  virtual llvm::StringRef getPassName() const {
     return "TA: Main phase of Timing Analysis, e.g. Value and "
            "Microarchitectural Analyses";
   }
@@ -155,11 +137,6 @@ private:
 
   // Private fiels
   static TargetMachine *TargetMachineInstance;
-
-  boost::optional<std::string> getNextFunction(unsigned int); // pop
-
-  // We no longer need this function
-  // boost::optional<std::string> getFunctionname(unsigned int); //
 };
 
 /**

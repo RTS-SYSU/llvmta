@@ -103,7 +103,7 @@ public:
   void dump(std::ostream &mystream,
             const std::map<std::string, double> *optTimesTaken) const;
 
-  void deleteMuArchInfo();
+      void deleteMuArchInfo();
 
 private:
   void buildInterBasicBlockEdges();
@@ -377,7 +377,6 @@ template <class MicroArchDom>
 void InsensitiveGraph<MicroArchDom>::dump(
     std::ostream &mystream,
     const std::map<std::string, double> *optTimesTaken) const {
-  bool f = false;
   if (!DumpVcgGraph) {
     int clusterNr = 0;
     mystream << "digraph WCET {\n    label = \"Microarchitectural State "
@@ -462,21 +461,19 @@ void InsensitiveGraph<MicroArchDom>::dump(
           weight += ccb->getWeightDescr(edge.first, edge.second);
           emitComma = true;
         }
-        // BTW, it is really not funny.
-        bool onPath = false;
+
+        bool onWCETPath = false;
         if (optTimesTaken) {
           Variable edgeVar =
               Variable::getEdgeVar(Variable::Type::timesTaken, edge);
           auto frequency = optTimesTaken->find(edgeVar.getName());
           if (frequency != optTimesTaken->end() && frequency->second > 0) {
             weight += "Frequency: " + std::to_string(frequency->second) + "\n";
-            onPath = true;
+            onWCETPath = true;
           }
         }
-        if (f)
-          this->dumpEdge(mystream, edge, weight, onPath);
-        else
-          this->dumpEdge(mystream, edge, weight, onPath);
+
+        this->dumpEdge(mystream, edge, weight, onWCETPath);
       }
     }
     mystream << "}\n}";
@@ -490,8 +487,8 @@ void InsensitiveGraph<MicroArchDom>::dump(
     for (MachineFunction *currFunc :
          machineFunctionCollector->getAllMachineFunctions()) {
       std::string funcName = currFunc->getName().str();
-      mystream << "graph : {\n	title : \"" << funcName << "\"\n	label : \""
-               << funcName << "\"\n";
+      mystream << "graph : {\n	title : \"" << funcName
+               << "\"\n	label : \"" << funcName << "\"\n";
       for (auto &currMBB : *currFunc) {
         std::string mbbName = currMBB.getFullName();
         mystream << "graph : {\n	title : \"" << mbbName
@@ -568,20 +565,18 @@ void InsensitiveGraph<MicroArchDom>::dump(
           emitComma = true;
         }
 
-        bool O9PaTh = false;
+        bool onWCETPath = false;
         if (optTimesTaken) {
           Variable edgeVar =
               Variable::getEdgeVar(Variable::Type::timesTaken, edge);
           auto frequency = optTimesTaken->find(edgeVar.getName());
           if (frequency != optTimesTaken->end() && frequency->second > 0) {
             weight += "Frequency: " + std::to_string(frequency->second) + "\n";
-            O9PaTh = true;
+            onWCETPath = true;
           }
         }
-        if (f)
-          this->dumpEdge(mystream, edge, weight, O9PaTh);
-        else
-          this->dumpEdge(mystream, edge, weight, O9PaTh);
+
+        this->dumpEdge(mystream, edge, weight, onWCETPath);
       }
     }
     mystream << "}\n}";

@@ -49,18 +49,17 @@ namespace cache {
  */
 struct CacheTraits {
 
-  CacheTraits(unsigned L = 16, unsigned A = 4, unsigned S = 32, bool WB = false,
-              bool WA = false)
-      : LINE_SIZE(L), ASSOCIATIVITY(A), N_SETS(S), WRITEBACK(WB),
-        WRITEALLOCATE(WA) {}
+  CacheTraits(unsigned L, unsigned A, unsigned S, bool WB, bool WA)
+      : LINE_SIZE(16), ASSOCIATIVITY(2), N_SETS(32), WRITEBACK(false),
+        WRITEALLOCATE(false) {}
 
   void checkParams() {
     // If larger values are desired, you just need to adjust the bit width
     // declarations below
 //     assert(IsPwr2(LINE_SIZE) && LINE_SIZE <= 256 &&
 //            "Line size must be a power of 2 and smaller than 256");
-//     //     assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
-//     //            "Associativity must be a power of 2 and smaller than 128");
+//     assert(IsPwr2(ASSOCIATIVITY) && ASSOCIATIVITY <= 128 &&
+//            "Associativity must be a power of 2 and smaller than 128");
 //     assert(IsPwr2(N_SETS) && N_SETS <= 256 &&
 //            "Number of sets must be a power of 2 and smaller than 256");
     assert((!WRITEBACK || WRITEALLOCATE) &&
@@ -75,7 +74,7 @@ struct CacheTraits {
   int LEVEL;
 
   //jjy: 把 satic const去掉了
-  unsigned LATENCY = 4; // l1 access
+  unsigned LATENCY = 5; // l1 access
 
   static const unsigned ADDRESS_BITS = 32;
   static const unsigned OFFSET_BITS_DECL = 8;

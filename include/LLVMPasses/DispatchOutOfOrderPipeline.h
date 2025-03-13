@@ -32,7 +32,7 @@
 namespace TimingAnalysisPass {
 
 boost::optional<BoundItv>
-dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo, unsigned int);
+dispatchOutOfOrderTimingAnalysis(AddressInformation &addressInfo);
 
 boost::optional<BoundItv>
 dispatchOutOfOrderCacheAnalysis(AnalysisType anatype,

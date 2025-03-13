@@ -7,21 +7,19 @@
 #include "PathAnalysis/LoopBoundInfo.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
 #include "Util/muticoreinfo.h"
-#include <cstdint>
 #include <string>
 #include <vector>
 
 Multicoreinfo mcif(0);
 std::vector<std::string> conflicFunctions;
 bool isBCET = false;
-uint64_t IMISS = 0;
-uint64_t DMISS = 0;
-uint64_t L2MISS = 0;
-uint64_t STBUS = 0;
-uint64_t BOUND = 0;
-unsigned currentCore = 0;
+int IMISS = 0;
+int DMISS = 0;
+int L2MISS = 0;
+int STBUS = 0;
+int BOUND = 0;
 TimingAnalysisPass::AddressInformation *glAddrInfo = NULL;
-llvm::Module *ModulePtr = nullptr;
+std::set<const MachineBasicBlock *> mylist;
 
 unsigned getbound(const MachineBasicBlock *MBB,
                   const TimingAnalysisPass::Context &ctx) {
@@ -37,4 +35,22 @@ unsigned getbound(const MachineBasicBlock *MBB,
     }
   }
   return 1;
+}
+
+void celectaddr(const MachineBasicBlock *MBB,
+                const TimingAnalysisPass::Context &ctx) {
+  if (mylist.count(MBB) == 0) {
+    if (SPersistenceA && L2CachePersType == PersistenceType::ELEWISE) {
+      // jjy：持久性内存块争用分析
+      int time = getbound(MBB, ctx);
+      // int time = 1;
+      //   mcif.addaddress(AnalysisEntryPoint, addrIlist, time);
+    } else {
+      // jjy：普通争用分析
+      //   for (auto &al : addrIlist) {
+      //     mcif.addaddress(AnalysisEntryPoint, al);
+      //   }
+    }
+    mylist.insert(MBB);
+  }
 }

@@ -39,17 +39,17 @@ unsigned getCachelineMemoryLatency(CacheType type) {
     assert(Ilinesize == Dlinesize);
     /* fallthrough */
   case CacheType::INSTRUCTION:
-    assert(Ilinesize % 16 == 0);
-    numWords = Ilinesize / 16;
+    assert(Ilinesize % 4 == 0);
+    numWords = Ilinesize / 4;
     break;
   case CacheType::DATA:
-    assert(Dlinesize % 16 == 0);
-    numWords = Dlinesize / 16;
+    assert(Dlinesize % 4 == 0);
+    numWords = Dlinesize / 4;
     break;
   default:
     assert(0 && "UNREACHABLE");
   }
-  return Latency + ceil(PerWordLatency * numWords / 4.0);
+  return Latency + PerWordLatency * numWords;
 }
 
 } // namespace TimingAnalysisPass

@@ -84,7 +84,6 @@ protected:
 
 public:
   using AnaDeps = std::tuple<>;
-  // bool isl2;
 
   explicit LruMinAgeAbstractCache(bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
@@ -92,7 +91,6 @@ public:
   LruMinAgeUpdateReport<TagType> *
   update(const AbstractAddress addr, AccessType load_store, AnaDeps *,
          bool wantReport = false, const Classification assumption = CL_UNKNOWN);
-
   LruMinAgeUpdateReport<TagType> *potentialUpdate(AbstractAddress addr,
                                                   AccessType load_store,
                                                   bool wantReport = false);
@@ -117,7 +115,7 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-/// assumeAnEmptyCache)
+///assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMinAgeAbstractCache<T>::LruMinAgeAbstractCache(
     bool assumeAnEmptyCache)
@@ -164,7 +162,7 @@ void LruMinAgeAbstractCache<T>::removeRedundantTags() {
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-/// Classification assumption)
+///Classification assumption)
 template <CacheTraits *T>
 LruMinAgeUpdateReport<typename CacheTraits::TagType> *
 LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
@@ -172,9 +170,7 @@ LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
                                   bool wantReport,
                                   const Classification assumption
                                   __attribute__((unused))) {
-
   TagType tag = getTag<T>(addr);
-
   int size = explicitTags.size();
   LruMinAgeUpdateReport<TagType> *report = nullptr;
 
@@ -191,8 +187,7 @@ LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
       break;
 
   bool found = pos != size && size > 0;
-  PosType accessedAge =
-      found ? explicitTags[pos].age : ageOfImplicitTags; // 初始为0
+  PosType accessedAge = found ? explicitTags[pos].age : ageOfImplicitTags;
 
   // 1. Update implicitly modelled elements
   if (ageOfImplicitTags <= accessedAge &&
@@ -241,8 +236,8 @@ LruMinAgeAbstractCache<T>::update(const AbstractAddress addr,
     }
     int upperDelimiter = i - 1;
 
-    // Merge elements in the interval (lowerDelimiter, upperDelimiter] with
-    // the tag set of age (accessedAge+1)
+    // Merge elements in the interval (lowerDelimiter, upperDelimiter] with the
+    // tag set of age (accessedAge+1)
     for (int i = upperDelimiter; i > lowerDelimiter; --i) {
       unsigned currentTag = explicitTags[i].tag;
 
@@ -441,8 +436,8 @@ inline bool LruMinAgeAbstractCache<T>::operator<(const Self &y) const {
 //{
 //	std::size_t res = static_cast<std::size_t>(2166136261UL);
 //	for (ConstIterType it = explicitTags.begin(); it != explicitTags.end();
-//++it) { 		res ^= (it->tag << CacheTraits::WAY_BITS) | it->age;
-// res *= static_cast<std::size_t>(16777619UL);
+//++it) { 		res ^= (it->tag << CacheTraits::WAY_BITS) | it->age; 		res *=
+//static_cast<std::size_t>(16777619UL);
 //	}
 //	res += ageOfImplicitTags;
 //	return res;

@@ -30,13 +30,11 @@
 #include "AnalysisFramework/AnalysisDomain.h"
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
 #include "PartitionUtil/DirectiveHeuristics.h"
-#include "Util/GlobalVars.h"
 #include "Util/Util.h"
 
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
 
-#include <iostream>
 #include <sstream>
 #include <unordered_set>
 
@@ -340,6 +338,8 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::
          "Analysis cannot update top states, it would diverge otherwise");
   // For each state in our set do cycle() updates until isFinal(MI, currentCtx)
   // is true
+  // std::ofstream myfile;
+  // myfile.open("temp.txt", std::ios_base::app);
 
   typename MicroArchState::StateSet intermediateResults;
 
@@ -353,7 +353,7 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::
     } else {
       // Else compute successor and add them to the workingset
       for (auto &succ : copy.cycle(anaInfo)) {
-        // std::cerr << succ;
+        // myfile<<succ<<'\n';
         if (succ.isWaitingForJoin()) {
           // if the state recommends to try
           // joining it with others in a set
@@ -361,11 +361,11 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::
           StateExplorationDom<MicroArchState>::insertOnInstr(
               intermediateResults, succ);
         } else {
-          StateExplorationDom<MicroArchState>::insertOnCycle(
-              workingSet, succ); //将新的状态加入工作集
+          StateExplorationDom<MicroArchState>::insertOnCycle(workingSet, succ);
         }
       }
     }
+
     // if the working set is empty, but we have some intermediate results,
     // use them to fill up the working set again.
     if (workingSet.empty() && !intermediateResults.empty()) {
@@ -373,6 +373,8 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::
       intermediateResults.clear();
     }
   }
+  // myfile<<"--------------------------------------------------------------------\n";
+  // myfile.close();
 }
 
 #else
@@ -582,20 +584,9 @@ void StateExplorationDomainBase<StateExplorationDom, MicroArchState>::join(
     return;
   } // set union (with potential merging of states) is join for this powerset
     // domains
-  // for (auto &state : this->states) {
-  //   std::cerr << state;
-  // }
-  // std::cerr << "------------------------------------\n";
-  // for (auto &state : element.states) {
-  //   std::cerr << state;
-  // }
-  // std::cerr << "------------------------------------\n";
   for (auto &state : element.states) {
     StateExplorationDom<MicroArchState>::insertOnInstr(this->states, state);
   }
-  // for (auto &state : this->states) {
-  //   std::cerr << state;
-  // }
 }
 
 template <template <class> class StateExplorationDom, class MicroArchState>
@@ -606,16 +597,6 @@ bool StateExplorationDomainBase<StateExplorationDom, MicroArchState>::lessequal(
   if (top) // We are top and element is not
     return false;
   // return false if any state is not included in element.states
-  //  for (auto &st : states) {
-  //    size_t hash_value = st.hashcode();
-  //    std::cerr << hash_value << "\n";
-  //    std::cerr << st << "\n";
-  //  }
-  //  for (auto &st : element.states) {
-  //    size_t hash_value = st.hashcode();
-  //    std::cerr << hash_value << "\n";
-  //    std::cerr << st << "\n";
-  //  }
   for (auto &st : states) {
     if (element.states.count(st) == 0)
       return false;

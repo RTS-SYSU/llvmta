@@ -41,6 +41,7 @@
 
 #include "Util/SharedStorage.h"
 #include "Util/Util.h"
+#include <fstream>
 
 namespace TimingAnalysisPass {
 
@@ -467,6 +468,16 @@ AbstractCacheImpl<T, C>::getPersistentScopes(const AbstractAddress addr) const {
           dbgs() << "\t" << s << "\n";
         }
       });
+  if (ret.size() > 0) {
+    std::ofstream myfile;
+    myfile.open("DeBug.txt", std::ios_base::app);
+    myfile << "L" << T->LEVEL << ":" << addr
+           << " is persistent in the following scopes:\n";
+    for (auto s : ret) {
+      myfile << "\t" << s << "\n";
+    }
+    myfile.close();
+  }
   return ret;
 }
 
@@ -499,9 +510,9 @@ std::ostream &AbstractCacheImpl<T, C>::dump(std::ostream &os) const {
 }
 
 /* TODO there is no good reason for this to be in "AbstractCache". This
- * probably belongs together with getTag, such that cache set analyses can also
- * access it. Maybe one even wants to do these operations on AbstractAddresses
- * directly */
+ * probably belongs together with getTag, such that cache set analyses can
+ * also access it. Maybe one even wants to do these operations on
+ * AbstractAddresses directly */
 template <CacheTraits *T, class C>
 unsigned AbstractCacheImpl<T, C>::getCacheSet(const Address addr) const {
   return (addr / T->LINE_SIZE) % T->N_SETS;
@@ -578,8 +589,8 @@ public:
          bool wantReport = false,
          const Classification assumption = dom::cache::CL_UNKNOWN);
 
-  virtual void enterScope(const PersistenceScope &scope){};
-  virtual void leaveScope(const PersistenceScope &scope){};
+  virtual void enterScope(const PersistenceScope &scope) {};
+  virtual void leaveScope(const PersistenceScope &scope) {};
   virtual std::set<PersistenceScope>
   getPersistentScopes(const AbstractAddress addr) const {
     return std::set<PersistenceScope>();
@@ -615,8 +626,8 @@ private:
    */
   unsigned getCacheSet(const Address addr) const;
   /**
-   * Compute the interval of possible cache sets to which an address of addritv
-   * can map to
+   * Compute the interval of possible cache sets to which an address of
+   * addritv can map to
    */
   CacheSetItv getCacheSetInterval(const AddressInterval &addritv) const;
   /**

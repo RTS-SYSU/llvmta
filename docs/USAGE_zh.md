@@ -29,53 +29,6 @@ ndes_init|Loop in file ndes.c near line 75|BB#5:for.cond2<header><exiting>_BB#6:
 <函数名>|<循环描述>|<循环的基本块描述>|<循环的迭代次数>
 ```
 
-### 循环描述文件的生成
-
-由于上述文件全部手动编写是非常繁琐的，因而本项目提供了一个自动生成的[脚本](../testcases/run.py)，使用方法如下
-
-```bash
-cd testcases
-./run.py -s <源代码所在目录> -o <输出文件目录> -p
-```
-
-其中 `-s` 为源代码所在目录，`-o` 为输出文件目录，`-p` 为是否打印循环描述文件。
-
-这样生成的循环描述文件有两个，分别是 `LoopAnnotations.csv` 和 `LLoopAnnotations.csv`，前者表示循环上界，后者表示循环下界，请根据实际情况，将两个描述文件分别填写完成，具体来说，检查循环的边界是否设置正确，同时对于那些标注为 `-1` 的循环，将其修改为正确的循环边界。修改完成后，将这两个文件放置到和测试用例同一目录下。
-
-### 核心描述文件
-
-由于本项目针对的是多核处理器，因而需要提供核心描述文件，文件格式如下：
-
-```json
-[
-    {
-        "core": 0,
-        "tasks": [
-            {
-                "function": "<函数名>"
-            },
-            {
-                "function": "<函数名>"
-            }
-        ]
-    },
-    {
-        "core": 1,
-        "tasks": [
-            {
-                "function": "<函数名>"
-            },
-            {
-                "function": "<函数名>"
-            }
-        ]
-    },
-    ...
-]
-```
-
-其中，`core` 表示核心编号，`tasks` 表示该核心上的任务，`function` 表示任务所在的函数名。
-
 ## 系统信息获取
 
 ### 缓存大小信息
@@ -146,44 +99,32 @@ $ cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
 powersave
 ```
 
-测试完成后，终端会打印对应的内存延迟，请手动记录并转换为 CPU 周期数，然后在运行时加入对应的参数，例如，得到的内存延迟为 150 个 CPU 周期数，L1 缓存延迟为 4 个 CPU 周期数，L2 缓存延迟为 12 个 CPU 周期数，可以用如下命令来运行
+测试完成后，终端会打印对应的内存延迟，请手动记录并转换为 CPU 周期数，然后在运行时加入对应的参数，例如，得到的内存延迟为 150 个 CPU 周期数，L1 缓存延迟为 4 个 CPU 周期数，L2 缓存延迟为 12 个 CPU 周期数。可以将参数加入`.vscode/launch.json`中的`args`，如下
 
-```bash
-./run.py -s <源代码所在目录> -o <输出文件目录> --icache_line_size 64 --dcache_line_size 64 --l2cache_line_size 64 --icache_assoc 8 --dcache_assoc 8 --l2cache_assoc 16 --icache_sets 128 --dcache_sets 64 --l2cache_sets 2048 --l1_latency 4 --l2_latency 12 --mem_latency 150
+```txt
+"--icache_line_size 64",
+"--dcache_line_size 64",
+"--l1_latency 4"
 ```
+
 
 ## 使用
 
-为方便使用，本项目提供了一个[脚本](../testcases/run.py)，使用方法如下
-
-```bash
-cd testcases
-./run.py -s <源代码所在目录> -o <输出文件目录> [-t <临时文件目录>]
-```
-
-其中，`-t` 参数为可选参数，用于指定临时文件目录，如果不指定，则默认为 `dirforgdb`。
-
-脚本默认会在源代码目录下搜索所需要的文件，包括循环描述文件和核心描述文件，如果找不到，则会报错。
+可以使用vscode的`Run and Debug`选择prelaunch task为`run gdb`的进行运行，运行的机制是调用`runBeforeGDB`进行源码编译后传入`args`中的参数运行。可以更改`--ta-analysis-entry-point`以切换被分析程序的入口函数名。被分析程序需要放置在`./testcases/test/`中
 
 ## 结果
 
-脚本运行完成后，会在指定的输出目录下生成 `WCET.json` 文件，格式如下
-
-```json
-{
-    "system": {
-        "core_count": <核心数量>
-    },
-    "tasks": [
-        {
-            "WCET": <最大执行时间>,
-            "function": "<函数名>",
-            "id": 0,
-            "partition": <核心编号>
-        },
-        ...
-    ]
-}
+运行完成后，会在终端输出结果，如:  
+```txt
+Timing Analysis for entry point: fdct_start
+ -> Finished Preprocessing Phase
+ -> Finished Value & Address Analysis
+ -> Starting Microarchitectural Analysis:
+N18TimingAnalysisPass30StateExplorationWithJoinDomainINS_20InOrderPipelineStateINS_31JJYSeparateCachesMemoryTopologyIXadL_ZNS_12CacheFactory21makeOptionsInstrCacheEbEEXadL_ZNS3_20makeOptionsDataCacheEbEEXadL_ZNS3_18makeOptionsL2CacheEbEENS_20SingleMemoryTopologyIXadL_ZNS_24makeOptionsBackgroundMemEvEEEEEEEEEE
+ -> Finished Microarchitectural Analysis
+ -> Finished Microarchitectural State Graph Construction
+ -> No valid Gurobi License found!
+ -> Using Solver: LPsolve
+ -> Finished Path Analysis
+Calculated Timing Bound: 98884
 ```
-
-其中，`WCET` 表示最大执行时间，`function` 表示函数名，`id` 表示任务编号，`partition` 表示核心编号。

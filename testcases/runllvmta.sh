@@ -205,15 +205,15 @@ if [[ "$limit_mem" = true ]]; then
 	llvmtacommand="../../memlimitllvmta"
 fi
 
-# if core info is available, pass it to llvmta
-if [ -f "$core_info" ]; then
-	llvmtaopts+=( "--core-info=$core_info" )
-fi
+# # if core info is available, pass it to llvmta
+# if [ -f "$core_info" ]; then
+# 	llvmtaopts+=( "--core-info=$core_info" )
+# fi
 
-# if core number is available, pass it to llvmta
-if [ -n "$core" ]; then
-	llvmtaopts+=( "--core-numbers=$core" )
-fi
+# # if core number is available, pass it to llvmta
+# if [ -n "$core" ]; then
+# 	llvmtaopts+=( "--core-numbers=$core" )
+# fi
 
 trap cleanup EXIT
 pushd "$WORKDIR"

@@ -41,7 +41,7 @@ const struct {
     return refreshPeriod * freq / numRows -
            (Latency + PerWordLatency * maxBurstLength);
   }
-} SDRAMConfig = {100000, 64, 8192, 16};
+} SDRAMConfig = {100000, 64, 8192, 8};
 
 /**
  * Class implementing a cycling memory based on a very simple SDRAM controller
@@ -159,8 +159,7 @@ public:
    * Implement how to announce a new access to the memory.
    */
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
-                 bool isL2 = false) const;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords) const;
 
   virtual std::list<AbstractCyclingMemory *> fastForward() const;
 

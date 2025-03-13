@@ -210,8 +210,9 @@ public:
    * use if for unordered_(set|map|...) operations
    */
   virtual bool operator==(const DerivedState &ds) const {
-    return time == ds.time &&pc == ds.pc && condBranchAssumptions == ds.condBranchAssumptions &&
-           returnAssumptions == ds.returnAssumptions; // 
+    return time == ds.time && pc == ds.pc &&
+           condBranchAssumptions == ds.condBranchAssumptions &&
+           returnAssumptions == ds.returnAssumptions;
   }
   /**
    * We require a hash function for every microarchitectural state to be used
@@ -225,23 +226,20 @@ public:
     return res;
   };
 
-  /**
-   * Storing the current pc, i.e. the address (together with the context if any)
-   * to fetch next. Typically the address belongs to a fixed MachineInstr* with
-   * a well-defined context. However due to prefetching techniques, we might see
-   * addresses that do not belong to known instructions, and/or addresses with
-   * an invalid context (i.e. if reaching dead-code).
-   */  
-  ProgramCounter pc;
-  
 protected:
   /**
    * Time potentially elapsed since the last basic block beginning.
    */
   TimeType time;
 
-
-
+  /**
+   * Storing the current pc, i.e. the address (together with the context if any)
+   * to fetch next. Typically the address belongs to a fixed MachineInstr* with
+   * a well-defined context. However due to prefetching techniques, we might see
+   * addresses that do not belong to known instructions, and/or addresses with
+   * an invalid context (i.e. if reaching dead-code).
+   */
+  ProgramCounter pc;
 
   /**
    * Vector storing some "context" this state was reached, more precisely

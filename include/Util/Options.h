@@ -28,7 +28,6 @@
 #define UTIL_OPTIONS_H
 
 //#define CPLEXINSTALLED
-#include "llvm/ADT/StringRef.h"
 #define GUROBIINSTALLED
 
 #include "llvm/Support/CommandLine.h"
@@ -116,7 +115,7 @@ enum class CompositionalAnalysisType {
           /// cache. This Cache is not analysed.
   DCACHE, /// Timing Analysis uses an always hit cache for the data cache. This
           /// Cache is not analysed.
-          // jjy: 层2cache
+// jjy: 层2cache
   L2CACHE,
   DRAMREFRESH,      /// Timing Analysis should analyse DRAM refreshes in a
                     /// compositional way.
@@ -243,14 +242,7 @@ enum class ArrivalCurveIlpObjectiveType { VARIANT1, VARIANT2, COMBINED };
 
 // Global options
 
-// Modified By Zeng-WCh
-extern llvm::cl::opt<bool> UseMetaDataAsAnnotation;
-// End Modification
-
-/**
- * TODO
- */
-//多核策略改动标记
+//jjy:多核策略改动标记
 extern llvm::cl::opt<unsigned> CoreNums;
 extern llvm::cl::opt<unsigned> Core;
 extern llvm::cl::opt<bool> SPersistenceA;
@@ -258,8 +250,7 @@ extern llvm::cl::opt<bool> SPersistenceA;
  * File that record the running info.
  */
 extern llvm::cl::opt<std::string> coreInfo;
-
-extern llvm::cl::opt<unsigned> ILatency, DLatency;
+extern llvm::cl::opt<bool> ParallelPrograms;
 
 /**
  * Quiet mode: No output on console and no file output, except for the

@@ -28,9 +28,9 @@
 
 #include "LLVMPasses/MachineFunctionCollector.h"
 #include "LLVMPasses/TimingAnalysisMain.h"
-#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 #include "Util/Util.h"
+
 #include "llvm/Support/Debug.h"
 
 #include <boost/tokenizer.hpp>
@@ -132,16 +132,6 @@ bool CallGraph::reachableFromEntryPoint(const llvm::MachineFunction *MF) const {
   std::set<const llvm::MachineFunction *> worklist;
 
   worklist.insert(getAnalysisEntryPoint());
-
-  //多核多个entrypoint改动标记
-  // for (auto core : mcif.coreinfo) {
-  //   for (auto entrypoint : core) {
-  //     auto *Res =
-  //         machineFunctionCollector->getFunctionByName(entrypoint);
-  //     assert(Res && "Invalid entry point specified");
-  //     worklist.insert(Res);
-  //   }
-  // }
 
   while (!worklist.empty()) {
     auto func = *worklist.begin();

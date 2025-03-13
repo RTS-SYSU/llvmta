@@ -27,10 +27,7 @@
 #ifndef STATESENSITIVEGRAPH_H
 #define STATESENSITIVEGRAPH_H
 
-#include "Util/GlobalVars.h"
 #include "Util/Graph.h"
-#include "Util/Options.h"
-#include "Util/StatisticOutput.h"
 #include "Util/Util.h"
 
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
@@ -144,61 +141,6 @@ public:
   void dump(std::ostream &mystream,
             const std::map<std::string, double> *optTimesTaken) const;
 
-  void dumpfunction_(
-      const char *filename,
-      const std::map<std::string, std::vector<int>> &funtoinfor) const {
-    char title[512];
-    memset(title, 0, sizeof(title));
-
-    if (::isBCET) {
-      snprintf(title, sizeof(title), "BCET for core: %u, entry: %s",
-               ::currentCore, AnalysisEntryPoint.c_str());
-    } else {
-      snprintf(title, sizeof(title), "WCET for core %u, entry: %s",
-               ::currentCore, AnalysisEntryPoint.c_str());
-    }
-
-    auto &manager = StatisticOutputManager::getInstance();
-    manager.set_dump_file(filename);
-    auto &so = manager.insert((const char *)title,
-                              StatisticOutput(title, "Function Name", COL_LEN));
-
-    // size_t columnWidth = 29;
-    constexpr char *columnNames[] = {"Time",          "L1I$ Misses",
-                                     "L1D$ Misses",   "L2$ Misses",
-                                     "Stores To Bus", "Writebacks"};
-
-    char buf[10];
-    memset(buf, 0, sizeof(buf));
-
-    for (const auto &[funcName, values] : funtoinfor) {
-      if (values[0] == 0) {
-        continue;
-      }
-      size_t idx = 0;
-
-      for (const auto &value : values) {
-        so.update(funcName, columnNames[idx++], static_cast<uint64_t>(value));
-      }
-      // 如果数据列不足，填充空白
-      // for (size_t i = values.size(); i < columnNames.size(); ++i) {
-      //   mystream << "| " << std::setw(columnWidth - 1) << " ";
-      // }
-      // mystream << "|" << std::endl;
-    }
-
-    // so.dump(filename, "a");
-  };
-
-  void dumpfunction(const char *file,
-                    const std::map<std::string, double> *optTimesTaken) const {
-    std::ofstream myfile;
-    myfile.open("output_information.txt", std::ios_base::app);
-    this->dumpfunction(myfile, optTimesTaken);
-    // this->dumpfunction_(file, optTimesTaken);
-    myfile.close();
-  }
-
   void dumpfunction(std::ostream &mystream,
                     const std::map<std::string, double> *optTimesTaken) const {
     std::set<unsigned> persistStatesAlreadyDumped;
@@ -208,7 +150,7 @@ public:
 
     const std::function<void(unsigned, const std::set<unsigned> &)>
         dumpPersistSuccessors =
-            [this, &persistStatesAlreadyDumped, &mystream, &funcName,
+            [this, &persistStatesAlreadyDumped, &funcName,
              &functiontoid, &dumpPersistSuccessors](
                 unsigned currId, const std::set<unsigned> &statesLeavingBB) {
               for (unsigned succId : graph.getSuccessors(currId)) {
@@ -321,43 +263,40 @@ public:
       }
     }
     // 列宽
-    // size_t columnWidth = 29;
-    // std::vector<std::string> columnNames = {"Time",          "l1I$ Misses",
-    //                                         "l1D$ Misses",   "l2$ Misses",
-    //                                         "Stores To Bus", "writebacks"};
-    // // 打印分隔线
-    // auto printSeparator = [&mystream](size_t columnWidth, size_t numColumns)
-    // {
-    //   mystream << "+";
-    //   for (size_t i = 0; i < numColumns; ++i) {
-    //     mystream << std::string(columnWidth, '-') << "+";
-    //   }
-    //   mystream << std::endl;
-    // };
-    // printSeparator(columnWidth, columnNames.size() + 1);
-    // mystream << "| " << std::setw(29) << "Function Name";
-    // for (const auto &colName : columnNames) {
-    //   mystream << "| " << std::setw(columnWidth - 1) << colName;
-    // }
-    // mystream << "|" << std::endl;
-    // printSeparator(columnWidth, columnNames.size() + 1);
-    // for (const auto &[funcName, values] : funtoinfor) {
-    //   if (values[0] == 0) {
-    //     continue;
-    //   }
-    //   mystream << "| " << std::setw(29) << funcName;
-    //   for (const auto &value : values) {
-    //     mystream << "| " << std::setw(columnWidth - 1) << value;
-    //   }
-    //   // 如果数据列不足，填充空白
-    //   for (size_t i = values.size(); i < columnNames.size(); ++i) {
-    //     mystream << "| " << std::setw(columnWidth - 1) << " ";
-    //   }
-    //   mystream << "|" << std::endl;
-    // }
-    // printSeparator(columnWidth, columnNames.size() + 1);
-
-    this->dumpfunction_("output_information.txt", funtoinfor);
+    size_t columnWidth = 20;
+    std::vector<std::string> columnNames = {"Time",          "l1I$ Misses",
+                                            "l1D$ Misses",   "l2$ Misses",
+                                            "Stores To Bus", "writebacks"};
+    // 打印分隔线
+    auto printSeparator = [&mystream](size_t columnWidth, size_t numColumns) {
+      mystream << "+";
+      for (size_t i = 0; i < numColumns; ++i) {
+        mystream << std::string(columnWidth, '-') << "+";
+      }
+      mystream << std::endl;
+    };
+    printSeparator(columnWidth, columnNames.size() + 1);
+    mystream << "| " << std::setw(columnWidth - 1) << "Function Name";
+    for (const auto &colName : columnNames) {
+      mystream << "| " << std::setw(columnWidth - 1) << colName;
+    }
+    mystream << "|" << std::endl;
+    printSeparator(columnWidth, columnNames.size() + 1);
+    for (const auto &[funcName, values] : funtoinfor) {
+      if (values[0] == 0) {
+        continue;
+      }
+      mystream << "| " << std::setw(columnWidth - 1) << funcName;
+      for (const auto &value : values) {
+        mystream << "| " << std::setw(columnWidth - 1) << value;
+      }
+      // 如果数据列不足，填充空白
+      for (size_t i = values.size(); i < columnNames.size(); ++i) {
+        mystream << "| " << std::setw(columnWidth - 1) << " ";
+      }
+      mystream << "|" << std::endl;
+    }
+    printSeparator(columnWidth, columnNames.size() + 1);
   }
 
   void deleteMuArchInfo();
@@ -476,7 +415,6 @@ private:
    */
   const MuAnaInfo &mai;
 
-public:
   /**
    * The Graph, represented by vertices.
    * All vertices know their incoming and outgoing edges.
@@ -2066,8 +2004,8 @@ void StateSensitiveGraph<MicroArchDom>::dump(
     for (MachineFunction *currFunc :
          machineFunctionCollector->getAllMachineFunctions()) {
       std::string funcName = currFunc->getName().str();
-      mystream << "graph : {\n	title : \"" << funcName
-               << "\"\n	label : \"" << funcName << "\"\n";
+      mystream << "graph : {\n	title : \"" << funcName << "\"\n	label : \""
+               << funcName << "\"\n";
       for (auto &currMBB : *currFunc) {
         std::string mbbName = currMBB.getFullName();
         mystream << "graph : {\n	title : \"" << mbbName
@@ -2194,11 +2132,10 @@ void StateSensitiveGraph<MicroArchDom>::dump(
     mystream << "}\n}";
   }
   if (optTimesTaken) {
-    // std::ofstream myfile;
-    // myfile.open("output_information.txt", std::ios_base::app);
-    // this->dumpfunction(myfile, optTimesTaken);
-    // myfile.close();
-    this->dumpfunction("output_information.txt", optTimesTaken);
+    std::ofstream myfile;
+    myfile.open("output_information.txt", std::ios_base::trunc);
+    this->dumpfunction(myfile, optTimesTaken);
+    myfile.close();
   }
 }
 

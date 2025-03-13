@@ -26,7 +26,6 @@
 #include "PathAnalysis/FlowConstraintProvider.h"
 
 #include "PathAnalysis/LoopBoundInfo.h"
-#include <iostream>
 
 namespace TimingAnalysisPass {
 
@@ -118,12 +117,12 @@ void FlowConstraintProvider::buildInFlowEqualsOutFlowConstraints() {
       if (FollowLocalWorstType.getBits() ==
           0) { // If != 0, the transfer is not monotonic, thus pending states
                // might arise
-               //改动标记
+               //jjy: 构造图时后继块检查
         // assert(vertex.second.getPredecessors().size() > 0 &&
         //        "Vertex has no predecessors!");
       }
-      assert(vertex.second.getSuccessors().size() > 0 &&
-             "Vertex has no successors!");
+      // assert(vertex.second.getSuccessors().size() > 0 &&
+      //        "Vertex has no successors!");
     }
 
     VarCoeffVector variables;
@@ -189,6 +188,7 @@ void FlowConstraintProvider::buildLoopConstraints(bool upper) {
 
   // for each loop, add loop constraint
   for (const MachineLoop *loop : LoopBoundInfo->getAllLoops()) {
+
     auto entryBB = loop->getHeader();
     // If the loop (i.e. the header) is not reachable at all, we do not need any
     // constraints here

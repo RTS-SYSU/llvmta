@@ -36,6 +36,7 @@
 #include "Memory/util/ImplicitSet.h"
 #include "Util/GlobalVars.h"
 #include "Util/Options.h"
+
 namespace TimingAnalysisPass {
 
 namespace dom {
@@ -140,6 +141,7 @@ protected:
     this->top = true;
     this->accessedBlocks.clear();
     this->accessedArrays.clear();
+    // std::cerr << "(" << T->ASSOCIATIVITY << ")";
   }
 
   unsigned getPerArrayBound(const GlobalVariable *array) {
@@ -203,14 +205,16 @@ UpdateReport *SetWiseCountingPersistence<T>::potentialUpdate(
       !addr.isArray()) {
     /* give up */
     // this->gotoTop();
+    // std::cerr << "(" << T->ASSOCIATIVITY << ")";
     return wantReport ? new UpdateReport : nullptr;
   }
 
   const GlobalVariable *array = addr.getArray();
   /* only update if we can have more accesses to array */
   if (accessedArrays.count(array) < getPerArrayBound(array)) {
-    if (accessedBlocks.size() + accessedArrays.size() >= ASSOCIATIVITY) {
+    if (accessedBlocks.size() + accessedArrays.size() >= T->ASSOCIATIVITY) {
       this->gotoTop();
+      // std::cerr << "(" << T->ASSOCIATIVITY << ")";
     } else {
       accessedArrays.insert(array);
     }
@@ -237,8 +241,9 @@ UpdateReport *SetWiseCountingPersistence<T>::update(
   std::tie(std::ignore, inserted) = accessedBlocks.insert(Block(addr));
 
   if (inserted) {
-    if (accessedBlocks.size() + accessedArrays.size() > ASSOCIATIVITY) {
+    if (accessedBlocks.size() + accessedArrays.size() > T->ASSOCIATIVITY) {
       this->gotoTop();
+      // std::cerr << "(" << T->ASSOCIATIVITY << ")";
     }
   }
   return wantReport ? new UpdateReport : nullptr;
@@ -248,6 +253,7 @@ UpdateReport *SetWiseCountingPersistence<T>::update(
 template <CacheTraits *T>
 void SetWiseCountingPersistence<T>::join(const Self &y) {
   if (this->top || y.top) {
+    // std::cerr << "(" << T->ASSOCIATIVITY << ")";
     this->gotoTop();
     return;
   }
@@ -277,7 +283,8 @@ void SetWiseCountingPersistence<T>::join(const Self &y) {
     }
   }
 
-  if (accessedBlocks.size() + accessedArrays.size() > ASSOCIATIVITY) {
+  if (accessedBlocks.size() + accessedArrays.size() > T->ASSOCIATIVITY) {
+    // std::cerr << "(" << T->ASSOCIATIVITY << ")";
     this->gotoTop();
   }
 }
@@ -322,12 +329,6 @@ SetWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
     return !top;
   }
 }
-
-// template <CacheTraits *T>
-// inline bool
-// SetWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
-//   return !top;
-// }
 
 template <CacheTraits *T>
 inline bool

@@ -24,7 +24,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include "Memory/crpd/CacheRelatedPreemptionDelay.h"
-#include "PathAnalysis/PathAnalysis.h"
 #include "PathAnalysis/PathAnalysisCPLEX.h"
 #include "PathAnalysis/PathAnalysisGUROBI.h"
 #include "PathAnalysis/PathAnalysisLPSolve.h"
@@ -35,11 +34,8 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <iostream>
-#include <string>
-#include <vector>
 
 #include "LLVMPasses/DispatchPathAnalysis.h"
-#include "Util/UtilPathAnalysis.h"
 
 using namespace boost::multiprecision;
 
@@ -55,100 +51,7 @@ namespace TimingAnalysisPass {
  * program run.
  */
 std::set<std::string> writtenByDoPathAnalysis;
-// void dumpinfp(std::string outputFileName,VarCoeffVector&obj,PathAnalysis* PA)
-// {
-//   int res = 0;
-//   for(auto &V:obj){
-//     PA->getVarId(V);
-//   }
-// }std::vector<VarCoeffVector>
-boost::optional<BoundItv>
-doPathAnalysis2(const std::string identifier, const ExtremumType extremumType,
-                std::vector<VarCoeffVector> &objectivelist,
-                const std::list<GraphConstraint> &constraints,
-                LPAssignment *extpath, const double timeLimit) {
-  // Create the path analysis.
-  std::unique_ptr<PathAnalysis> pathAnalysis;
-  const VarCoeffVector &objective = objectivelist.front();
 
-  // Fallback to lpsolve if gurobi license is missing.
-#ifdef GUROBIINSTALLED
-  std::string Output = exec("gurobi_cl");
-  if (Output.find("Error") != std::string::npos) {
-    LpSolver = LpSolverType::LPSOLVE;
-    VERBOSE_PRINT(" -> No valid Gurobi License found!\n");
-  }
-#endif
-  switch (LpSolver) {
-  case LpSolverType::LPSOLVE:
-    if (!QuietMode)
-      VERBOSE_PRINT(" -> Using Solver: LPsolve\n");
-    pathAnalysis.reset(
-        new PathAnalysisLPSolve(extremumType, objective, constraints));
-    break;
-#ifdef CPLEXINSTALLED
-  case LpSolverType::CPLEX:
-    if (!QuietMode)
-      VERBOSE_PRINT(" -> Using Solver: CPLEX\n");
-    pathAnalysis.reset(
-        new PathAnalysisCPLEX(extremumType, objective, constraints));
-    break;
-#endif
-#ifdef GUROBIINSTALLED
-  case LpSolverType::GUROBI:
-    if (!QuietMode)
-      VERBOSE_PRINT(" -> Using Solver: Gurobi\n");
-    pathAnalysis.reset(
-        new PathAnalysisGUROBI(extremumType, objective, constraints));
-    break;
-#endif
-  }
-
-  // Set the time limit. 0.0 means no time limit!
-  pathAnalysis->setTimeLimit(timeLimit);
-
-  // Perform the path analysis.
-  if (!pathAnalysis->calculateExtremalPath()) {
-    errs() << "Path analysis failed. Aborting\n";
-    exit(1);
-  }
-
-  // Dump the results to a file.
-  VERBOSE_PRINT(" -> Finished Path Analysis\n");
-  const bool maximum = extremumType == ExtremumType::Maximum;
-  const std::string outputFileName =
-      std::to_string(Core) + "_" + AnalysisEntryPoint + "_PathAnalysis_" +
-      identifier + "_" + (maximum ? "Max" : "Min") + ".txt";
-  if (!QuietMode) {
-    std::ofstream myfile;
-    auto openMode = writtenByDoPathAnalysis.count(outputFileName) == 0
-                        ? std::ios_base::trunc
-                        : std::ios_base::app;
-    writtenByDoPathAnalysis.insert(outputFileName);
-    myfile.open(outputFileName, openMode);
-    pathAnalysis->dump(myfile);
-    myfile.close();
-  }
-
-  // Return extremal value and (optionally) extremal path.
-  if (pathAnalysis->isInfinite()) {
-    return boost::none;
-  } else if (pathAnalysis->hasSolution()) {
-    if (extpath != nullptr) {
-      pathAnalysis->getExtremalPath(*extpath);
-    }
-    //输出miss信息改动标记
-    std::vector<std::string> name = {" ", "IMISS", "DMISS", "L2MISS", "STBUS"};
-    for (int i = 1; i < objectivelist.size(); i++) {
-      pathAnalysis->dumpinfp(outputFileName, objectivelist[i], name[i]);
-    }
-    return pathAnalysis->getSolution();
-  } else {
-    errs() << "Path analysis could not compute valid result, see "
-           << outputFileName << " for details.\n";
-    return boost::none;
-  }
-}
 boost::optional<BoundItv>
 doPathAnalysis(const std::string identifier, const ExtremumType extremumType,
                const VarCoeffVector &objective,
@@ -203,8 +106,7 @@ doPathAnalysis(const std::string identifier, const ExtremumType extremumType,
   VERBOSE_PRINT(" -> Finished Path Analysis\n");
   const bool maximum = extremumType == ExtremumType::Maximum;
   const std::string outputFileName =
-      std::to_string(Core) + "_" + AnalysisEntryPoint + "_PathAnalysis_" +
-      identifier + "_" + (maximum ? "Max" : "Min") + ".txt";
+      "PathAnalysis_" + identifier + "_" + (maximum ? "Max" : "Min") + ".txt";
   if (!QuietMode) {
     std::ofstream myfile;
     auto openMode = writtenByDoPathAnalysis.count(outputFileName) == 0
@@ -527,7 +429,7 @@ void performCRPDAnalysis(
   assert(CT == CacheType::INSTRUCTION || CT == CacheType::DATA);
 
   if (CT == CacheType::DATA) {
-    performCRPDAnalysisCC<&icacheConf>(SimpleGraph, provider);
+    performCRPDAnalysisCC<&dcacheConf>(SimpleGraph, provider);
   } else {
     performCRPDAnalysisCC<&icacheConf>(SimpleGraph, provider);
   }
@@ -657,7 +559,7 @@ double computeWBCleanupCost(const LPAssignment &WCETpath) {
     /* costs can be smaller than 0 if we did not enforce the bound */
     return 0;
   }
-  costs *= (Latency + PerWordLatency * Dlinesize / 16);
+  costs *= (Latency + PerWordLatency * Dlinesize / 4);
   if (BackgroundMemoryType == BgMemType::SIMPLEDRAM) {
     /* TODO this is too simplistic. We should do a
      * fixed-point iteration here, since the refreshes might

@@ -31,7 +31,6 @@
 #include "MicroarchitecturalAnalysis/ConvergenceType.h"
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
-#include "Util/GlobalVars.h"
 #include "Util/Util.h"
 
 #include "ARM.h"

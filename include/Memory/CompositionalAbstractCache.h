@@ -36,12 +36,7 @@
 #include "Memory/UpdateReports.h"
 #include "Memory/progana/Lattice.h"
 #include "Memory/util/CacheSetAnalysisConcept.h"
-#include "Util/GlobalVars.h"
 
-#include "LLVMPasses/DispatchMemory.h"
-#include "Memory/CacheTraits.h"
-#include "Memory/LruMaxAgeAbstractCache.h"
-#include "Memory/LruMinAgeAbstractCache.h"
 namespace TimingAnalysisPass {
 
 namespace dom {
@@ -74,14 +69,11 @@ protected:
   BOOST_CONCEPT_ASSERT((concepts::CacheSetAnalysis<SetType2>));
 
   SetType1 analysis1;
-  // TimingAnalysisPass::dom::cache::LruMinAgeAbstractCache<
-  //     &TimingAnalysisPass::icacheConf>
-  //     analysis1;
   SetType2 analysis2;
 
 public:
   using AnaDeps = std::pair<typename A1::AnaDeps *, typename A2::AnaDeps *>;
-  // bool isl2;
+
   explicit CompositionalAbstractCache(bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
@@ -112,11 +104,11 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-/// assumeAnEmptyCache)
+///assumeAnEmptyCache)
 template <class A1, class A2>
 inline CompositionalAbstractCache<A1, A2>::CompositionalAbstractCache(
     bool assumeAnEmptyCache)
-    : analysis1(assumeAnEmptyCache), analysis2(assumeAnEmptyCache){}
+    : analysis1(assumeAnEmptyCache), analysis2(assumeAnEmptyCache) {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <class A1, class A2>
@@ -129,7 +121,7 @@ CompositionalAbstractCache<A1, A2>::classify(const AbstractAddress addr) const {
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-/// Classification assumption)
+///Classification assumption)
 template <class A1, class A2>
 UpdateReport *CompositionalAbstractCache<A1, A2>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,
@@ -272,7 +264,7 @@ inline bool CompositionalAbstractCache<A1, A2>::operator<(const Self &y) const {
 template <class A1, class A2>
 inline std::ostream &
 CompositionalAbstractCache<A1, A2>::dump(std::ostream &os) const {
-  return os << analysis1 << analysis2;
+  return os << analysis1 << " " << analysis2;
 }
 
 ///\see std::ostream& operator<<(std::ostream& os, const CacheSetAnalysis<T>& x)

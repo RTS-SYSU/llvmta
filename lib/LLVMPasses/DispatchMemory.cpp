@@ -71,6 +71,7 @@ inline AbstractCache *makePersistenceCache(PersistenceType persType,
     assert(ArrayPersistenceAnalysis == ArrayPersistenceAnaType::NONE ||
            ArrayAnalysis);
   }
+
   switch (persType) {
   case PersistenceType::NONE:
     return new AbstractCacheImpl<CacheConfig, CacheAna>(assumeEmptyCache);
@@ -154,7 +155,7 @@ AbstractCache *CacheFactory::makeOptionsInstrCache(bool assumeEmptyCache) {
 AbstractCache *CacheFactory::makeOptionsL2Cache(bool assumeEmptyCache) {
   return makeOptionsCache<&l2cacheConf>(
       L2CacheReplPolType, L2CachePersType, assumeEmptyCache,
-      CompAnaType.isSet(CompositionalAnalysisType::L2CACHE),false);
+      CompAnaType.isSet(CompositionalAnalysisType::L2CACHE), false);
 }
 AbstractCache *CacheFactory::makeOptionsDataCache(bool assumeEmptyCache) {
   return makeOptionsCache<&dcacheConf>(
@@ -384,11 +385,9 @@ getUbAccesses(const AbstractCyclingMemory::LocalMetrics *pBaseMetrics) {
       return 0;
     }
   }
-
-  // return static_cast<
-  //            const MemoriesForIterative::AccessCounterMemory::LocalMetrics
-  //            *>( pBaseMetrics)
-  //     ->accessCounter.getUb();
+  //	return static_cast<const
+  // MemoriesForIterative::AccessCounterMemory::LocalMetrics*>(pBaseMetrics)
+  //		->accessCounter.getUb();
 }
 
 unsigned

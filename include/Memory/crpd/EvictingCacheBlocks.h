@@ -54,7 +54,6 @@ class EvictingCacheBlocks : public progana::JoinSemiLattice {
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
-  // bool isl2;
 
   typedef typename CacheTraits::WayType WayType;
   typedef typename CacheTraits::TagType TagType;

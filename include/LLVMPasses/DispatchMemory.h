@@ -29,7 +29,6 @@
 #include "Memory/AbstractCache.h"
 #include "Memory/AbstractCyclingMemory.h"
 
-#include "Memory/CacheTraits.h"
 #include "Util/IntervalCounter.h"
 
 namespace TimingAnalysisPass {

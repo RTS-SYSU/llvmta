@@ -3,23 +3,24 @@
 
 #include "PreprocessingAnalysis/AddressInformation.h"
 #include "muticoreinfo.h"
-#include <cstdint>
 #include <string>
 #include <vector>
 extern Multicoreinfo mcif;
 extern bool isBCET;
 extern std::vector<std::string> conflicFunctions;
-extern uint64_t IMISS;
-extern uint64_t DMISS;
-extern uint64_t STBUS;
-extern uint64_t L2MISS;
-extern uint64_t BOUND;
-extern unsigned currentCore;
-extern TimingAnalysisPass::AddressInformation *glAddrInfo;
-extern llvm::Module *ModulePtr;
+extern int IMISS;
+extern int DMISS;
+extern int STBUS;
+extern int L2MISS;
+extern int BOUND;
+// 记录已经分析过执行次数的块
+extern std::set<const MachineBasicBlock *> mylist;
 
-#define COL_LEN 0
+extern TimingAnalysisPass::AddressInformation *glAddrInfo;
 
 unsigned getbound(const MachineBasicBlock *MBB,
                   const TimingAnalysisPass::Context &ctx);
+
+void celectaddr(const MachineBasicBlock *MBB,
+                const TimingAnalysisPass::Context &ctx);
 #endif

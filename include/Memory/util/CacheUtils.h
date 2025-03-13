@@ -49,17 +49,6 @@ unsigned getindex(typename dom::cache::CacheTraits::AddressType addr) {
   return (addr / CacheConfig->LINE_SIZE) % CacheConfig->N_SETS;
 }
 
-// template <dom::cache::CacheTraits *CacheConfig>
-// typename dom::cache::CacheTraits::TagType
-// l2getTag(typename dom::cache::CacheTraits::AddressType addr) {
-//   return (addr / CacheConfig->LINE_SIZE) / CacheConfig->L2N_SETS;
-// }
-
-// template <dom::cache::CacheTraits *CacheConfig>
-// unsigned l2getindex(typename dom::cache::CacheTraits::AddressType addr) {
-//   return (addr / CacheConfig->LINE_SIZE) % CacheConfig->L2N_SETS;
-// }
-
 template <dom::cache::CacheTraits *CacheConfig>
 typename dom::cache::CacheTraits::TagType getTag(AbstractAddress addr) {
   AddressInterval itv = addr.getAsInterval();
@@ -75,22 +64,6 @@ typename dom::cache::CacheTraits::TagType getindex(AbstractAddress addr) {
          getCachelineAddress<CacheConfig>(itv.upper()));
   return getindex<CacheConfig>(itv.lower());
 }
-// template <dom::cache::CacheTraits *CacheConfig>
-// typename dom::cache::CacheTraits::TagType l2getTag(AbstractAddress addr) {
-//   AddressInterval itv = addr.getAsInterval();
-//   assert(getCachelineAddress<CacheConfig>(itv.lower()) ==
-//          getCachelineAddress<CacheConfig>(itv.upper()));
-
-//   return l2getTag<CacheConfig>(itv.lower());
-// }
-
-// template <dom::cache::CacheTraits *CacheConfig>
-// typename dom::cache::CacheTraits::TagType l2getindex(AbstractAddress addr) {
-//   AddressInterval itv = addr.getAsInterval();
-//   assert(getCachelineAddress<CacheConfig>(itv.lower()) ==
-//          getCachelineAddress<CacheConfig>(itv.upper()));
-//   return l2getindex<CacheConfig>(itv.lower());
-// }
 /* returns (in cycles) how long the transfer of a cache line between cache and
  * main memory takes */
 unsigned getCachelineMemoryLatency(CacheType type);
@@ -114,26 +87,6 @@ unsigned getPerSetSize(const GlobalVariable *ds) {
 
   return perSetSize;
 }
-
-// template <dom::cache::CacheTraits *CacheConfig>
-// unsigned l2getPerSetSize(const GlobalVariable *ds) {
-//   unsigned size = StaticAddrProvider->getArraySize(ds);
-//   unsigned base = StaticAddrProvider->getGlobalVarAddress(ds);
-
-//   /* If the array is not aligned at cacheline boundaries we have to
-//    * account for the initial part of the cacheline */
-//   size += base - getCachelineAddress<CacheConfig>(base);
-
-//   unsigned cacheSizePerAssoc = CacheConfig->L2N_SETS * CacheConfig->LINE_SIZE;
-
-//   unsigned perSetSize = size / cacheSizePerAssoc;
-
-//   if (size % cacheSizePerAssoc != 0) {
-//     ++perSetSize;
-//   }
-
-//   return perSetSize;
-// }
 
 } // namespace TimingAnalysisPass
 

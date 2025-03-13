@@ -231,14 +231,14 @@ void AddressInformation::dump(std::ostream &mystream) const {
       }
     }
   }
-  // auto &ar = AnalysisResults::getInstance();
-  // ar.registerResult("StaticMemoryReferences", numStaticReference);
-  // ar.registerResult("StaticMemoryReferencesWithPreciseAddress",
-  //                   numPreciseAddress);
-  // ar.registerResult("StaticMemoryReferencesWithPreciseCacheline",
-  //                   numPreciseCacheline);
-  // ar.registerResult("StaticMemoryReferencesToDatastructure", numDatastructure);
-  // ar.registerResult("StaticMemoryUnknownReferences", numUnknown);
+  auto &ar = AnalysisResults::getInstance();
+  ar.registerResult("StaticMemoryReferences", numStaticReference);
+  ar.registerResult("StaticMemoryReferencesWithPreciseAddress",
+                    numPreciseAddress);
+  ar.registerResult("StaticMemoryReferencesWithPreciseCacheline",
+                    numPreciseCacheline);
+  ar.registerResult("StaticMemoryReferencesToDatastructure", numDatastructure);
+  ar.registerResult("StaticMemoryUnknownReferences", numUnknown);
 }
 
 //////////////////////////////

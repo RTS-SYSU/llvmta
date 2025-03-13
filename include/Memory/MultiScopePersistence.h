@@ -75,7 +75,6 @@ protected:
 #endif
 
 public:
-  // bool isl2;
   using AnaDeps = std::tuple<>;
   explicit MultiScopePersistence(bool assumeAnEmptyCache = false);
   Classification classify(const AbstractAddress addr) const;
@@ -97,10 +96,10 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<P>::CacheSetAnalysis(bool
-/// assumeAnEmptyCache)
+///assumeAnEmptyCache)
 template <class P>
-inline MultiScopePersistence<P>::MultiScopePersistence(
-    bool assumeAnEmptyCache __attribute__((unused)))
+inline MultiScopePersistence<P>::MultiScopePersistence(bool assumeAnEmptyCache
+                                                       __attribute__((unused)))
     : scopes2info()
 #ifndef STRICT_SCOPE_CONSISTENCY
       ,
@@ -132,7 +131,7 @@ UpdateReport *MultiScopePersistence<P>::potentialUpdate(AbstractAddress addr,
 }
 
 ///\see dom::cache::CacheSetAnalysis<P>::update(const TagType tag, const
-/// Classification assumption)
+///Classification assumption)
 template <class P>
 UpdateReport *MultiScopePersistence<P>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,
@@ -203,7 +202,7 @@ void MultiScopePersistence<P>::enterScope(const PersistenceScope &scope) {
   scopes2info.insert(std::make_pair(scope, P()));
 #else
   if (scopes2info.count(scope) == 0) {
-    scopes2info.insert(std::make_pair(scope, P(false)));
+    scopes2info.insert(std::make_pair(scope, P()));
     scopes2entercount.insert(std::make_pair(scope, 1));
   } else {
     ++scopes2entercount[scope];

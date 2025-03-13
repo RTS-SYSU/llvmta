@@ -67,7 +67,6 @@ protected:
    * dirty */
   bool implicitDirty;
   std::map<TagType, DirtinessClassification> dirtiness;
-  // bool isl2;
 
 public:
   typedef std::tuple<> AnaDeps;
@@ -77,7 +76,6 @@ public:
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
                        const Classification assumption = CL_UNKNOWN);
-
   UpdateReport *potentialUpdate(AbstractAddress addr, AccessType load_store,
                                 bool wantReport);
   void join(const Self &y);
@@ -105,14 +103,14 @@ private:
   void checkInvariants() const {
     for (auto entry : dirtiness) {
       if (entry.second == DCL_DIRTY &&
-          must.getMaxAge(entry.first) == (T->ASSOCIATIVITY)) {
+          must.getMaxAge(entry.first) == T->ASSOCIATIVITY) {
         std::cerr << *this << "\n";
         std::cerr << "The above dirtiness state contains a dirty block that is "
                      "not guaranteed to be cached! This is impossible\n";
         abort();
       }
       if (entry.second != DCL_CLEAN &&
-          may.getMinAge(entry.first) == (T->ASSOCIATIVITY)) {
+          may.getMinAge(entry.first) == T->ASSOCIATIVITY) {
         std::cerr << *this << "\n";
         std::cerr << "The above dirtiness state contains a block that cannot "
                      "be cached but is not clean anyway. This is impossible\n";
@@ -139,7 +137,7 @@ template <CacheTraits *T, class MustAna, class MayAna>
 inline DirtinessAnalysis<T, MustAna, MayAna>::DirtinessAnalysis(
     bool assumeAnEmptyCache)
     : must(assumeAnEmptyCache), may(assumeAnEmptyCache),
-      implicitDirty(!AssumeCleanCache){}
+      implicitDirty(!AssumeCleanCache) {}
 
 ///\see dom::cache::CacheSetAnalysis<T>::classify(const TagType tag) const
 template <CacheTraits *T, class MustAna, class MayAna>
@@ -166,7 +164,7 @@ bool DirtinessAnalysis<T, MustAna, MayAna>::existsDirtyVictim() const {
     }
     /* XXX in Daniel Grund's MUST implementation this is not
      * efficient. */
-    if (must.getMaxAge(entry.first) == (T->ASSOCIATIVITY)) {
+    if (must.getMaxAge(entry.first) == T->ASSOCIATIVITY) {
       return true;
     }
   }
@@ -223,12 +221,12 @@ void DirtinessAnalysis<T, MustAna, MayAna>::incorporateMustMayUpdates(
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-/// Classification assumption)
+///Classification assumption)
 template <CacheTraits *T, class MustAna, class MayAna>
 UpdateReport *DirtinessAnalysis<T, MustAna, MayAna>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *deps,
     bool wantReport, const Classification assumption) {
-  TagType tag =getTag<T>(addr);
+  TagType tag = getTag<T>(addr);
 
   LLVM_DEBUG(checkInvariants());
   LLVM_DEBUG(std::cerr << load_store << " " << addr << "\n");
@@ -291,7 +289,7 @@ UpdateReport *DirtinessAnalysis<T, MustAna, MayAna>::potentialUpdate(
   const unsigned maxWorthwhileTags = 4;
 
   if (numTags > maxWorthwhileTags) {
-    if (!may.getTagsWithMaxMinAge((T->ASSOCIATIVITY) - 1).containsAll()) {
+    if (!may.getTagsWithMaxMinAge(T->ASSOCIATIVITY - 1).containsAll()) {
       std::cerr << "[WARNING] Dirtiness Analysis gave up on finding the target "
                    "of the store while MAY tracks it - this makes no sense "
                    "(it's gonna be really hard to recover from this)\n";

@@ -31,60 +31,44 @@
 #include "AnalysisFramework/PartitioningDomain.h"
 #include "LLVMPasses/DispatchPathAnalysis.h"
 #include "MicroarchitecturalAnalysis/StateExplorationDomain.h"
-#include "Util/GlobalVars.h"
-#include "Util/Options.h"
 
 #include <fstream>
-#include <string>
 
 namespace TimingAnalysisPass {
 
 template <class MuArchDomain, class Deps>
 AnalysisInformation<PartitioningDomain<MuArchDomain, MachineInstr>,
                     MachineInstr> *
-doMuArchTimingAnalysis(Deps deps, unsigned coreNum = 0) {
+doMuArchTimingAnalysis(Deps deps) {
   VERBOSE_PRINT(" -> Starting Microarchitectural Analysis:\n"
-                << typeid(MuArchDomain).name() << " on function "
-                << AnalysisEntryPoint << "\n");
-  conflicFunctions = mcif.getConflictFunction(Core, AnalysisEntryPoint);
+                << typeid(MuArchDomain).name() << "\n");
 
-  AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(deps);
-  BOUND = 1;
+  AnalysisDriverInstrContextMapping<MuArchDomain> microArchAna(
+      AnalysisEntryPoint, deps);
   auto microArchAnaInfo = microArchAna.runAnalysis();
-  BOUND = 0;
 
   if (!QuietMode) {
     std::ofstream myfile;
-    std::string fileName = std::to_string(coreNum) + "_core" +
-                           (isBCET ? "_bect" : "_wcet") + AnalysisEntryPoint +
-                           "_MicroArchAnalysis.txt";
-    myfile.open(fileName, std::ios_base::trunc);
+    myfile.open("MicroArchAnalysis.txt", std::ios_base::trunc);
     microArchAnaInfo->dump(myfile);
     myfile.close();
   }
 
-  VERBOSE_PRINT(" -> Finished _core_" + std::to_string(coreNum) +
-                " entrypoint_" + AnalysisEntryPoint +
-                "Microarchitectural Analysis\n");
+  VERBOSE_PRINT(" -> Finished Microarchitectural Analysis\n");
 
   return microArchAnaInfo;
 }
 
 template <class MuState, class Deps>
-boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps,
-                                                     unsigned coreNum) {
+boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps) {
   if (MuJoinEnabled) {
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
 
     Statistics &stats = Statistics::getInstance();
-    // stats.startMeasurement("core_" + std::to_string(coreNum) + " entrypoint_"
-    // +
-    //                        AnalysisEntryPoint + "_Timing MuArch Analysis");
-    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, coreNum);
+    stats.startMeasurement("Timing MuArch Analysis");
+    auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
     // Res deleted at the end of state graph construction
-    // stats.stopMeasurement("core_" + std::to_string(coreNum) + " entrypoint_"
-    // +
-    //                       AnalysisEntryPoint + "_Timing MuArch Analysis");
+    stats.stopMeasurement("Timing MuArch Analysis");
     boost::optional<BoundItv> bound;
 
     assert(AnaType.isSet(AnalysisType::CRPD) ||
@@ -94,18 +78,14 @@ boost::optional<BoundItv> dispatchTimingAnalysisJoin(Deps deps,
       dispatchCRPDPathAnalysis<MuArchDomain>(*res, TplSpecial());
     }
     if (AnaType.isSet(AnalysisType::TIMING)) {
-      // stats.startMeasurement("core_" + std::to_string(coreNum) + "_" +
-      //                        AnalysisEntryPoint +
-      //                        "_Timing Stategraph Generation");
-      currentCore = coreNum;
+      stats.startMeasurement("Timing Stategraph Generation");
       bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
-      // stats.stopMeasurement("core_" + std::to_string(coreNum) + "_" +
-      //                       AnalysisEntryPoint + "_Timing Path Analysis");
+      stats.stopMeasurement("Timing Path Analysis");
     }
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;
-  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps, coreNum);
+  auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
   auto bound = dispatchTimingPathAnalysis<MuArchDomain>(*res);
   // Res deleted at the end of state graph construction
   return bound;
@@ -117,14 +97,14 @@ boost::optional<BoundItv> dispatchCacheAnalysisJoin(Deps deps,
   if (MuJoinEnabled) {
     typedef StateExplorationWithJoinDomain<MuState> MuArchDomain;
     Statistics &stats = Statistics::getInstance();
-    // stats.startMeasurement(prefix + "Cache MuArch Analysis");
+    stats.startMeasurement(prefix + "Cache MuArch Analysis");
     auto res = doMuArchTimingAnalysis<MuArchDomain>(deps);
-    // stats.stopMeasurement(prefix + "Cache MuArch Analysis");
+    stats.stopMeasurement(prefix + "Cache MuArch Analysis");
     // TODO split the next measuremtn in two for stategraph and ILP
-    // stats.startMeasurement(prefix + "Cache Path Analysis");
+    stats.startMeasurement(prefix + "Cache Path Analysis");
     // Res deleted at the end of state graph construction
     auto bound = dispatchCachePathAnalysis<MuArchDomain>(*res);
-    // stats.stopMeasurement(prefix + "Cache Path Analysis");
+    stats.stopMeasurement(prefix + "Cache Path Analysis");
     return bound;
   } // else
   typedef StateExplorationDomain<MuState> MuArchDomain;

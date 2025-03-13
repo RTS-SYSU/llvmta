@@ -29,16 +29,14 @@
 #include <algorithm>
 #include <ostream>
 
-#include "AbstractCache.h"
 #include "Memory/CacheTraits.h"
 #include "Memory/Classification.h"
+#include "Memory/UpdateReports.h"
 #include "Memory/progana/Lattice.h"
-#include "Memory/util/CacheUtils.h"
 #include "Memory/util/ImplicitSet.h"
 #include "Util/GlobalVars.h"
 #include "Util/PersistenceScope.h"
-#include <boost/tuple/tuple.hpp>
-#include <string>
+
 namespace TimingAnalysisPass {
 
 namespace dom {
@@ -66,7 +64,6 @@ protected:
   std::vector<TagType> tags;
   std::vector<WayType> ages;
   PosType size;
-  // bool isl2;
 
 public:
   using AnaDeps = std::tuple<>;
@@ -76,7 +73,6 @@ public:
   LruMaxAgeUpdateReport<TagType> *
   update(AbstractAddress addr, AccessType load_store, AnaDeps *,
          bool wantReport = false, const Classification assumption = CL_UNKNOWN);
-
   LruMaxAgeUpdateReport<TagType> *potentialUpdate(AbstractAddress addr,
                                                   AccessType load_store,
                                                   bool wantReport = false);
@@ -102,7 +98,7 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-/// assumeAnEmptyCache)
+///assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMaxAgeAbstractCache<T>::LruMaxAgeAbstractCache(
     bool assumeAnEmptyCache __attribute__((unused)))
@@ -169,7 +165,7 @@ LruMaxAgeAbstractCache<T>::potentialUpdate(AbstractAddress addr,
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-/// Classification assumption)
+///Classification assumption)
 template <CacheTraits *T>
 LruMaxAgeUpdateReport<typename CacheTraits::TagType> *
 LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,

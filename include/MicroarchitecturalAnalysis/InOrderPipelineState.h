@@ -32,7 +32,6 @@
 #include "MicroarchitecturalAnalysis/ConvergenceType.h"
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
-#include "Util/Options.h"
 #include "Util/Util.h"
 
 #include "ARM.h"
@@ -42,8 +41,6 @@
 #include <iostream>
 
 #include <boost/optional/optional.hpp>
-
-#include "Util/GlobalVars.h"
 
 #include <set>
 
@@ -443,12 +440,10 @@ InOrderPipelineState<MemoryTopology>::cycle(
       }
     }
   }
-  // std::cout << succ;
 
   DEBUG_WITH_TYPE(
       "driverSED", for (auto &succ
                         : res) { std::cerr << succ; });
-
   return res;
 }
 

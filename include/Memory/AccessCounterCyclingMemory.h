@@ -125,12 +125,9 @@ public:
    * Implement how to announce a new access to the memory.
    */
   virtual std::list<AbstractCyclingMemory *>
-  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords,
-                 bool isL2 = false) const;
+  announceAccess(AbstractAddress addr, AccessType t, unsigned numWords) const;
 
-  virtual void addaccessCounter();
-
-public:
+protected:
   /**
    * The internal access counter.
    */
@@ -216,24 +213,16 @@ std::list<AbstractCyclingMemory *>
 AccessCounterCyclingMemory<Memory, LowerBoundNeeded, UpperBoundNeeded,
                            AllowJoin>::announceAccess(AbstractAddress addr,
                                                       AccessType t,
-                                                      unsigned numWords,
-                                                      bool isL2) const {
+                                                      unsigned numWords) const {
   assert(!this->isBusy() && "Don't announce an access to a busy memory!");
 
   // increase the access counter
   auto copy = this->clone();
-  // ++copy->accessCounter;
+  ++copy->accessCounter;
 
-  auto res = copy->Base::announceAccess(addr, t, numWords, isL2);
+  auto res = copy->Base::announceAccess(addr, t, numWords);
   delete copy;
   return res;
-}
-
-template <class Memory, bool LowerBoundNeeded, bool UpperBoundNeeded,
-          bool AllowJoin>
-void AccessCounterCyclingMemory<Memory, LowerBoundNeeded, UpperBoundNeeded,
-                                AllowJoin>::addaccessCounter() {
-  ++this->accessCounter;
 }
 
 } // namespace TimingAnalysisPass

@@ -2,3 +2,6 @@
 *
 # Except this file
 !.gitignore
+# Except the patches directory and its contents
+!patches/
+!patches/**

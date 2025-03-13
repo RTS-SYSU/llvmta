@@ -61,7 +61,6 @@ class ConstrainedAges : public progana::JoinSemiLattice {
 
 protected:
   unsigned ASSOCIATIVITY = T->ASSOCIATIVITY;
-  // bool isl2;
 
   using TagType = typename CacheTraits::TagType;
 

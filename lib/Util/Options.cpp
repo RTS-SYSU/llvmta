@@ -44,20 +44,23 @@ cl::OptionCategory ArrayCat("5. Array-aware Cache Analysis");
 cl::OptionCategory
     CoRunnerSensitiveCat("6. Multi-Core Corunner-sensitive Analysis");
 cl::OptionCategory MultiCoreCat("7. TODO");
-//多核改动标记
+//jjy
 cl::opt<std::string>
     coreInfo("core-info", cl::init("CoreInfo.json"),
              cl::desc("Used to descripe which core runs which function"),
              cl::cat(MultiCoreCat));
+             
+cl::opt<bool> ParallelPrograms("parallel-programs", cl::init(false),
+                               cl::desc("Parallel Program Analysis"),
+                               cl::cat(MultiCoreCat));
 
 cl::opt<unsigned>
     CoreNums("core-numbers", cl::init(1),
              cl::desc("The number of core for the analysis (default '1')"),
              cl::cat(MultiCoreCat));
 
-cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis",
-                            cl::init(false), cl::desc("(default 'F')"),
-                            cl::cat(MultiCoreCat));
+cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis", cl::init(false),
+                            cl::desc("(default 'F')"), cl::cat(MultiCoreCat));
 
 cl::opt<unsigned> Core("core", cl::init(0),
                        cl::desc("The core for the analysis (default '0')"),
@@ -118,7 +121,7 @@ cl::opt<MemoryTopologyType> MemTopType(
 
 cl::opt<SharedBusType> SharedBus(
     "ta-shared-bus", cl::desc("Select which type of shared bus is assumed."),
-    cl::init(SharedBusType::ROUNDROBIN), //改动
+    cl::init(SharedBusType::ROUNDROBIN),
     cl::values(
         clEnumValN(
             SharedBusType::NONE, "none",
@@ -169,11 +172,11 @@ cl::bits<LocalWorstCaseType> StallOnLocalWorstType(
              "(Default None)"),
     cl::CommaSeparated,
     cl::values(
-        // 			clEnumValN(LocalWorstCaseType::ICMISS, "icmiss",
-        // "Instruction cache miss"),
-        // clEnumValN(LocalWorstCaseType::DCMISS, "dcmiss", "Data cache miss"),
-        // 			clEnumValN(LocalWorstCaseType::WRITEBACK,
-        // "writeback", "Writeback upon eviction of dirty line"),
+        //			clEnumValN(LocalWorstCaseType::ICMISS, "icmiss",
+        //"Instruction cache miss"),
+        //clEnumValN(LocalWorstCaseType::DCMISS, "dcmiss", "Data cache miss"),
+        //			clEnumValN(LocalWorstCaseType::WRITEBACK,
+        //"writeback", "Writeback upon eviction of dirty line"),
         clEnumValN(LocalWorstCaseType::DRAMREFRESH, "dramrefresh",
                    "DRAM refresh"),
         clEnumValN(LocalWorstCaseType::BUSBLOCKING, "busblocking",
@@ -181,7 +184,7 @@ cl::bits<LocalWorstCaseType> StallOnLocalWorstType(
     cl::cat(HardwareDescrCat));
 
 cl::opt<bool> CompAnaJointILP(
-    "ta-compana-joint-ilp", cl::init(false), //改动标记
+    "ta-compana-joint-ilp", cl::init(false),
     cl::desc("Enables the joint ILP mode for compositional analyses where "
              "applicable. Default is off (false)"),
     cl::cat(LLVMTACat));
@@ -218,18 +221,18 @@ cl::opt<PersistenceType> InstrCachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> Ilinesize(
-    "ta-icache-linesize", cl::init(64),
+    "ta-icache-linesize", cl::init(16),
     cl::desc(
         "The linesize of the instruction cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Iassoc(
-    "ta-icache-assoc", cl::init(3),
+    "ta-icache-assoc", cl::init(1),
     cl::desc("The associativity of the instruction cache. The default is 2"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Insets(
-    "ta-icache-nsets", cl::init(256), // 256
+    "ta-icache-nsets", cl::init(16), 
     cl::desc(
         "The number of cache sets of the instruction cache. The default is 32"),
     cl::cat(CacheConfigCat));
@@ -265,17 +268,17 @@ cl::opt<PersistenceType> L2CachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> L2linesize(
-    "ta-l2cache-linesize", cl::init(64),
+    "ta-l2cache-linesize", cl::init(16),
     cl::desc("The linesize of the data cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    L2assoc("ta-l2cache-assoc", cl::init(16),
-            cl::desc("The associativity of the L2 cache. The default is 2"),
+    L2assoc("ta-l2cache-assoc", cl::init(4),
+            cl::desc("The associativity of the L2 cache. The default is 4"),
             cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    NN_SET("ta-l2cache-nsets", cl::init(1024), // 1024
+    NN_SET("ta-l2cache-nsets", cl::init(64), 
            cl::desc("The number of cache sets of L2 cache. The default is 128"),
            cl::cat(MultiCoreCat));
 
@@ -310,20 +313,20 @@ cl::opt<PersistenceType> DataCachePersType(
     cl::cat(LLVMTACat));
 
 cl::opt<unsigned> Dlinesize(
-    "ta-dcache-linesize", cl::init(64),
+    "ta-dcache-linesize", cl::init(16),
     cl::desc("The linesize of the data cache in bytes. The default is 16"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    Dassoc("ta-dcache-assoc", cl::init(2),
+    Dassoc("ta-dcache-assoc", cl::init(1),
            cl::desc("The associativity of the data cache. The default is 2"),
            cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Dnsets(
-    "ta-dcache-nsets", cl::init(256), // 256
+    "ta-dcache-nsets", cl::init(16), 
     cl::desc("The number of cache sets of the data cache. The default is 32"),
     cl::cat(CacheConfigCat));
-
+//写回
 cl::opt<bool>
     DataCacheWriteBack("ta-dcache-write-back", cl::init(true),
                        cl::desc("Enables write-back mode of the cache. The "
@@ -358,20 +361,8 @@ cl::opt<BgMemType> BackgroundMemoryType(
 cl::opt<unsigned>
     Latency("ta-mem-latency", cl::init(131),
             cl::desc("The latency of the background memory. (default '9', i.e. "
-                     "transferring a single word takes 14 cycles)"),
+                     "transferring a single word takes 10 cycles)"),
             cl::cat(HardwareDescrCat));
-
-cl::opt<unsigned>
-    ILatency("ta-Icache-latency", cl::init(4),
-             cl::desc("The latency of the L1 I cache. (default '4', i.e. "
-                      "transferring a single word takes 5 cycles)"),
-             cl::cat(HardwareDescrCat));
-
-cl::opt<unsigned>
-    DLatency("ta-Dcache-latency", cl::init(4),
-             cl::desc("The latency of the L1 D cache. (default '4', i.e. "
-                      "transferring a single word takes 5 cycles)"),
-             cl::cat(HardwareDescrCat));
 
 cl::opt<unsigned>
     L2Latency("ta-L2-latency", cl::init(6),
@@ -604,16 +595,9 @@ cl::opt<unsigned>
 
 // User-provided annotations
 
-// Modified By Zeng-WCh
-cl::opt<bool> UseMetaDataAsAnnotation(
-    "ta-use-metadata-as-loop-annotation", cl::init(false),
-    cl::desc("Use metadata as loop annotation"), cl::cat(LLVMTACat));
-// End Modification
-
 cl::list<std::string> ManualLoopBounds(
     "ta-loop-bounds-file", cl::ZeroOrMore,
-    cl::desc("Takes the file with the given name and uses the loop "
-             "bounds in "
+    cl::desc("Takes the file with the given name and uses the loop bounds in "
              "it for the analysis (default: no file given)"),
     cl::cat(LLVMTACat));
 
@@ -816,7 +800,7 @@ cl::opt<ArrivalCurveIlpObjectiveType> ArrivalCurveIlpObjective(
     cl::desc("Use one of two orthogonal objectives. Or use a combined version "
              "that is at least as precise as each variant, but potentially "
              "more precise than each one. (default 'variant1')"),
-    cl::init(ArrivalCurveIlpObjectiveType::VARIANT1), //改动标记
+    cl::init(ArrivalCurveIlpObjectiveType::VARIANT1),
     cl::values(
         clEnumValN(ArrivalCurveIlpObjectiveType::VARIANT1, "variant1",
                    "Sum up upper bound on event occurrences for each edge."),
@@ -917,7 +901,7 @@ cl::opt<WBBoundType> WBBound(
 cl::opt<bool>
     AnalyseDirtiness("ta-dirtiness-analysis",
                      cl::desc("Toggles the dirtiness analysis (default: on)"),
-                     cl::init(false), cl::cat(WritebackCat));
+                     cl::init(true), cl::cat(WritebackCat));
 
 cl::opt<bool> StaticallyRefuteWritebacks(
     "ta-statically-refute-writebacks",

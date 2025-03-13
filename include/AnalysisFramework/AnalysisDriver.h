@@ -40,16 +40,13 @@
 #include "AnalysisFramework/CollectingContextsDomain.h"
 #include "AnalysisFramework/PartitioningDomain.h"
 #include "LLVMPasses/MachineFunctionCollector.h"
-#include "LLVMPasses/StaticAddressProvider.h"
-#include "LLVMPasses/TimingAnalysisMain.h"
 #include "PartitionUtil/DirectiveHeuristics.h"
 
-#include "PathAnalysis/LoopBoundInfo.h"
-#include "Util/GlobalVars.h"
-#include "Util/Options.h"
 #include "Util/Statistics.h"
+
 #include <boost/static_assert.hpp>
 #include <boost/type_traits.hpp>
+#include "Util/GlobalVars.h"
 
 #include <iostream>
 #include <list>
@@ -97,7 +94,8 @@ public:
    * Constructor, takes the entry point for this analysis, and valid analysis
    * information for the analyses AnaDeps as AnalysisDom depends on them.
    */
-  AnalysisDriver(AnaDeps anaDeps) : analysisResults(anaDeps) {}
+  AnalysisDriver(std::string entrypoint, AnaDeps anaDeps)
+      : entrypoint(entrypoint), analysisResults(anaDeps) {}
 
   /**
    * Perform the analysis of type AnalysisDom on function given by entrypoint on
@@ -113,7 +111,7 @@ protected:
    * The entrypoint for which an analysis is about to be done
    * (interprocedurally).
    */
-  // std::string entrypoint;
+  std::string entrypoint;
   /**
    * References to the analyses information that are required by AnalysisDom.
    */
@@ -141,8 +139,8 @@ public:
   /**
    * Constructor, calls the superclass constructor
    */
-  AnalysisDriverInstr(AnaDeps anaDeps)
-      : AnalysisDriver<AnalysisDom, MachineInstr>(anaDeps),
+  AnalysisDriverInstr(std::string entrypoint, AnaDeps anaDeps)
+      : AnalysisDriver<AnalysisDom, MachineInstr>(entrypoint, anaDeps),
         mbb2anainfo(new BB2AnaInfoType()), func2anainfo(new Func2AnaInfoType()),
         worklist() {}
 
@@ -226,8 +224,6 @@ private:
    */
   std::map<const MachineBasicBlock *, std::set<Context, ctxcomp>, mbbComp>
       worklist;
-  //改动标记 记录已经分析过执行次数的块
-  std::set<const MachineBasicBlock *> mylist;
 };
 
 template <class AnalysisDom>
@@ -282,7 +278,7 @@ template <class AnalysisDom>
 void AnalysisDriverInstr<AnalysisDom>::initialize() {
   // Put analysis entry-point into worklist
   assert(worklist.empty());
-  auto MF = machineFunctionCollector->getFunctionByName(AnalysisEntryPoint);
+  auto MF = machineFunctionCollector->getFunctionByName(this->entrypoint);
   const MachineBasicBlock *analysisStart = &*(MF->begin());
   Context initialCtx;
   // Directive handling on function called
@@ -304,7 +300,7 @@ void AnalysisDriverInstr<AnalysisDom>::initialize() {
                          PartitionedAnalysisDom(AnaDomInit::BOTTOM));
     // If this is the (reachable) analysis entry point, use START analysis
     // information instead
-    if (currFunc->getName() == AnalysisEntryPoint) {
+    if (currFunc->getName() == this->entrypoint) {
       tmp.in = PartitionedAnalysisDom(AnaDomInit::START);
     }
     func2anainfo->insert(make_pair(currFunc, tmp));
@@ -328,47 +324,6 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
     }
     analyseInstruction(&currentInstr, targetCtx, newOut);
     handleBranchInstruction(&currentInstr, targetCtx, newOut);
-    //jjy：争用分析地址收集
-    if (CoreNums>0 && BOUND && mylist.count(MBB) == 0) {
-      //jjy:这里似乎有问题所以先不管data的访存
-      if (currentInstr.mayLoad() || currentInstr.mayStore()) {
-        AbstractAddress addrItv =
-            glAddrInfo->getDataAccessAddress(&currentInstr, &targetCtx, 0);
-        //未知的地址不管
-        if (!addrItv.isSameInterval(
-                TimingAnalysisPass::AbstractAddress::getUnknownAddress())) {
-          //数组的地址会转换为地址范围
-          unsigned lowAligned =
-              addrItv.getAsInterval().lower() & ~(Dlinesize - 1);
-          unsigned upAligned =
-              addrItv.getAsInterval().upper() & ~(Dlinesize - 1);
-          while (lowAligned <= upAligned) {
-            addrIlist.emplace_back(lowAligned);
-            lowAligned += Dlinesize;
-          }
-        }
-      }
-      //指令地址
-      unsigned iadd = StaticAddrProvider->getAddr(&currentInstr);
-      addrIlist.emplace_back(iadd & ~(Ilinesize - 1));
-    }
-  }
-
-  if ( BOUND && mylist.count(MBB) == 0) {
-    if (SPersistenceA &&L2CachePersType == PersistenceType::ELEWISE)
-    {
-      //jjy：持久性内存块争用分析
-      int time = getbound(MBB, ctx);
-      // int time = 1;
-      mcif.addaddress(AnalysisEntryPoint, addrIlist, time);
-    }
-    else{
-      //jjy：普通争用分析
-      for(auto&al:addrIlist){
-        mcif.addaddress(AnalysisEntryPoint,al);
-      }
-    }
-    mylist.insert(MBB);
   }
 
   // Handle fallthrough cases to layout successor
@@ -388,8 +343,8 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
         targetCtx.update(direc);
       }
     }
-    // analysis info needs an "edge transfer" to adjust analysis information
-    // for loops
+    // analysis info needs an "edge transfer" to adjust analysis information for
+    // loops
     targetCtx.transfer(edge);
     // Directives when edge is left
     if (DirectiveHeuristicsPassInstance->hasDirectiveOnEdgeLeave(edge)) {
@@ -402,7 +357,7 @@ void AnalysisDriverInstr<AnalysisDom>::analyseMachineBasicBlock(
     newOut.enterBasicBlock(targetMBB);
     // Join incoming information, and check whether the join changed something
     auto &targetMBBAnaInfo = mbb2anainfo->at(targetMBB);
-    bool changed = targetMBBAnaInfo.addContext(targetCtx, newOut); // ？????
+    bool changed = targetMBBAnaInfo.addContext(targetCtx, newOut);
     // Add potential affected contexts to worklist
     if (changed) {
       worklist[targetMBB].insert(targetCtx);
@@ -573,7 +528,6 @@ void AnalysisDriverInstr<AnalysisDom>::handleBranchInstruction(
       branchTakenInfo.enterBasicBlock(targetMBB);
       // Join incoming information, and check whether the join changed something
       auto &targetMBBAnaInfo = mbb2anainfo->find(targetMBB)->second;
-
       bool changed = targetMBBAnaInfo.addContext(targetCtx, branchTakenInfo);
       // Add potential affected contexts to worklist
       if (changed) {
@@ -655,6 +609,7 @@ bool AnalysisDriverInstr<AnalysisDom>::analyseInstruction(
                   dbgs() << "Before:" << getMachineInstrIdentifier(currentInstr)
                          << "\n"
                          << newOut.print() << "\n");
+
   bool changed = false;
   // Directives before the instruction
   if (DirectiveHeuristicsPassInstance->hasDirectiveBeforeInstr(currentInstr)) {
@@ -923,20 +878,24 @@ class AnalysisDriverInstrContextMapping
 public:
   // Making AnaDeps visible again
   using typename AnalysisDriver<AnalysisDom, MachineInstr>::AnaDeps;
+
   /**
    * Constructor, calls the superclass constructor
    */
   template <class TailAnaDeps>
-  AnalysisDriverInstrContextMapping(TailAnaDeps tAnaDeps)
-      : AnalysisDriverInstr<AnalysisDom>(std::tuple_cat(
-            std::tuple<InstrContextMapping &>(*(new InstrContextMapping())),
-            tAnaDeps))
+  AnalysisDriverInstrContextMapping(std::string entrypoint,
+                                    TailAnaDeps tAnaDeps)
+      : AnalysisDriverInstr<AnalysisDom>(
+            entrypoint, std::tuple_cat(std::tuple<InstrContextMapping &>(
+                                           *(new InstrContextMapping())),
+                                       tAnaDeps))
   // Allocate the InstrContext-map on the heap as it is needed even after the
   // lifetime of the analysis-driver It is freed within the state graph
   // construction, once the microarchitectural information is no longer needed
   {
-    std::tuple<> noDep; //&给analysisResults
-    AnalysisDriverInstr<CollectingContextsDomain> collectCtxsAna(noDep);
+    std::tuple<> noDep;
+    AnalysisDriverInstr<CollectingContextsDomain> collectCtxsAna(
+        AnalysisEntryPoint, noDep);
     auto *ccAnaInfo = collectCtxsAna.runAnalysis();
     // ccAnaInfo->dump(std::cout);
     //  Get handle for the instr-context-mapping stored inside the analysis

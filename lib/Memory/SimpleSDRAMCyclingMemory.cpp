@@ -149,7 +149,7 @@ void SimpleSDRAMCyclingMemory::print(std::ostream &stream) const {
 
 std::list<AbstractCyclingMemory *>
 SimpleSDRAMCyclingMemory::announceAccess(AbstractAddress addr, AccessType t,
-                                         unsigned numWords, bool) const {
+                                         unsigned numWords) const {
   assert(!isBusy() && "Cannot announce access if busy");
   assert(!hasSeenRefresh && "Internal: Forgot to reset flag");
   assert(numWords <= SDRAMConfig.maxBurstLength);
@@ -158,7 +158,7 @@ SimpleSDRAMCyclingMemory::announceAccess(AbstractAddress addr, AccessType t,
   // Case: No refresh as we split later (delayed)
   SimpleSDRAMCyclingMemory *noref = this->clone();
   noref->accessPhase = DRAMPhase::ACCESS;
-  noref->timeBlocked = Latency + ceil(PerWordLatency * numWords / 4.0);
+  noref->timeBlocked = Latency + PerWordLatency * numWords;
   res.push_back(noref);
   // Return
   return res;

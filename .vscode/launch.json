@@ -5,89 +5,34 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "(gdb) Launch Native",
+            "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceRoot}/build/bin/llvmta",
+            "program": "/workspaces/llvmta/build/bin/llvmta",
             "args": [
                 "-disable-tail-calls",
                 "-float-abi=hard",
                 "-mattr=-neon,+vfp2",
                 "-O0",
-                "--ta-muarch-type=outoforder",
-                "--ta-memory-type=separatecaches",
+                "--ta-muarch-type=inorder",
                 "--ta-strict=false",
-                "--ta-loop-bounds-file='${workspaceRoot}/testcases/test/LoopAnnotations.csv'",
-                "--ta-loop-lowerbounds-file='${workspaceRoot}/testcases/test/LLoopAnnotations.csv'",
-                "--ta-num-callsite-tokens=1",
-                "--core-info=${workspaceRoot}/testcases/test/CoreInfo.json",
-                "--core-numbers=2",
+                "--ta-memory-type=separatecaches",
+                "--ta-loop-bounds-file='/workspaces/llvmta/testcases/test/LoopAnnotations.csv'",
+                "--ta-loop-lowerbounds-file='/workspaces/llvmta/testcases/test/LLoopAnnotations.csv'",
+                "--core-info='/workspaces/llvmta/testcases/test/CoreInfo.json'",
+                "--core-numbers=1",
+                "--ta-analysis-entry-point=fdct_start",
                 "--shared-cache-Persistence-Analysis=false",
-                "--ta-l2cache-persistence=elementwise",
+                "--ta-l2cache-persistence=none",
+                "--ta-dcache-persistence=elementwise",
+                "--ta-icache-persistence=elementwise",
+                "--ta-mem-latency=100",
+                "--ta-L2-latency=5",
                 "-debug-only=",
                 "optimized.ll"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceRoot}/testcases/dirforgdb",
-            "environment": [
-                {
-                    "name": "GUROBI_HOME",
-                    "value": "${workspaceRoot}/thirdParty/gurobi952/linux64"
-                },
-                {
-                    "name": "PATH",
-                    "value": "${env:PATH}:${workspaceRoot}/thirdParty/gurobi952/linux64/bin"
-                },
-                {
-                    "name": "GRB_LICENSE_FILE",
-                    "value": "${workspaceRoot}/thirdParty/gurobi952/gurobi.lic"
-                },
-                {
-                    "name": "LD_LIBRARY_PATH",
-                    "value": "${env:LD_LIBRARY_PATH}:${workspaceRoot}/thirdParty/gurobi952/linux64/lib"
-                }
-            ],
-            "externalConsole": false,
-            "MIMode": "gdb",
-            "setupCommands": [
-                {
-                    "description": "Enable pretty-printing for gdb",
-                    "text": "-enable-pretty-printing",
-                    "ignoreFailures": true
-                },
-                {
-                    "description": "Set Disassembly Flavor to Intel",
-                    "text": "-gdb-set disassembly-flavor intel",
-                    "ignoreFailures": true
-                }
-            ],
-            "preLaunchTask": "run gdb"
-        },
-        {
-            "name": "(gdb) Launch Docker",
-            "type": "cppdbg",
-            "request": "launch",
-            "program": "${workspaceRoot}/build/bin/llvmta",
-            "args": [
-                "-disable-tail-calls",
-                "-float-abi=hard",
-                "-mattr=-neon,+vfp2",
-                "-O0",
-                "--ta-muarch-type=outoforder",
-                "--ta-memory-type=separatecaches",
-                "--ta-strict=false",
-                "--ta-loop-bounds-file='${workspaceRoot}/testcases/test/LoopAnnotations.csv'",
-                "--ta-loop-lowerbounds-file='${workspaceRoot}/testcases/test/LLoopAnnotations.csv'",
-                "--ta-num-callsite-tokens=1",
-                "--core-info=${workspaceRoot}/testcases/test/CoreInfo.json",
-                "--core-numbers=2",
-                "--shared-cache-Persistence-Analysis=false",
-                "--ta-l2cache-persistence=elementwise",
-                "-debug-only=",
-                "optimized.ll"
-            ],
-            "stopAtEntry": false,
-            "cwd": "${workspaceRoot}/testcases/dirforgdb",
+            "cwd": "/workspaces/llvmta/testcases/dirforgdb",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",

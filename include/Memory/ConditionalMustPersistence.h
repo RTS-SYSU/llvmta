@@ -63,7 +63,6 @@ protected:
   typedef typename CacheTraits::PosType PosType;
 
   std::map<TagType, unsigned> conflicts;
-  // bool isl2;
 
 public:
   using AnaDeps = std::tuple<>;
@@ -86,7 +85,7 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-/// assumeAnEmptyCache)
+///assumeAnEmptyCache)
 template <CacheTraits *T>
 inline ConditionalMustPersistence<T>::ConditionalMustPersistence(
     bool assumeAnEmptyCache __attribute__((unused)))
@@ -107,22 +106,20 @@ template <CacheTraits *T>
 UpdateReport *ConditionalMustPersistence<T>::potentialUpdate(
     AbstractAddress addr, AccessType load_store, bool wantReport) {
   for (auto &block : conflicts) {
-    if (block.second > 0 &&
-        block.second <= T->ASSOCIATIVITY)
+    if (block.second > 0 && block.second <= T->ASSOCIATIVITY)
       block.second++;
   }
   return nullptr;
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-/// Classification assumption)
+///Classification assumption)
 template <CacheTraits *T>
 UpdateReport *ConditionalMustPersistence<T>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *,
     bool wantReport, const Classification assumption __attribute__((unused))) {
 
   TagType tag = getTag<T>(addr);
-  unsigned ASSO = T->ASSOCIATIVITY;
   if (!conflicts.count(tag)) {
     conflicts[tag] = 1;
     return nullptr;
@@ -131,7 +128,7 @@ UpdateReport *ConditionalMustPersistence<T>::update(
   for (auto &block : conflicts) {
     if (block.first == tag)
       block.second = 1;
-    else if (block.second > 0 && block.second <= ASSO)
+    else if (block.second > 0 && block.second <= T->ASSOCIATIVITY)
       block.second++;
   }
   return nullptr;

@@ -45,12 +45,10 @@
 #include "LLVMPasses/DispatchMemory.h"
 #include "Memory/AbstractCyclingMemory.h"
 
-#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 #include "Util/Statistics.h"
 #include "Util/TplTools.h"
 #include "Util/Util.h"
-#include "Util/UtilPathAnalysis.h"
 
 #include "llvm/Support/Format.h"
 
@@ -132,19 +130,13 @@ boost::optional<BoundItv> doCoRunnerSensitivePathAnalysis(
     MuStateGraph<MuState> *pSg, MuStateGraph<MuState> *pArrivalCurveSg,
     StateGraphNumericWeightProvider<MuState> &sgtp,
     StateGraphCacheMissProvider<MuState, CacheType::DATA> *sgdcpers,
-    StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *sgicpers,
-    StateGraphCacheMissProvider<MuState, CacheType::UNIFIED> *sgl2cpers);
+    StateGraphCacheMissProvider<MuState, CacheType::INSTRUCTION> *sgicpers);
 
 boost::optional<BoundItv>
 doPathAnalysis(const std::string identifier, const ExtremumType extremumType,
                const VarCoeffVector &objective,
                const std::list<GraphConstraint> &constraints,
                LPAssignment *extpath = nullptr, const double timeLimit = 0.0);
-boost::optional<BoundItv>
-doPathAnalysis2(const std::string identifier, const ExtremumType extremumType,
-                std::vector<VarCoeffVector> &objectivelist,
-                const std::list<GraphConstraint> &constraints,
-                LPAssignment *extpath = nullptr, const double timeLimit = 0.0);
 
 void calculateSoundSlope(double lower, double upper,
                          const std::list<GraphConstraint> &constraints,
@@ -315,7 +307,7 @@ void dispatchCompositionalBaseBound(TimingPathAnalysis<MuState> &tpa) {
   VarCoeffVector timeObjective = tpa.sgtp->getEdgeWeightTimesTakenVector();
 
   Statistics &stats = Statistics::getInstance();
-  // stats.startMeasurement("Comp Base Bound Path Analysis");
+  stats.startMeasurement("Comp Base Bound Path Analysis");
 
   // Calculate a compositional base bound (this is a normal ILP run, because we
   // build the state graph that way)
@@ -538,15 +530,15 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   }
   // END LEGACY CODE
 
-  // AnalysisResults::getInstance().registerResult("staticallyRefutedWritebacks",
-  //                                               0);
-  // AnalysisResults::getInstance().registerResult("staticMisses", 0);
+  AnalysisResults::getInstance().registerResult("staticallyRefutedWritebacks",
+                                                0);
+  AnalysisResults::getInstance().registerResult("staticMisses", 0);
 
   // Build state graph
   sg->buildGraph();
 
-  // AnalysisResults::getInstance().finalize("staticallyRefutedWritebacks");
-  // AnalysisResults::getInstance().finalize("staticMisses");
+  AnalysisResults::getInstance().finalize("staticallyRefutedWritebacks");
+  AnalysisResults::getInstance().finalize("staticMisses");
 
   // Dump state graph without longest-path coloring to aid debugging of
   // path analysis problems
@@ -554,13 +546,9 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
     VERBOSE_PRINT(" -> Finished Microarchitectural State Graph Construction\n");
     std::ofstream myfile;
     if (!DumpVcgGraph) {
-      myfile.open(std::to_string(Core) + "_" + AnalysisEntryPoint +
-                      "_StateGraph_Time.dot",
-                  std::ios_base::trunc);
+      myfile.open("StateGraph_Time.dot", std::ios_base::trunc);
     } else {
-      myfile.open(std::to_string(Core) + "_" + AnalysisEntryPoint +
-                      "_StateGraph_Time.vcg",
-                  std::ios_base::trunc);
+      myfile.open("StateGraph_Time.vcg", std::ios_base::trunc);
     }
     sg->dump(myfile, nullptr);
     myfile.close();
@@ -573,12 +561,9 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   sg->deleteMuArchInfo();
 
   // Trigger the next measurement phase
-  // Statistics &stats = Statistics::getInstance();
-  // stats.stopMeasurement("core_" + std::to_string(Core) + "_" +
-  //                       AnalysisEntryPoint + "_Timing Stategraph
-  //                       Generation");
-  // stats.startMeasurement("core_" + std::to_string(Core) + "_" +
-  //                        AnalysisEntryPoint + "_Timing Path Analysis");
+  Statistics &stats = Statistics::getInstance();
+  stats.stopMeasurement("Timing Stategraph Generation");
+  stats.startMeasurement("Timing Path Analysis");
 
   // Dump Interference response curves
   if (DumpInterferenceResponseCurve.getBits()) {
@@ -603,63 +588,29 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   // Create constraints
   std::list<GraphConstraint> constraints;
   // Get Basic constraints such as flow, loop bound, and persistence constraints
-
-  // tpa.getBasicConstraints(constraints);
-  if(isBCET){
-    tpa.getLowerConstraints(constraints);
-  }else{
-    tpa.getUpperConstraints(constraints);
-  }
+  tpa.getUpperConstraints(constraints);
   // Add potential interference constraints for dram refreshes, crpd-cost, ...
   tpa.addAvailableInterferenceConstraints(constraints);
 
-  //  Optimize for maximum time
+  // Optimize for maximum time
   VarCoeffVector timeObjective = tpa.sgtp->getEdgeWeightTimesTakenVector();
 
-  std::vector<VarCoeffVector> VLIST;
-  VLIST.emplace_back(timeObjective);
-
-  // jjy：输出MISS信息
-  VarCoeffVector objInstMisses = tpa.l1sgnicmp->getEdgeWeightTimesTakenVector();
-  VarCoeffVector objDataMisses = tpa.l1sgndcmp->getEdgeWeightTimesTakenVector();
-  VarCoeffVector objL2Misses = tpa.l2sgncmp->getEdgeWeightTimesTakenVector();
-
-  VLIST.emplace_back(objInstMisses);
-  VLIST.emplace_back(objDataMisses);
-  VLIST.emplace_back(objL2Misses);
-
-
   // Extremal path
-  LPAssignment Path;
-  // LPAssignment shortestPath;
+  LPAssignment longestPath;
   // Perform the longest path search (under given interference budgets)
-  boost::optional<BoundItv> res;
-  if (isBCET) {
-    res = doPathAnalysis2("Time", ExtremumType::Minimum, VLIST, constraints,
-                          &Path);
-  } else {
-    // WCET
-    res = doPathAnalysis2("Time", ExtremumType::Maximum, VLIST, constraints,
-                          &Path);
-  }
+  auto res = doPathAnalysis("Time", ExtremumType::Maximum, timeObjective,
+                            constraints, &longestPath);
+
   /* dump the state graph with coloring information, overwriting the
    * previous dump */
   if (!QuietMode) {
     std::ofstream myfile;
-    std::string fn;
-    if (isBCET) {
-      fn = std::to_string(Core) + "_" + AnalysisEntryPoint +
-           "_StateGraph_shortest_Time";
-    } else {
-      fn = std::to_string(Core) + "_" + AnalysisEntryPoint +
-           "_StateGraph_longest_Time";
-    }
     if (!DumpVcgGraph) {
-      myfile.open(fn + ".dot", std::ios_base::trunc);
+      myfile.open("StateGraph_Time.dot", std::ios_base::trunc);
     } else {
-      myfile.open(fn + ".vcg", std::ios_base::trunc);
+      myfile.open("StateGraph_Time.vcg", std::ios_base::trunc);
     }
-    sg->dump(myfile, &Path);
+    sg->dump(myfile, &longestPath);
     myfile.close();
   }
 
@@ -667,7 +618,7 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   ar.registerResult("time", res);
 
   // If required, calculate additional metrics on a worst-case timing path
-  if (MetricsOnWCEP.getBits() && Path.size() > 0) {
+  if (MetricsOnWCEP.getBits() && longestPath.size() > 0) {
     assert(res.get().lb == res.get().ub &&
            "Cannot compute metrics on WCEP if bound is imprecise");
     dispatchMetricsOnWCEP(tpa, res.get().ub);
@@ -682,7 +633,7 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   if (res && DataCacheWriteBack) {
     // Compute write-back cleanup cost (i.e. the cost of writing all left-over
     // dirty blocks)
-    double cleanupCost = computeWBCleanupCost(Path);
+    double cleanupCost = computeWBCleanupCost(longestPath);
     if (cleanupCost >= 0) {
       ar.registerResult("WritebackCleanupCost", cleanupCost);
     }
@@ -720,9 +671,6 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
       }
     }
   }
-  // pair of 2 u
-  // mcif.updateTaskTime(Core, AnalysisEntryPoint, BCETres.get().lb,
-  //                     WCETres.get().ub);
 
   return res;
 }

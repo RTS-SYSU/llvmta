@@ -181,6 +181,8 @@ bool StaticAddressProvider::runOnMachineBasicBlock(MachineBasicBlock &MBB) {
         case RISCV::IMPLICIT_DEF:
         case RISCV::KILL:
         case RISCV::CFI_INSTRUCTION:
+        //jjy:改动标记
+        case RISCV::DBG_VALUE:
           assert(I.isTransient() && "Non-effect pseudo might have effect?");
           break;
         // TODO review, why are all instructions classified as pseudo?

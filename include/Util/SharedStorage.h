@@ -76,9 +76,9 @@ public:
     std::pair<typename Storage::iterator, bool> pair = storage->insert(ptr);
 
     // If object was already contained delete the newly constructed one
-    if (!pair.second){
-      delete ptr;      
-    }
+    if (!pair.second)
+      delete ptr;
+
     return *pair.first;
   }
 };

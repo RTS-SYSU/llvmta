@@ -29,7 +29,6 @@
 #include "AnalysisFramework/CallGraph.h"
 #include "LLVMPasses/MachineFunctionCollector.h"
 #include "LLVMPasses/TimingAnalysisMain.h"
-#include "Util/GlobalVars.h"
 #include "Util/Options.h"
 #include "Util/Util.h"
 
@@ -41,17 +40,12 @@
 #include "llvm/CodeGen/MachineInstr.h"
 
 #include "llvm/CodeGen/MachineLoopInfo.h"
-#include "llvm/IR/Metadata.h"
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_os_ostream.h"
 
 #include <boost/tokenizer.hpp>
 #include <cassert>
-#include <cstddef>
 #include <fstream>
-#include <memory>
-#include <sstream>
-#include <utility>
 #include <vector>
 
 using namespace llvm;
@@ -62,11 +56,7 @@ LoopBoundInfoPass *LoopBoundInfo;
 
 char LoopBoundInfoPass::ID = 0;
 
-LoopBoundInfoPass::LoopBoundInfoPass() : MachineFunctionPass(ID) {
-  // UpperLoopBoundsSCEV =
-  //     new std::unordered_map<const llvm::MachineLoop *, const llvm::SCEV
-  //     *>();
-}
+LoopBoundInfoPass::LoopBoundInfoPass() : MachineFunctionPass(ID) {}
 
 void LoopBoundInfoPass::getAnalysisUsage(AnalysisUsage &AU) const {
   MachineFunctionPass::getAnalysisUsage(AU);
@@ -149,26 +139,26 @@ bool LoopBoundInfoPass::isMachineLoopPartialMatch(const MachineLoop *Maloop,
   return FoundAllmaloopBb;
 }
 SCEV *LoopBoundInfoPass::copySCEV(const SCEV *N) {
-  SCEV *C = nullptr;
+  SCEV *C = NULL;
   switch (N->getSCEVType()) {
-  case scConstant:
+  case scConstant: {
     // SCEVConstant d = std::move(dyn_cast<SCEVConstant>(N));
     // std::unique_ptr<SCEV> ptr(&d);
-    C = new SCEVConstant(*cast<SCEVConstant>(N));
-    break;
+    C = new SCEVConstant(*dyn_cast<SCEVConstant>(N));
+  } break;
   case scAddExpr:
   case scMulExpr:
   case scUMaxExpr:
-  case scSMaxExpr:
-    C = new SCEVNAryExpr(*cast<SCEVNAryExpr>(N));
-    break;
-  case scUDivExpr:
-    C = new SCEVUDivExpr(*cast<SCEVUDivExpr>(N));
-    break;
-  case scUnknown:
-    C = new SCEVUnknown(*cast<SCEVUnknown>(N));
-    cast<SCEVUnknown>(C)->is_copied = true;
-    break;
+  case scSMaxExpr: {
+    C = new SCEVNAryExpr(*dyn_cast<SCEVNAryExpr>(N));
+  } break;
+  case scUDivExpr: {
+    C = new SCEVUDivExpr(*dyn_cast<SCEVUDivExpr>(N));
+  } break;
+  case scUnknown: {
+    C = new SCEVUnknown(*dyn_cast<SCEVUnknown>(N));
+    dyn_cast<SCEVUnknown>(C)->IsCopied = true;
+  } break;
   // Cases that we don't handle
   case scTruncate:
   case scZeroExtend:
@@ -187,19 +177,12 @@ void LoopBoundInfoPass::addSCEVMapping(const MachineLoop *ML,
   DEBUG_WITH_TYPE("loopbound", dbgs()
                                    << "Adding map for loop: " << *ML << "\n");
   if (SEInfo.hasLoopInvariantBackedgeTakenCount(Loop)) {
-    // auto noop_deleter = [](const SCEV *) {};
-    // std::shared_ptr<const SCEV>
-    // TakenCount(SEInfo.getBackedgeTakenCount(Loop),
-    //                                        noop_deleter);
     const SCEV *T = SEInfo.getBackedgeTakenCount(Loop);
     const SCEV *TakenCount = copySCEV(T);
-
-    // jjy:这里的打印会报错，因为SCEV有些信息并没有被保留下来
-    //  DEBUG_WITH_TYPE("loopbound", dbgs()
-    //                                   << "Loop SCEV: " << *TakenCount <<
-    //                                   "\n");
-    //  DEBUG_WITH_TYPE("loopbound", dbgs() << "Loop SCEV: " << TakenCount <<
-    //  "\n");
+    // const SCEV *TakenCount = SEInfo.getBackedgeTakenCount(Loop);
+    DEBUG_WITH_TYPE("loopbound", dbgs()
+                                     << "Loop SCEV: " << *TakenCount << "\n");
+    DEBUG_WITH_TYPE("loopbound", dbgs() << "Loop SCEV: " << TakenCount << "\n");
     UpperLoopBoundsSCEV.insert(std::make_pair(ML, TakenCount));
     LowerLoopBoundsSCEV.insert(std::make_pair(ML, TakenCount));
   } else {
@@ -383,7 +366,7 @@ bool LoopBoundInfoPass::getSCEVBoundFromCVDomain(
     volatile int64_t BitWidth =
         dyn_cast<SCEVConstant>(Equation)->getValue()->getBitWidth();
     if (BitWidth > 64) {
-      DEBUG_WITH_TYPE("loopbound", dbgs() << "Skipping too largeconstant\n");
+      DEBUG_WITH_TYPE("loopbound", dbgs() << "Skipping too large constant\n");
       AnalysisResults::getInstance().incrementResult("SCEV_constant");
       Ret = false;
       break;
@@ -583,15 +566,14 @@ void LoopBoundInfoPass::computeLoopBoundFromCVDomain(
       "loopbound",
       dbgs() << "+++ Computing Loop Bounds from CV Domain Now +++\n");
   AnalysisResults &Ar = AnalysisResults::getInstance();
-  // 改动标记
-  // Ar.registerResult("SCEV_constant", 0);
-  // Ar.registerResult("SCEV_argument_high", 0);
-  // Ar.registerResult("SCEV_arg_cv", 0);
-  // Ar.registerResult("SCEV_overflow", 0);
-  // Ar.registerResult("SCEV_unknown", 0);
-  // Ar.registerResult("SCEV_NotImplemented", 0);
-  computeLoopBounds(LowerLoopBoundsSCEV, LowerLoopBoundsCtx, CvAnaInfo);
+  Ar.registerResult("SCEV_constant", 0);
+  Ar.registerResult("SCEV_argument_high", 0);
+  Ar.registerResult("SCEV_arg_cv", 0);
+  Ar.registerResult("SCEV_overflow", 0);
+  Ar.registerResult("SCEV_unknown", 0);
+  Ar.registerResult("SCEV_NotImplemented", 0);
   computeLoopBounds(UpperLoopBoundsSCEV, UpperLoopBoundsCtx, CvAnaInfo);
+  computeLoopBounds(LowerLoopBoundsSCEV, LowerLoopBoundsCtx, CvAnaInfo);
 }
 
 template <llvm::Triple::ArchType ISA>
@@ -604,9 +586,8 @@ void LoopBoundInfoPass::computeLoopBounds(
   for (auto Loop : LoopMapping) {
     DEBUG_WITH_TYPE("loopbound", dbgs() << "Trying to compute bounds for: "
                                         << *Loop.first << "\n");
-    // jjy：这里打印会报错，因为SCEV有些信息没有被保留下
-    //  DEBUG_WITH_TYPE("loopbound",
-    //                  dbgs() << "Equation is: " << *Loop.second << "\n");
+    DEBUG_WITH_TYPE("loopbound",
+                    dbgs() << "Equation is: " << *Loop.second << "\n");
     auto *ParentFunction = Loop.first->getHeader()->getParent();
     std::list<MBBedge> Initialedgelist;
     const MachineInstr *FirstInstr =
@@ -615,9 +596,8 @@ void LoopBoundInfoPass::computeLoopBounds(
       DEBUG_WITH_TYPE("loopbound", dbgs() << "We have analysis info.\n");
       auto AnaInfoCtx = CvAnaInfo.getAnaInfoBefore(FirstInstr);
       if (!AnaInfoCtx.isBottom()) {
-        std::unordered_map<Context, unsigned> CtxBounds =
-            getContextSensitiveBounds(Loop.first, Loop.second,
-                                      AnaInfoCtx.getAnalysisInfoPerContext());
+        auto CtxBounds = getContextSensitiveBounds(
+            Loop.first, Loop.second, AnaInfoCtx.getAnalysisInfoPerContext());
         LoopBounds.insert(std::make_pair(Loop.first, CtxBounds));
       } else {
         DEBUG_WITH_TYPE("loopbound", dbgs() << "No Analysis info for bottom\n");
@@ -645,7 +625,6 @@ bool LoopBoundInfoPass::hasLoopBoundNoCtx(
         &ManualLoopBoundsNoCtx) const {
 
   bool HasBound = true;
-  // //jjy: 这里或许有问题
   if (LoopContextMap.count(Loop) == 0) {
     return false;
   }
@@ -723,7 +702,6 @@ unsigned LoopBoundInfoPass::getLoopBoundNoCtx(
 
 unsigned LoopBoundInfoPass::getUpperLoopBound(const llvm::MachineLoop *Loop,
                                               const Context &Ctx) const {
-  this->currentRequestLowerBound = false;
   if (Ctx.isEmpty()) {
     return getLoopBoundNoCtx(Loop, UpperLoopBoundsCtx, ManualUpperLoopBounds,
                              ManualUpperLoopBoundsNoCtx);
@@ -734,7 +712,6 @@ unsigned LoopBoundInfoPass::getUpperLoopBound(const llvm::MachineLoop *Loop,
 
 unsigned LoopBoundInfoPass::getLowerLoopBound(const llvm::MachineLoop *Loop,
                                               const Context &Ctx) const {
-  this->currentRequestLowerBound = true;
   if (Ctx.isEmpty()) {
     return getLoopBoundNoCtx(Loop, LowerLoopBoundsCtx, ManualLowerLoopBounds,
                              ManualLowerLoopBoundsNoCtx);
@@ -765,20 +742,6 @@ unsigned LoopBoundInfoPass::getLoopBound(
     FoundBoundManual = true;
   }
 
-  if (currentRequestLowerBound) {
-    if (MetaLowerLoopBounds.count(Loop) > 0) {
-      unsigned MetaBounds = MetaLowerLoopBounds.at(Loop);
-      Bound = MetaBounds;
-      FoundBoundManual = true;
-    }
-  } else {
-    if (MetaUpperLoopBounds.count(Loop) > 0) {
-      unsigned MetaBounds = MetaUpperLoopBounds.at(Loop);
-      Bound = MetaBounds;
-      FoundBoundManual = true;
-    }
-  }
-
   if (ManualLoopBounds.count(Loop) > 0) {
     auto ManualBounds = ManualLoopBounds.at(Loop);
     if (ManualBounds.count(Ctx) > 0) {
@@ -805,7 +768,7 @@ unsigned LoopBoundInfoPass::getLoopBound(
                << *Loop << "| AutoBound: " << AutoBound << ", Bound: " << Bound
                << "\n";
       } else {
-        Bound = AutoBound;
+      Bound = AutoBound;
       }
     }
   }
@@ -820,25 +783,20 @@ void LoopBoundInfoPass::dump(std::ostream &Mystream) const {
   for (auto LoopMap : LoopContextMap) {
     auto *Func = LoopMap.first->getHeader()->getParent();
     for (auto Ctx : LoopMap.second) {
-      bool p1 = hasUpperLoopBound(LoopMap.first, Ctx);
-      bool p2 = hasLowerLoopBound(LoopMap.first, Ctx);
-      if (p1 || p2) {
-        if (p1) {
-          OrderedLoopBoundOutput.insert(
-              "# In function " + Func->getName().str() + ", loop:\n  " +
-              getLoopDesc(LoopMap.first) + " with context " + Ctx.serialize() +
-              "\nthe loop header is executed at most " +
-              std::to_string(getUpperLoopBound(LoopMap.first, Ctx)) +
-              " times.\n");
-        }
-        if (p2) {
-          OrderedLoopBoundOutput.insert(
-              "# In function " + Func->getName().str() + ", loop:\n  " +
-              getLoopDesc(LoopMap.first) + " with context " + Ctx.serialize() +
-              "\nthe loop header is executed at least " +
-              std::to_string(getLowerLoopBound(LoopMap.first, Ctx)) +
-              " times.\n");
-        }
+      if (hasUpperLoopBound(LoopMap.first, Ctx)) {
+        OrderedLoopBoundOutput.insert(
+            "# In function " + Func->getName().str() + ", loop:\n  " +
+            getLoopDesc(LoopMap.first) + " with context " + Ctx.serialize() +
+            "\nthe loop header is executed at most " +
+            std::to_string(getUpperLoopBound(LoopMap.first, Ctx)) +
+            " times.\n");
+      } else if (hasLowerLoopBound(LoopMap.first, Ctx)) {
+        OrderedLoopBoundOutput.insert(
+            "# In function " + Func->getName().str() + ", loop:\n  " +
+            getLoopDesc(LoopMap.first) + " with context " + Ctx.serialize() +
+            "\nthe loop header is executed at least " +
+            std::to_string(getLowerLoopBound(LoopMap.first, Ctx)) +
+            " times.\n");
 
       } else {
         OrderedLoopBoundOutput.insert(
@@ -915,75 +873,53 @@ void LoopBoundInfoPass::dumpNonBoundLoops(
     DEBUG_WITH_TYPE("loopdump",
                     dbgs() << "[LFunc]: " << Header->getParent()->getName()
                            << "\n");
-    bool found = false;
-    if (::ModulePtr) {
-      // get from metadata
-      auto &BrInstr = LoopMap.second->getHeader()->back();
-      auto *MD = BrInstr.getMetadata("loop.src.loc");
-      if (MD) {
-        auto Loc = cast<ConstantAsMetadata>(MD->getOperand(0))
-                       ->getValue()
-                       ->getUniqueInteger()
-                       .getZExtValue();
-        auto FileName = cast<MDString>(MD->getOperand(1))->getString().str();
-        LoopInfo << "in file " << FileName;
-        LoopInfo << " near line " << Loc << "|";
-        // llvm::outs() << "Loc: " << Loc << "\n";
-        found = true;
+    if (!Header->empty() && !Header->front().isTransient() &&
+        !(Header->front().mayLoad() || Header->front().mayStore()) &&
+        Header->front().getDebugLoc() &&
+        Header->front().getDebugLoc().getLine() != 0) {
+      auto DbgLoc = Header->front().getDebugLoc();
+      std::string Filename = getFilenameFromDebugLoc(DbgLoc);
+      LoopInfo << "in file " << Filename;
+      LoopInfo << " near line " << DbgLoc.getLine() << "|";
+    } else {
+      bool Unknown = true;
+      for (auto &CurrInstr : *Header) {
+        if (CurrInstr.isTransient() || CurrInstr.mayLoad() ||
+            CurrInstr.mayStore()) {
+          continue;
+        }
+        if (CurrInstr.getDebugLoc() && CurrInstr.getDebugLoc().getLine() != 0) {
+          std::string Filename =
+              getFilenameFromDebugLoc(CurrInstr.getDebugLoc());
+          LoopInfo << "in file " << Filename;
+          LoopInfo << " near line " << CurrInstr.getDebugLoc().getLine() << "|";
+          Unknown = false;
+          break;
+        }
       }
-    }
-    if (!found) {
-      if (!Header->empty() && !Header->front().isTransient() &&
-          !(Header->front().mayLoad() || Header->front().mayStore()) &&
-          Header->front().getDebugLoc() &&
-          Header->front().getDebugLoc().getLine() != 0) {
-        auto DbgLoc = Header->front().getDebugLoc();
-        std::string Filename = getFilenameFromDebugLoc(DbgLoc);
-        LoopInfo << "in file " << Filename;
-        LoopInfo << " near line " << DbgLoc.getLine() << "|";
-      } else {
-        bool Unknown = true;
-        for (auto &CurrInstr : *Header) {
-          if (CurrInstr.isTransient() || CurrInstr.mayLoad() ||
-              CurrInstr.mayStore()) {
-            continue;
-          }
-          if (CurrInstr.getDebugLoc() &&
-              CurrInstr.getDebugLoc().getLine() != 0) {
+      if (Unknown) {
+        // Try to get information from the middle-end loops
+        if (LoopMapping.count(LoopMap.first) > 0) {
+          std::cout << "Trying to get info from middle-end loops\n";
+          const auto *Irloop = LoopMapping.at(LoopMap.first);
+          auto *Irinstr = Irloop->getHeader()->getTerminator();
+          if (Irinstr != nullptr && Irinstr->getDebugLoc() &&
+              Irinstr->getDebugLoc().getLine() != 0) {
             std::string Filename =
-                getFilenameFromDebugLoc(CurrInstr.getDebugLoc());
+                getFilenameFromDebugLoc(Irinstr->getDebugLoc());
             LoopInfo << "in file " << Filename;
-            LoopInfo << " near line " << CurrInstr.getDebugLoc().getLine()
+            LoopInfo << " near line " << Irinstr->getDebugLoc().getLine()
                      << "|";
             Unknown = false;
-            break;
+          } else {
+            assert(Irinstr != nullptr && "IR Instr is nullptr");
+            assert(Irinstr->getDebugLoc() && "Could not get DebugLoc from IR");
+            assert(false);
           }
         }
+        // If still unknown
         if (Unknown) {
-          // Try to get information from the middle-end loops
-          if (LoopMapping.count(LoopMap.first) > 0) {
-            std::cout << "Trying to get info from middle-end loops\n";
-            const auto *Irloop = LoopMapping.at(LoopMap.first);
-            auto *Irinstr = Irloop->getHeader()->getTerminator();
-            if (Irinstr != nullptr && Irinstr->getDebugLoc() &&
-                Irinstr->getDebugLoc().getLine() != 0) {
-              std::string Filename =
-                  getFilenameFromDebugLoc(Irinstr->getDebugLoc());
-              LoopInfo << "in file " << Filename;
-              LoopInfo << " near line " << Irinstr->getDebugLoc().getLine()
-                       << "|";
-              Unknown = false;
-            } else {
-              assert(Irinstr != nullptr && "IR Instr is nullptr");
-              assert(Irinstr->getDebugLoc() &&
-                     "Could not get DebugLoc from IR");
-              assert(false);
-            }
-          }
-          // If still unknown
-          if (Unknown) {
-            LoopInfo << "in file UNKNOWN near line 0|";
-          }
+          LoopInfo << "in file UNKNOWN near line 0|";
         }
       }
     }
@@ -1173,120 +1109,6 @@ void LoopBoundInfoPass::parseManualLoopBounds(
         "Manual Loopbounds should define type in (ContextSensitive, Normal)");
   }
   File.close();
-}
-
-void LoopBoundInfoPass::extractLoopAnnotationsFromMetaData(Module *M) {
-  DEBUG_WITH_TYPE("loopbound",
-                  dbgs() << "## Using clang metadata for loop bounds\n");
-
-  for (const auto *Loop : MaLoops) {
-    // First try to get from metadatas
-    unsigned LineNo = 0;
-    auto *MidIRLoop = LoopMapping.at(Loop);
-    auto *Irinstr = MidIRLoop->getHeader()->getTerminator();
-    if (Irinstr) {
-      auto *LoopMeta = Irinstr->getMetadata("loop.bound.annotation");
-      if (LoopMeta) {
-        assert(LoopMeta->getNumOperands() == 2 && "Invalid number of operands");
-        auto LowerBound =
-            cast<ConstantAsMetadata>(LoopMeta->getOperand(0).get())
-                ->getValue()
-                ->getUniqueInteger()
-                .getZExtValue();
-        auto UpperBound =
-            cast<ConstantAsMetadata>(LoopMeta->getOperand(1).get())
-                ->getValue()
-                ->getUniqueInteger()
-                .getZExtValue();
-        // llvm::outs() << "Get From metadata: " << LowerBound << " " <<
-        // UpperBound
-        //              << "\n";
-        this->MetaLowerLoopBounds.insert(std::make_pair(Loop, LowerBound));
-        this->MetaUpperLoopBounds.insert(std::make_pair(Loop, UpperBound));
-        continue;
-      }
-      auto *Meta = Irinstr->getMetadata("loop.src.loc");
-      if (Meta) {
-        assert(Meta->getNumOperands() == 2 && "Invalid number of operands");
-        auto *Loc = cast<ConstantAsMetadata>(Meta->getOperand(0).get());
-        LineNo = cast<ConstantInt>(Loc->getValue())->getZExtValue();
-      }
-    }
-
-    // llvm::outs() << "Get From metadata: " << LineNo << "\n";
-
-    // Get Loop Function
-    auto FuncName = Loop->getHeader()->getParent()->getName().str();
-    if (LineNo == 0) {
-      if (Loop->getHeader()->front().getDebugLoc() &&
-          Loop->getHeader()->front().getDebugLoc().getLine() != 0) {
-        LineNo = Loop->getHeader()->front().getDebugLoc().getLine();
-      }
-    }
-
-    if (LineNo == 0) {
-      for (auto &CurrentInstr : *Loop->getHeader()) {
-        if (CurrentInstr.getDebugLoc() &&
-            CurrentInstr.getDebugLoc().getLine() != 0) {
-          LineNo = CurrentInstr.getDebugLoc().getLine();
-          break;
-        }
-      }
-    }
-
-    if (LineNo == 0) {
-      // Try to get from mid-end
-      if (LoopMapping.count(Loop) > 0) {
-        auto *Irloop = LoopMapping.at(Loop);
-        auto *Irinstr = Irloop->getHeader()->getTerminator();
-        if (Irinstr != nullptr && Irinstr->getDebugLoc().getLine() != 0) {
-          LineNo = Irinstr->getDebugLoc().getLine();
-        }
-      }
-    }
-
-    if (LineNo == 0) {
-      errs() << "Could not get line number for loop: " << *Loop << "\n";
-      continue;
-    }
-
-    std::stringstream ss;
-    ss << FuncName << ".loop.near.line." << LineNo;
-
-    // llvm::outs() << "[DEBUG]: " << ss.str() << '\n';
-
-    // llvm::outs() << "Trying to get: " << ss.str() << "\n";
-
-    auto *MD = M->getNamedMetadata(ss.str());
-    if (MD == nullptr) {
-      continue;
-    }
-    assert(MD->getNumOperands() == 1 && "Invalid number of operands");
-    auto *BoundMD = MD->getOperand(0);
-    assert(BoundMD->getNumOperands() == 2 && "Invalid number of operands");
-
-    auto LowerBound =
-        cast<llvm::ConstantAsMetadata>(BoundMD->getOperand(0).get())
-            ->getValue()
-            ->getUniqueInteger()
-            .getZExtValue();
-    auto UpperBound =
-        cast<llvm::ConstantAsMetadata>(BoundMD->getOperand(1).get())
-            ->getValue()
-            ->getUniqueInteger()
-            .getZExtValue();
-    // llvm::outs() << getLoopDesc(Loop) << " Lower Bound: " << LowerBound
-    // << " Upper Bound: " << UpperBound << "\n";
-    DEBUG_WITH_TYPE("loopbound", dbgs()
-                                     << "Loop: " << getLoopDesc(Loop) << "\n");
-    DEBUG_WITH_TYPE("loopbound", dbgs()
-                                     << "Lower Bound: " << LowerBound << "\n");
-    DEBUG_WITH_TYPE("loopbound", dbgs()
-                                     << "Upper Bound: " << UpperBound << "\n");
-    // Add bounds to manual bounds
-    MetaLowerLoopBounds.insert(std::make_pair(Loop, LowerBound));
-    MetaUpperLoopBounds.insert(std::make_pair(Loop, UpperBound));
-  }
 }
 } // namespace TimingAnalysisPass
 

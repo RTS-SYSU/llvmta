@@ -98,19 +98,15 @@ void createCacheRelatedWeightProvider(
   typedef typename MuState::LocalMetrics LocalMetrics;
 
   l1sgnicmp = new StateGraphNumericWeightProvider<MuState>(
-      sg,
-      [](const LocalMetrics &lm) { return lm.memoryTopology.l1instrMisses; },
+      sg, [](const LocalMetrics &lm) { return lm.memoryTopology.instrMisses; },
       "UB l1I$ Misses");
 
   l1sgndcmp = new StateGraphNumericWeightProvider<MuState>(
-      sg, [](const LocalMetrics &lm) { return lm.memoryTopology.l1dataMisses; },
+      sg, [](const LocalMetrics &lm) { return lm.memoryTopology.dataMisses; },
       "UB l1D$ Misses");
 
   l2sgncmp = new StateGraphNumericWeightProvider<MuState>(
-      sg,
-      [](const LocalMetrics &lm) {
-        return lm.memoryTopology.l2dataMisses + lm.memoryTopology.l2instrMisses;
-      },
+      sg, [](const LocalMetrics &lm) { return lm.memoryTopology.l2Misses; },
       "UB l2$ Misses");
 
   sgnsbap = new StateGraphNumericWeightProvider<MuState>(
@@ -386,6 +382,11 @@ void TimingPathAnalysis<MuState>::getUpperConstraints(
   constraints.insert(constraints.end(), flowConstr.begin(), flowConstr.end());
 
   // Add persistence constraints for data and instruction cache
+  if (sgl2cpers) {
+    const auto &l2PersConstr = sgl2cpers->getPersistenceConstraints();
+    constraints.insert(constraints.end(), l2PersConstr.begin(),
+                       l2PersConstr.end());
+  }
   if (sgdcpers) {
     const auto &dataPersConstr = sgdcpers->getPersistenceConstraints();
     constraints.insert(constraints.end(), dataPersConstr.begin(),
@@ -395,11 +396,6 @@ void TimingPathAnalysis<MuState>::getUpperConstraints(
     const auto &instrPersConstr = sgicpers->getPersistenceConstraints();
     constraints.insert(constraints.end(), instrPersConstr.begin(),
                        instrPersConstr.end());
-  }
-  if (sgl2cpers) {
-    const auto &l2PersConstr = sgl2cpers->getPersistenceConstraints();
-    constraints.insert(constraints.end(), l2PersConstr.begin(),
-                       l2PersConstr.end());
   }
 }
 template <class MuState>
