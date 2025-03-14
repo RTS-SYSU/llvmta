@@ -1,8 +1,6 @@
 # Worst-Case Execution Time Analysis for Multicore Real-time Systems
 
-<p align="center">
-    <img src="./assets/LLVM-TA+.png" alt="LLVM-TA+" width=30%></>
-</p>
+
 
 <p align="center">
     <a href="https://github.com/RTS-SYSU" rel="nofollow">
