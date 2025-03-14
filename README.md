@@ -20,7 +20,7 @@
     <a href="README.md">English</a> | <a href="README_zh.md">中文</a>
 </p>
 
-[LLVM-TA+](https://github.com/RTS-SYSU/LLVM-TA-) is a static analysis tool for WCET(Worst Case Execution Time) of real-time systems based on LLVM. It is developed based on the LLVM-TA (https://gitlab.cs.uni-saarland.de/reineke/llvmta) - a WCET analysis for single core real-time systems.
+[LLVM-TA+](https://github.com/RTS-SYSU/LLVM-TA-) is a static analysis tool for WCET(Worst Case Execution Time) of real-time systems based on LLVM. It is developed based on the LLVM-TA - a WCET analysis for single core real-time systems.
 
 
 ## Design Goal
