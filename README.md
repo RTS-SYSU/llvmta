@@ -1,4 +1,4 @@
-# Worst-Case Execution Time Analysis for Multicore Real-time Systems
+# WCET Analysis for Multicore Real-time Systems
 
 
 
