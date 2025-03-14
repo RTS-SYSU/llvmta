@@ -1,4 +1,4 @@
-# LLVM-TA+
+# Worst-Case Execution Time Analysis for Multicore Real-time Systems
 
 <p align="center">
     <img src="./assets/LLVM-TA+.png" alt="LLVM-TA+" width=30%></>
