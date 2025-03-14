@@ -64,7 +64,7 @@ PersistenceScopeInfo &PersistenceScopeInfo::getInfo() {
   return *persistenceScopeInfo;
 }
 
-void PersistenceScopeInfo::walkMachineLoop(const MachineLoop *loop) {
+    void PersistenceScopeInfo::walkMachineLoop(const MachineLoop *loop) {
   // TODO filter the loops with the conditionals!!!
   bool isLoopGoodScope = true;
 

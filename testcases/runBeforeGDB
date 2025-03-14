@@ -14,7 +14,7 @@ fi
 
 pushd "../build" || echo "Unable to compile"
     echo "compiling..."
-    ninja -j$(nproc) || exit
+    ninja -j4 || exit
 popd || exit
 
 WORKDIR=$(mktemp -d -p .)

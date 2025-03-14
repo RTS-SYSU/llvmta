@@ -1,6 +1,6 @@
 # 使用
 
-> 请确保已经按照[安装文档](INSTALL_zh.md)成功安装了本项目，然后再继续阅读本文档。
+> 请确保已经按照[安装文档](INSTALL.md)成功安装了本项目，然后再继续阅读本文档。
 
 ## 环境变量的设置
 
@@ -10,7 +10,7 @@
 
 ### 本地用户
 
-而对于本地用户，有关的环境变量参考[安装文档](INSTALL_zh.md)中的说明，需要注意的是，终端中的环境变量设置仅对当前终端有效，如果需要永久设置，可以将环境变量写入到 `~/.bashrc` 或者 `~/.zshrc` 中。
+而对于本地用户，有关的环境变量参考[安装文档](INSTALL.md)中的说明，需要注意的是，终端中的环境变量设置仅对当前终端有效，如果需要永久设置，可以将环境变量写入到 `~/.bashrc` 或者 `~/.zshrc` 中。
 
 ## 使用前准备
 
@@ -22,14 +22,57 @@
 ndes_init|Loop in file ndes.c near line 75|BB#5:for.cond2<header><exiting>_BB#6:for.body4_BB#7:for.inc7<latch>|49
 ```
 
-
 具体来说，格式为
 
 ```text
 <函数名>|<循环描述>|<循环的基本块描述>|<循环的迭代次数>
 ```
 
+### 循环描述文件的生成
+由于上述文件全部手动编写是非常繁琐的，因而本项目提供了一个自动生成的脚本，使用方法如下
+
+```shell
+cd testcases
+./run.py -s <源代码所在目录> -o <输出文件目录> -p
+其中 -s 为源代码所在目录，-o 为输出文件目录，-p 为是否打印循环描述文件。
+```
+
+这样生成的循环描述文件有两个，分别是 LoopAnnotations.csv 和 LLoopAnnotations.csv，前者表示循环上界，后者表示循环下界，请根据实际情况，将两个描述文件分别填写完成，具体来说，检查循环的边界是否设置正确，同时对于那些标注为 -1 的循环，将其修改为正确的循环边界。修改完成后，将这两个文件放置到和测试用例同一目录下。
+
 ## 系统信息获取
+
+### 核心描述文件
+由于本项目针对的是多核处理器，因而需要提供核心描述文件，文件格式如下：
+
+```
+[
+    {
+        "core": 0,
+        "tasks": [
+            {
+                "function": "<函数名>"
+            },
+            {
+                "function": "<函数名>"
+            }
+        ]
+    },
+    {
+        "core": 1,
+        "tasks": [
+            {
+                "function": "<函数名>"
+            },
+            {
+                "function": "<函数名>"
+            }
+        ]
+    },
+    ...
+]
+```
+其中，core 表示核心编号，tasks 表示该核心上的任务，function 表示任务所在的函数名。
+
 
 ### 缓存大小信息
 
@@ -84,37 +127,26 @@ total 0
 
 对应的 `size` 为缓存大小，`coherency_line_size` 为缓存行大小，`ways_of_associativity` 为组相联度，`number_of_sets` 为组数吗，`type` 为缓存类型。
 
-### 缓存内存延迟信息
-
-缓存以及内存的延迟信息可以 [lmbench](https://lmbench.sourceforge.net/) 工具来进行测试，具体的测试和使用方法请参考官方文档，这里需要注意的是，该工具默认测试结果的单位为 ns，而本项目需要的单位为 CPU 周期数，因而需要将测试结果转换为 CPU 周期数，为了确保转换的精准，请在测试时将 CPU 固定在最低频率，Linux 上可以通过设置 CPU 的 governor 为 `powersave` 来实现，具体方法如下
-
-```bash
-$ sudo cpufreq-set -g powersave
-```
-
-设置完成后，可以通过如下文件来查看 CPU 的 governor
-
-```bash
-$ cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor
-powersave
-```
-
-测试完成后，终端会打印对应的内存延迟，请手动记录并转换为 CPU 周期数，然后在运行时加入对应的参数，例如，得到的内存延迟为 150 个 CPU 周期数，L1 缓存延迟为 4 个 CPU 周期数，L2 缓存延迟为 12 个 CPU 周期数。可以将参数加入`.vscode/launch.json`中的`args`，如下
-
-```txt
-"--icache_line_size 64",
-"--dcache_line_size 64",
-"--l1_latency 4"
-```
-
-
 ## 使用
 
-可以使用vscode的`Run and Debug`选择prelaunch task为`run gdb`的进行运行，运行的机制是调用`runBeforeGDB`进行源码编译后传入`args`中的参数运行。可以更改`--ta-analysis-entry-point`以切换被分析程序的入口函数名。被分析程序需要放置在`./testcases/test/`中
+为方便使用，本项目提供了一个脚本，使用方法如下
+
+```shell
+cd testcases
+./run.py -s <源代码所在目录> -o <输出文件目录> [-t <临时文件目录>]
+```
+其中，-t 参数为可选参数，用于指定临时文件目录，如果不指定，则默认为 dirforgdb。
+
+脚本默认会在源代码目录下搜索所需要的文件，包括循环描述文件和核心描述文件，如果找不到，则会报错。
+
+### GDB调试运行
+
+可以使用vscode remote explorer打开项目，然后使用`Run and Debug`、选择prelaunch task为`run gdb`的进行运行。运行的机制是调用`runBeforeGDB`进行源码编译后传入`args`中的参数运行。可以更改`--ta-analysis-entry-point`以切换被分析程序的入口函数名。被分析程序需要放置在`./testcases/test/`中。
 
 ## 结果
 
-运行完成后，会在终端输出结果，如:  
+运行完成后，会在终端输出结果各核心任务的执行时间上界，如:  
+
 ```txt
 Timing Analysis for entry point: fdct_start
  -> Finished Preprocessing Phase

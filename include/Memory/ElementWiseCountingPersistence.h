@@ -63,6 +63,8 @@ protected:
    * If the map has no set for a specific tag, than it is empty by default.
    */
   std::map<TagType, SetWiseCountingPersistence<T>> ele2conflicts;
+  std::map<const GlobalVariable *, SetWiseCountingPersistence<T>>
+      arry2conflicts;
 
 public:
   using AnaDeps = std::tuple<>;
@@ -78,6 +80,17 @@ public:
   void enterScope(const PersistenceScope &scope) {}
   void leaveScope(const PersistenceScope &scope) {}
   bool isPersistent(const TagType tag) const;
+
+  int getCSS(const TagType tag) const {
+    if (ele2conflicts.count(tag) != 0) {
+      return ele2conflicts.at(tag).getCSS(tag);
+    }
+    return INT_MAX;
+  }
+
+  int getCSS(const GlobalVariable *var) const { return -1; }
+
+  int getAge(const AbstractAddress addr) const { return -1; }
   bool isPersistent(const GlobalVariable *var) const;
   bool operator==(const Self &y) const;
   bool operator<(const Self &y) const;
@@ -85,7 +98,7 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-///assumeAnEmptyCache)
+/// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline ElementWiseCountingPersistence<T>::ElementWiseCountingPersistence(
     bool assumeAnEmptyCache __attribute__((unused)))
@@ -105,6 +118,8 @@ ElementWiseCountingPersistence<T>::classify(const AbstractAddress addr) const {
 template <CacheTraits *T>
 UpdateReport *ElementWiseCountingPersistence<T>::potentialUpdate(
     AbstractAddress addr, AccessType load_store, bool wantReport) {
+  // arry2conflicts[addr] =
+  //     SetWiseCountingPersistence<T>(0);
   for (auto &e2c : ele2conflicts) {
     e2c.second.potentialUpdate(addr, load_store);
   }
@@ -112,7 +127,7 @@ UpdateReport *ElementWiseCountingPersistence<T>::potentialUpdate(
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T>
 UpdateReport *ElementWiseCountingPersistence<T>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *Deps,
@@ -162,8 +177,10 @@ ElementWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
    * mark it as persistent (since we are allowed one miss anyway). If we
    * do see it again and our conflict set is small enough we want to mark
    * this access as persistent since it corresponds to the initial load */
-  return ele2conflicts.count(tag) == 0 ||
-         ele2conflicts.at(tag).isPersistent(tag);
+  if (ele2conflicts.count(tag) == 0) {
+    return false;
+  }
+  return ele2conflicts.at(tag).isPersistent(tag);
 }
 
 template <CacheTraits *T>
@@ -171,6 +188,9 @@ inline bool ElementWiseCountingPersistence<T>::isPersistent(
     const GlobalVariable *var) const {
   /* We have no idea */
   return false;
+  // 可以优化
+  // return arry2conflicts.count(var) == 0 ||
+  //        arry2conflicts.at(var).isPersistent(var);
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::operator==(const Self& y) const

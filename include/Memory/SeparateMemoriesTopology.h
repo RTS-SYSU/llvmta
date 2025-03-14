@@ -25,7 +25,7 @@
 
 #ifndef SEPARATEMEMORIESTOPOLOGY_H
 #define SEPARATEMEMORIESTOPOLOGY_H
-
+#include "Memory/Classification.h"
 #include "llvm/Support/Debug.h"
 
 #include "Memory/MemoryTopologyInterface.h"
@@ -55,6 +55,12 @@ public:
   SeparateMemoriesTopology &operator=(const SeparateMemoriesTopology &smt2);
 
   ~SeparateMemoriesTopology();
+
+  boost::optional<std::tuple<AbstractAddress, dom::cache::Classification, int>>
+  getIaccAdress() const{};
+  boost::optional<std::tuple<AbstractAddress, dom::cache::Classification, int>>
+  getDaccAdress() const{};
+
 
   /**
    * Container used to make the local metrics of this class

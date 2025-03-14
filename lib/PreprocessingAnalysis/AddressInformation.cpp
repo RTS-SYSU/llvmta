@@ -25,6 +25,8 @@
 
 #include "PreprocessingAnalysis/AddressInformation.h"
 #include "LLVMPasses/TimingAnalysisMain.h"
+#include "Util/GlobalVars.h"
+#include <iostream>
 
 using namespace llvm;
 
@@ -168,7 +170,45 @@ unsigned AddressInformation::getNumOfDataAccesses(const MachineInstr *MI) {
     return 0;
   }
 }
+std::vector<unsigned>
+AddressInformation::getvalueaddr(const MachineInstr *currMI) const {
+  std::vector<unsigned> res;
+  if (currMI->mayLoad() || currMI->mayStore()) {
+    auto ctxs = getAddressContexts(&*currMI);
+    raw_os_ostream llvmstream(std::cout);
+    if (ctxs.empty()) {
+      // llvmstream << "NO CONTEXT-SENSITIVE INFO AVAILABLE!\n";
+    } else {
+      std::set<Context, ctxcomp> ctx_sorted;
+      for (Context c : ctxs) {
+        ctx_sorted.insert(c);
+      }
+      for (Context ctx : ctx_sorted) {
+        std::stringstream ss;
+        ss << ctx;
+        // llvmstream << "In context:\n" << ss.str() << "\n";
+        for (unsigned o = 0; o < getNumOfDataAccesses(&*currMI); ++o) {
+          const auto &addr = getDataAccessAddress(&*currMI, &ctx, o);
+          // llvmstream << "Address for #memop " << o << ": " << addr << "\n";
 
+          if (addr.isPrecise() ||
+              (addr.getAsInterval().lower() & ~(Dlinesize - 1)) ==
+                  (addr.getAsInterval().upper() & ~(Dlinesize - 1))) {
+            res.emplace_back(addr.getAsInterval().lower());
+          } else if (addr.isArray()) {
+            auto l = addr.getAsInterval();
+            for (int temp = l.lower(); temp < l.upper(); temp += Dlinesize) {
+              res.emplace_back(temp);
+            }
+          }
+        }
+      }
+    }
+  } else {
+    assert("Not a memory access instruction");
+  }
+  return res;
+}
 void AddressInformation::dump(std::ostream &mystream) const {
   unsigned numStaticReference = 0;
   unsigned numPreciseAddress = 0;
@@ -231,14 +271,15 @@ void AddressInformation::dump(std::ostream &mystream) const {
       }
     }
   }
-  auto &ar = AnalysisResults::getInstance();
-  ar.registerResult("StaticMemoryReferences", numStaticReference);
-  ar.registerResult("StaticMemoryReferencesWithPreciseAddress",
-                    numPreciseAddress);
-  ar.registerResult("StaticMemoryReferencesWithPreciseCacheline",
-                    numPreciseCacheline);
-  ar.registerResult("StaticMemoryReferencesToDatastructure", numDatastructure);
-  ar.registerResult("StaticMemoryUnknownReferences", numUnknown);
+  // auto &ar = AnalysisResults::getInstance();
+  // ar.registerResult("StaticMemoryReferences", numStaticReference);
+  // ar.registerResult("StaticMemoryReferencesWithPreciseAddress",
+  //                   numPreciseAddress);
+  // ar.registerResult("StaticMemoryReferencesWithPreciseCacheline",
+  //                   numPreciseCacheline);
+  // ar.registerResult("StaticMemoryReferencesToDatastructure",
+  // numDatastructure); ar.registerResult("StaticMemoryUnknownReferences",
+  // numUnknown);
 }
 
 //////////////////////////////

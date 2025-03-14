@@ -41,9 +41,9 @@ parser.add_argument('--dcache_assoc', type=int, default=8, help='The DCache Asso
 parser.add_argument('--l2_line_size', type=int, default=64, help='The L2 Cache Line Size, in bytes, default is 64')
 parser.add_argument('--l2_assoc', type=int, default=8, help='The L2 Cache Associativity, default is 8')
 parser.add_argument('--l2_sets', type=int, default=64, help='The L2 Cache Number of Sets, default is 64')
-parser.add_argument('--mem_latency', type=int, default=100, help='The memory latency, default is 100 cycles')
-parser.add_argument('--l2_latency', type=int, default=50, help='The L2 cache latency, default is 100 cycles')
-parser.add_argument('--l1_latency', type=int, default=10, help='The L1 cache latency, default is 10 cycles')
+# parser.add_argument('--mem_latency', type=int, default=100, help='The memory latency, default is 100 cycles')
+# parser.add_argument('--l2_latency', type=int, default=50, help='The L2 cache latency, default is 100 cycles')
+# parser.add_argument('--l1_latency', type=int, default=10, help='The L1 cache latency, default is 10 cycles')
 
 args = parser.parse_args()
 
@@ -100,10 +100,10 @@ def handle_generate(args):
         f"--ta-l2cache-linesize={args.l2_line_size}",
         f"--ta-l2cache-assoc={args.l2_assoc}",
         f"--ta-l2cache-nsets={args.l2_sets}",
-        f"--ta-mem-latency={args.mem_latency}",
-        f"--ta-Icache-latency={args.l1_latency}",
-        f"--ta-Dcache-latency={args.l1_latency}",
-        f"--ta-L2-latency={args.l2_latency}",
+        # f"--ta-mem-latency={args.mem_latency}",
+        # f"--ta-Icache-latency={args.l1_latency}",
+        # f"--ta-Dcache-latency={args.l1_latency}",
+        # f"--ta-L2-latency={args.l2_latency}",
         "-debug-only=",
         "optimized.ll"
     ]
@@ -265,10 +265,10 @@ def handle_run(args):
         f"--ta-l2cache-linesize={args.l2_line_size}",
         f"--ta-l2cache-assoc={args.l2_assoc}",
         f"--ta-l2cache-nsets={args.l2_sets}",
-        f"--ta-mem-latency={args.mem_latency}",
-        f"--ta-Icache-latency={args.l1_latency}",
-        f"--ta-Dcache-latency={args.l1_latency}",
-        f"--ta-L2-latency={args.l2_latency}",
+        # f"--ta-mem-latency={args.mem_latency}",
+        # f"--ta-Icache-latency={args.l1_latency}",
+        # f"--ta-Dcache-latency={args.l1_latency}",
+        # f"--ta-L2-latency={args.l2_latency}",
         "-debug-only=",
         "optimized.ll"
     ]
@@ -301,9 +301,9 @@ def handle_run(args):
         logger_error(f'Failed to run llvmta')
         exit(1)
     else:
-        shutil.copy('WCET.json', out_dir)
+        # shutil.copy('WCET.json', out_dir)
         logger_success(f'Successfully ran llvmta')
-        logger_success(f'Output WCET: {str(out_dir / "WCET.json")}')
+        # logger_success(f'Output WCET: {str(out_dir / "WCET.json")}')
 
     os.chdir(pwd)
 

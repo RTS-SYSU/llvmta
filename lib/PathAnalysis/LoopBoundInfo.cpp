@@ -566,12 +566,12 @@ void LoopBoundInfoPass::computeLoopBoundFromCVDomain(
       "loopbound",
       dbgs() << "+++ Computing Loop Bounds from CV Domain Now +++\n");
   AnalysisResults &Ar = AnalysisResults::getInstance();
-  Ar.registerResult("SCEV_constant", 0);
-  Ar.registerResult("SCEV_argument_high", 0);
-  Ar.registerResult("SCEV_arg_cv", 0);
-  Ar.registerResult("SCEV_overflow", 0);
-  Ar.registerResult("SCEV_unknown", 0);
-  Ar.registerResult("SCEV_NotImplemented", 0);
+  // Ar.registerResult("SCEV_constant", 0);
+  // Ar.registerResult("SCEV_argument_high", 0);
+  // Ar.registerResult("SCEV_arg_cv", 0);
+  // Ar.registerResult("SCEV_overflow", 0);
+  // Ar.registerResult("SCEV_unknown", 0);
+  // Ar.registerResult("SCEV_NotImplemented", 0);
   computeLoopBounds(UpperLoopBoundsSCEV, UpperLoopBoundsCtx, CvAnaInfo);
   computeLoopBounds(LowerLoopBoundsSCEV, LowerLoopBoundsCtx, CvAnaInfo);
 }
@@ -625,6 +625,7 @@ bool LoopBoundInfoPass::hasLoopBoundNoCtx(
         &ManualLoopBoundsNoCtx) const {
 
   bool HasBound = true;
+    // //jjy: 这里或许有问题
   if (LoopContextMap.count(Loop) == 0) {
     return false;
   }
@@ -763,7 +764,7 @@ unsigned LoopBoundInfoPass::getLoopBound(
       if (FoundBoundManual && (AutoBound != Bound)) {
         //找到了以注释优先
         errs() << "Warnings Both automatic and manual loop bounds were found "
-                  "and bounds differ! (Automatic used) for:\n"
+                  "and bounds differ! (Manual used) for:\n"
                << Loop->getHeader()->getParent()->getName().str() << " | "
                << *Loop << "| AutoBound: " << AutoBound << ", Bound: " << Bound
                << "\n";

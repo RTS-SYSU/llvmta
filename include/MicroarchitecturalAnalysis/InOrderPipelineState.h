@@ -31,7 +31,9 @@
 #include "MicroarchitecturalAnalysis/ConvergenceDetection.h"
 #include "MicroarchitecturalAnalysis/ConvergenceType.h"
 #include "MicroarchitecturalAnalysis/MicroArchitecturalState.h"
+#include "PartitionUtil/Context.h"
 #include "PreprocessingAnalysis/AddressInformation.h"
+#include "Util/GlobalVars.h"
 #include "Util/Util.h"
 
 #include "ARM.h"
@@ -115,6 +117,7 @@ public:
    * Virtual destructor
    */
   virtual ~InOrderPipelineState();
+
 
   /**
    * Container used to make the local metrics of this class
@@ -286,8 +289,10 @@ private:
   /**
    * Some attached memory which is accessed for data.
    */
+public:
   MemoryTopology memory;
 
+private:
   /**
    * Temporary storage of the accessId for the instruction access
    * There can only be one instruction access at a time.
@@ -441,9 +446,7 @@ InOrderPipelineState<MemoryTopology>::cycle(
     }
   }
 
-  DEBUG_WITH_TYPE(
-      "driverSED", for (auto &succ
-                        : res) { std::cerr << succ; });
+  DEBUG_WITH_TYPE("driverSED", for (auto &succ : res) { std::cerr << succ; });
   return res;
 }
 
@@ -611,7 +614,7 @@ std::ostream &operator<<(std::ostream &stream,
   auto &base = (const MicroArchitecturalState<
                 InOrderPipelineState<Mem>,
                 typename InOrderPipelineState<Mem>::StateDep> &)iops;
-  stream << base << "\n";
+  stream << base << "\n"; // 打印pc base.pc
   stream << "Fetching instruction: "
          << (iops.instructionAccessFinished ? "No" : "Yes") << "\n";
   if (iops.flushedFetchStage) {

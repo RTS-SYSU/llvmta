@@ -26,7 +26,9 @@
 #ifndef CACHEANALYSIS_H_
 #define CACHEANALYSIS_H_
 
+#include <algorithm>
 #include <boost/tuple/tuple.hpp>
+#include <climits>
 #include <iterator>
 #include <ostream>
 #include <vector>
@@ -38,7 +40,7 @@
 #include "Memory/progana/Lattice.h"
 #include "Memory/util/CacheSetAnalysisConcept.h"
 #include "Memory/util/CacheUtils.h"
-
+#include "Util/GlobalVars.h"
 #include "Util/SharedStorage.h"
 #include "Util/Util.h"
 #include <fstream>
@@ -74,7 +76,9 @@ public:
   update(const AbstractAddress &addr, AccessType load_store,
          bool wantReport = false,
          const Classification assumption = dom::cache::CL_UNKNOWN) = 0;
-
+  virtual int getAge(const AbstractAddress &itv) const { return -1; }
+  virtual int getCSS(const CacheTraits::TagType tag) const { return -1; }
+  virtual int getCSS(const GlobalVariable *var) const { return -1; }
   virtual void join(const AbstractCache &y) = 0;
   virtual bool lessequal(const AbstractCache &y) const = 0;
   virtual void enterScope(const PersistenceScope &scope) = 0;
@@ -142,6 +146,7 @@ public:
   AbstractCacheImpl(bool assumeAnEmptyCache = false);
   virtual AbstractCacheImpl *clone() const;
   virtual Classification classify(const AbstractAddress &itv) const;
+  virtual int getAge(const AbstractAddress &itv) const;
 
   virtual UpdateReport *
   update(const AbstractAddress &addr, AccessType load_store,
@@ -262,6 +267,26 @@ AbstractCacheImpl<T, C>::classify(const AbstractAddress &addr) const {
     lowAligned += T->LINE_SIZE;
   }
   return result;
+}
+
+template <CacheTraits *T, class C>
+int AbstractCacheImpl<T, C>::getAge(const AbstractAddress &addr) const {
+  /* fastpath for unknownAddressInterval */
+  if (addr.isSameInterval(AbstractAddress::getUnknownAddress())) {
+    return INT_MAX;
+  }
+
+  Address lowAligned = alignToCacheline(addr.getAsInterval().lower());
+  Address upAligned = alignToCacheline(addr.getAsInterval().upper());
+
+  int age = 0;
+  while (lowAligned <= upAligned && age != INT_MAX) {
+    unsigned tag, index;
+    boost::tie(tag, index) = getTagAndIndex(lowAligned);
+    age = std::max(age, cacheSets[index]->getAge(AbstractAddress(lowAligned)));
+    lowAligned += T->LINE_SIZE;
+  }
+  return age;
 }
 
 /**
@@ -455,11 +480,14 @@ AbstractCacheImpl<T, C>::getPersistentScopes(const AbstractAddress addr) const {
                             std::inserter(intersection, intersection.begin()));
       ret = std::move(intersection);
     }
+
+
   } else {
     unsigned tag, index;
     assert(addr.isPrecise());
     boost::tie(tag, index) = getTagAndIndex(addr.getAsInterval().lower());
     ret = cacheSets[index]->getPersistentScopes(tag);
+
   }
   DEBUG_WITH_TYPE(
       "persistence", if (ret.size() > 0) {
@@ -468,16 +496,16 @@ AbstractCacheImpl<T, C>::getPersistentScopes(const AbstractAddress addr) const {
           dbgs() << "\t" << s << "\n";
         }
       });
-  if (ret.size() > 0) {
-    std::ofstream myfile;
-    myfile.open("DeBug.txt", std::ios_base::app);
-    myfile << "L" << T->LEVEL << ":" << addr
-           << " is persistent in the following scopes:\n";
-    for (auto s : ret) {
-      myfile << "\t" << s << "\n";
-    }
-    myfile.close();
-  }
+  // if (ret.size() > 0) {
+  //   std::ofstream myfile;
+  //   myfile.open("DeBug.txt", std::ios_base::app);
+  //   myfile << "L" << T->LEVEL << ":" << addr
+  //          << " is persistent in the following scopes:\n";
+  //   for (auto s : ret) {
+  //     myfile << "\t" << s << "\n";
+  //   }
+  //   myfile.close();
+  // }
   return ret;
 }
 

@@ -50,6 +50,7 @@ public:
    * Provides access to the callgraph
    */
   static PersistenceScopeInfo &getInfo();
+  
   static void deletper() {
     if (persistenceScopeInfo != nullptr) {
       delete persistenceScopeInfo;

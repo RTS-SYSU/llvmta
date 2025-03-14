@@ -27,6 +27,8 @@
 #define CLASSIFICATION_H_
 
 #include "Memory/util/BitstringDomain.h"
+#include "llvm/Support/FileSystem.h" // 输出ur-cfg图片
+#include "llvm/Support/raw_ostream.h"
 
 namespace TimingAnalysisPass {
 
@@ -35,8 +37,9 @@ namespace cache {
 
 class Classification;
 
-extern const char *ClassificationNames[7];
-extern const Classification CL_BOT, CL_HIT, CL_MISS, CL_UNKNOWN, CL2_HIT, CL2_MISS, CL2_UNKNOWN;
+extern const char *ClassificationNames[14];
+extern const Classification CL_BOT, CL_HIT, CL_MISS, CL_UNKNOWN, CL2_HIT,
+    CL2_MISS, CL2_UNKNOWN;
 
 /**
  * \brief Implements the lattice {\c hit, \c miss, \c unknown, \c bottom }.
@@ -51,6 +54,17 @@ public:
 
   friend std::ostream &operator<<(std::ostream &os, const Self &x) {
     return os << ClassificationNames[x.value];
+  }
+  // for ur-cfg debug
+  friend llvm::raw_ostream &operator<<(llvm::raw_ostream &os, const Self &x){
+    return os << ClassificationNames[x.value];
+  }
+
+  bool operator<(const Self &x) const {
+    if (this->value < x.value) {
+      return true;
+    }
+    return false;
   }
 };
 

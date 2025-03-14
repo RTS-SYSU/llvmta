@@ -106,6 +106,7 @@ public:
    * Checks for equality of this context with the given ctx
    */
   bool operator==(const Context &ctx) const;
+  bool operator<(const Context &other) const;
 
   /**
    * Output operator

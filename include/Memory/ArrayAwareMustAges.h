@@ -104,6 +104,7 @@ public:
     assert(!this->isAssociativity());
     return (WayType)age;
   }
+  
 
   virtual void ageBy(const GlobalVariable *var) {
     assert(var);

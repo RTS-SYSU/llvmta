@@ -218,8 +218,8 @@ private:
   /// The address where rodata placement starts
   unsigned RodataAddress;
 
-  /// Instruction to address mapping, including constant pool entries
-  std::map<const MachineInstr *, unsigned> Ins2addr;
+  // /// Instruction to address mapping, including constant pool entries
+  // std::map<const MachineInstr *, unsigned> Ins2addr;
   /// Address to instruction mapping, including constant pool entries
   std::map<unsigned, const MachineInstr *> Addr2ins;
 
@@ -236,6 +236,9 @@ private:
 public:
   /// Instruction to identifier mapping
   std::map<const MachineInstr *, unsigned> Ins2posinbb;
+  //jjy private->public
+  /// Instruction to address mapping, including constant pool entries
+  std::map<const MachineInstr *, unsigned> Ins2addr;
 };
 
 extern StaticAddressProvider *StaticAddrProvider;

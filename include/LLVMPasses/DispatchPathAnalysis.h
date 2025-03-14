@@ -530,15 +530,15 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   }
   // END LEGACY CODE
 
-  AnalysisResults::getInstance().registerResult("staticallyRefutedWritebacks",
-                                                0);
-  AnalysisResults::getInstance().registerResult("staticMisses", 0);
+  // AnalysisResults::getInstance().registerResult("staticallyRefutedWritebacks",
+  //                                               0);
+  // AnalysisResults::getInstance().registerResult("staticMisses", 0);
 
   // Build state graph
   sg->buildGraph();
 
-  AnalysisResults::getInstance().finalize("staticallyRefutedWritebacks");
-  AnalysisResults::getInstance().finalize("staticMisses");
+  // AnalysisResults::getInstance().finalize("staticallyRefutedWritebacks");
+  // AnalysisResults::getInstance().finalize("staticMisses");
 
   // Dump state graph without longest-path coloring to aid debugging of
   // path analysis problems
@@ -561,9 +561,9 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
   sg->deleteMuArchInfo();
 
   // Trigger the next measurement phase
-  Statistics &stats = Statistics::getInstance();
-  stats.stopMeasurement("Timing Stategraph Generation");
-  stats.startMeasurement("Timing Path Analysis");
+  // Statistics &stats = Statistics::getInstance();
+  // stats.stopMeasurement("Timing Stategraph Generation");
+  // stats.startMeasurement("Timing Path Analysis");
 
   // Dump Interference response curves
   if (DumpInterferenceResponseCurve.getBits()) {
@@ -613,9 +613,10 @@ boost::optional<BoundItv> dispatchTimingPathAnalysisWeightProvider(
     sg->dump(myfile, &longestPath);
     myfile.close();
   }
+  
 
   AnalysisResults &ar = AnalysisResults::getInstance();
-  ar.registerResult("time", res);
+  // ar.registerResult("time", res);
 
   // If required, calculate additional metrics on a worst-case timing path
   if (MetricsOnWCEP.getBits() && longestPath.size() > 0) {

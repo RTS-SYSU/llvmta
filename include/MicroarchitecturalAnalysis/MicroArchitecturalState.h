@@ -82,6 +82,7 @@ public:
   typedef Dependencies StateDep;
 
   typedef IntervalCounter<true, true, true> TimeType;
+  ProgramCounter getpc() const { return this->pc; }
 
   /**
    * Constructor. Store the program counter.

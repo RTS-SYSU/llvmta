@@ -30,6 +30,7 @@
 #include "llvm/Support/Debug.h"
 
 #include "Memory/AbstractCyclingMemory.h"
+#include "Memory/Classification.h"
 #include "Memory/MemoryTopologyInterface.h"
 #include <list>
 
@@ -53,6 +54,13 @@ public:
   ~SingleMemoryTopology() { delete memory; }
 
   SingleMemoryTopology &operator=(const SingleMemoryTopology &ncmt);
+
+  boost::optional<
+      std::tuple<AbstractAddress, dom::cache::Classification, int>>
+  getIaccAdress() const {};
+  boost::optional<
+      std::tuple<AbstractAddress, dom::cache::Classification, int>>
+  getDaccAdress() const {};
 
   /**
    * Container used to make the local metrics of this class
@@ -91,10 +99,8 @@ public:
    */
   virtual boost::optional<unsigned> accessInstr(unsigned addr,
                                                 unsigned numWords);
-  //我为什么要加这个来的？                                              
-  void setcurrentid(unsigned id){
-    currentId=id;
-  }
+  // 我为什么要加这个来的？
+  void setcurrentid(unsigned id) { currentId = id; }
 
   /**
    * Tells the memory topology to access an instruction.

@@ -41,6 +41,13 @@ enum class GetEdges_method : char;
 }
 using TimingAnalysisPass::GetEdges_method;
 
+enum class MultiCoreType {
+  LiangY, // Timing analysis of concurrent programs running on shared cache
+          // multi-cores
+  ZhangW,  // Precise and scalable shared cache contention analysis for WCET
+          // estimation
+  NONE  // 不做并行任务的干扰分析
+};
 /**
  * The available analysis types
  */
@@ -244,19 +251,26 @@ enum class ArrivalCurveIlpObjectiveType { VARIANT1, VARIANT2, COMBINED };
 
 //jjy:多核策略改动标记
 extern llvm::cl::opt<unsigned> CoreNums;
-extern llvm::cl::opt<unsigned> Core;
+extern llvm::cl::opt<unsigned> CurrentCore;
 extern llvm::cl::opt<bool> SPersistenceA;
-/**
- * File that record the running info.
- */
-extern llvm::cl::opt<std::string> coreInfo;
+extern llvm::cl::opt<bool> TimingAnomalyAnalysis;
+    /**
+     * File that record the running info.
+     */
+    extern llvm::cl::opt<std::string>
+        CoreInfo;
 extern llvm::cl::opt<bool> ParallelPrograms;
-
+/*
+  Choose the calculation method of the L2 cache contention
+  among different cores
+*/
+extern llvm::cl::opt<MultiCoreType> MulCType;
 /**
  * Quiet mode: No output on console and no file output, except for the
  * necessary.
  */
 extern llvm::cl::opt<bool> QuietMode;
+
 
 /**
  * Dumps the state graph in .vcg instead of .dot

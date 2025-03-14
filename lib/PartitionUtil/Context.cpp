@@ -247,6 +247,24 @@ const std::list<PartitionToken *> &Context::getTokenList() const {
 
 bool Context::isEmpty() const { return (context->size() == 0); }
 
+bool Context::operator<(const Context &ctx) const {
+  if (this->context->size() < ctx.context->size())
+    return true;
+  if (this->context->size() == ctx.context->size()) {
+    auto it_this = this->context->begin();
+    auto it_ctx = ctx.context->begin();
+    for (; it_this != this->context->end(); ++it_this, ++it_ctx) {
+      assert((*it_this)->getType() != PartitionTokenType::NONE &&
+             "Should not see any NONE token in a context");
+      if ((*it_this)->less(**it_ctx))
+        return true;
+      if (!(*it_this)->equals(**it_ctx))
+        return false;
+    }
+  }
+  return false;
+}
+
 bool Context::operator==(const Context &ctx) const {
   if (this->context->size() != ctx.context->size())
     return false;

@@ -27,7 +27,9 @@
 #define LRUMAXAGEANALYSIS_H_
 
 #include <algorithm>
+#include <climits>
 #include <ostream>
+#include <string>
 
 #include "Memory/CacheTraits.h"
 #include "Memory/Classification.h"
@@ -76,6 +78,21 @@ public:
   LruMaxAgeUpdateReport<TagType> *potentialUpdate(AbstractAddress addr,
                                                   AccessType load_store,
                                                   bool wantReport = false);
+  int getCSS(const TagType tag) const { return -1; }
+  int getCSS(const GlobalVariable *var) const { return -1; }
+  int getAge(const AbstractAddress addr) const {
+    TagType tag = getTag<T>(addr);
+    for (unsigned i = 0; i < size; ++i)
+      if (tags[i] == tag) {
+        if (ages[i] >= T->ASSOCIATIVITY) {
+          return INT_MAX;
+        }
+        int8_t signedValue = static_cast<int8_t>(ages[i]); // 可能变为 -1
+        int intValue = static_cast<int>(signedValue);
+        return intValue;
+      }
+    return INT_MAX;
+  }
   void join(const Self &y);
   bool lessequal(const Self &y) const;
   void enterScope(const PersistenceScope &) {}
@@ -98,7 +115,7 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-///assumeAnEmptyCache)
+/// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMaxAgeAbstractCache<T>::LruMaxAgeAbstractCache(
     bool assumeAnEmptyCache __attribute__((unused)))
@@ -111,11 +128,19 @@ LruMaxAgeAbstractCache<T>::classify(const AbstractAddress addr) const {
   unsigned CNN = 0;
   TagType tag = getTag<T>(addr);
   unsigned index = getindex<T>(addr);
-  if (T->LEVEL > 1) {
-    for (std::string &funtion : conflicFunctions) {
-      for (unsigned address : mcif.addressinfo[funtion]) {
-        if (getindex<T>(address) == index && getTag<T>(address) != tag) {
-          CNN++;
+  // 计算CNN
+  if (MulCType == MultiCoreType::LiangY && T->LEVEL > 1) {
+    for (int i = 0; i < mcif.coreinfo.size(); i++) {
+      if (i == CurrentCore) {
+        continue;
+      }
+      for (std::string entry : mcif.coreinfo[i]) {
+        for (functionaddr *f : functiontofs[entry]) {
+          for (unsigned address : f->addrlist) {
+            if (getindex<T>(address) == index && getTag<T>(address) != tag) {
+              CNN++;
+            }
+          }
         }
       }
     }
@@ -165,7 +190,7 @@ LruMaxAgeAbstractCache<T>::potentialUpdate(AbstractAddress addr,
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T>
 LruMaxAgeUpdateReport<typename CacheTraits::TagType> *
 LruMaxAgeAbstractCache<T>::update(AbstractAddress addr, AccessType load_store,

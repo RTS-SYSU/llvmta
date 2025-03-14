@@ -408,9 +408,7 @@ InOrderCacheState<makeCache, dataCache>::cycle(
       res.insert(state);
     }
 
-    DEBUG_WITH_TYPE(
-        "driverSED", for (auto &succ
-                          : res) { std::cerr << succ; });
+    DEBUG_WITH_TYPE("driverSED", for (auto &succ : res) { std::cerr << succ; });
     return res;
   }
 }

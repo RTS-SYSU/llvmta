@@ -64,6 +64,13 @@ typename dom::cache::CacheTraits::TagType getindex(AbstractAddress addr) {
          getCachelineAddress<CacheConfig>(itv.upper()));
   return getindex<CacheConfig>(itv.lower());
 }
+template <dom::cache::CacheTraits *CacheConfig>
+typename dom::cache::CacheTraits::TagType getintaddr(AbstractAddress addr) {
+  AddressInterval itv = addr.getAsInterval();
+  assert(getCachelineAddress<CacheConfig>(itv.lower()) ==
+         getCachelineAddress<CacheConfig>(itv.upper()));
+  return itv.lower();
+}
 /* returns (in cycles) how long the transfer of a cache line between cache and
  * main memory takes */
 unsigned getCachelineMemoryLatency(CacheType type);

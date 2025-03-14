@@ -73,7 +73,6 @@ public:
    */
   virtual ~FixedLatencyState() { /* Nothing to clean up */
   }
-
   /**
    * Container used to make the local metrics of this class
    * available to the world outside.

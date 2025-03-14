@@ -1,5 +1,5 @@
-#ifndef MUTICORE_INFORMATION
-#define MUTICORE_INFORMATION
+#ifndef MULTICORE_INFORMATION
+#define MULTICORE_INFORMATION
 
 #include "Util/AbstractAddress.h"
 #include "Util/Options.h"
@@ -10,6 +10,27 @@
 #include <utility>
 #include <vector>
 
+#include "llvm/CodeGen/MachineBasicBlock.h"
+#include "llvm/CodeGen/MachineInstr.h"
+#include "llvm/CodeGen/MachineLoopInfo.h"
+#include "llvm/CodeGen/MachineFunctionPass.h"
+#include "llvm/Analysis/LoopInfo.h"
+
+#include "LLVMPasses/MachineFunctionCollector.h" // 由函数名找函数
+#include "LLVMPasses/StaticAddressProvider.h" // mi -> addr
+// #include "LLVMPasses/DispatchMemory.h" // cacheconfig
+
+#include "Memory/Classification.h" // CL_MISS/UNKONWN/HIT
+#include "Memory/CacheTraits.h" // addr -> cache index
+#include "PathAnalysis/LoopBoundInfo.h"
+
+#include "llvm/Support/FileSystem.h" 
+#include "llvm/Support/raw_ostream.h"
+#include "Util/Util.h"
+
+// using namespace TimingAnalysisPass;
+
+/* 这个类维护MSG */
 class Multicoreinfo {
 private:
   // CoreNum -> <Earlest Start, Latest Stop>list
@@ -18,7 +39,7 @@ private:
   std::vector<std::vector<std::pair<unsigned, unsigned>>> BWtime;
 
   // CoreNum -> map<function, index>
-  // BTW, this is actually core order (orz)
+  // BTW, this is actually core order (orz) // 6
   std::vector<std::map<std::string, unsigned>> coreOrz;
 
 public:
@@ -27,6 +48,7 @@ public:
   std::map<std::string, std::set<unsigned>> addressinfo;
   // CoreNum -> vector of function
   std::vector<std::vector<std::string>> coreinfo;
+
   Multicoreinfo();
   // Make all constructor and destructor to be default
   Multicoreinfo(unsigned coreNum)
@@ -72,14 +94,14 @@ public:
 
   void addTask(unsigned num, const std::string &function) {
     coreinfo[num].emplace_back(function);
-    //对没有分析过的函数进行访存信息收集
+    //对没有分析过的函数进行访存信息收集，这是个初始化
     if (addressinfo.find(function) == addressinfo.end()) {
       addressinfowithtime.insert(
           std::make_pair(function, std::map<unsigned, unsigned>{}));
       addressinfo.insert(std::make_pair(function, std::set<unsigned>{}));
     }
     coreOrz[num].insert(std::make_pair(function, coreinfo[num].size() - 1));
-    schedule[num].emplace_back(std::make_pair(0, 0));
+    schedule[num].emplace_back(std::make_pair(0, 0)); // 这个00初值没问题吗？
     BWtime[num].emplace_back(std::make_pair(0, 0));
   }
 
@@ -97,27 +119,27 @@ public:
   }
 
   bool updateTaskTime(unsigned core, const std::string &function,
-                      unsigned early = 0, unsigned latest = 0) {
+                      unsigned early = 0, unsigned latest = 0) { // 这两参数是BCET和WCET
     if (coreOrz[core].count(function) == 0) {
       fprintf(stderr, "Function %s can not found on core %u\n",
               function.c_str(), core);
       return false;
     }
     bool changed = false;
-    unsigned taskNum = coreOrz[core][function];
-    if (BWtime[core][taskNum].first != early ||
+    unsigned taskNum = coreOrz[core][function]; // CoreNum -> map<function, index>核上第几个函数
+    if (BWtime[core][taskNum].first != early || // map里存的是生命周期
         BWtime[core][taskNum].second != latest) {
       changed = true;
       //更新 执行时间
       BWtime[core][taskNum].first = early;
-      BWtime[core][taskNum].second =latest;
+      BWtime[core][taskNum].second = latest;
     }
     //更新生命周期
     if (taskNum == 0) {
       schedule[core][taskNum].second = 0u + latest;
     } else {
       schedule[core][taskNum].second =
-          schedule[core][taskNum - 1].second + latest;
+          schedule[core][taskNum - 1].second + latest; // 原来前置就只考虑1个
     }
     if (taskNum != schedule[core].size() - 1) {
       schedule[core][taskNum + 1].first = schedule[core][taskNum].first + early;
@@ -128,16 +150,16 @@ public:
   std::vector<std::string> getConflictFunction(unsigned core,
                                                const std::string &function) {
     std::vector<std::string> list;
-    auto liftime = schedule[core][coreOrz[core][function]];
+    auto liftime = schedule[core][coreOrz[core][function]]; // (core, index) -> (ES, LF)
     // if (liftime.first == 0 || liftime.second == 0) {
     //   list.emplace_back("ALL");
     //   return list;
     // }
-    for (int i = 0; i < schedule.size(); i++) {
+    for (int i = 0; i < schedule.size(); i++) { //各个其它核心
       if (i == core) {
         continue;
       }
-      for (int j = 0; j < schedule[i].size(); j++) {
+      for (int j = 0; j < schedule[i].size(); j++) { //的各个task
         auto &tlifetime = schedule[i][j];
         if (tlifetime.second > liftime.first &&
                 tlifetime.second < liftime.second ||
@@ -151,6 +173,7 @@ public:
     }
     return list;
   }
+
   std::pair<unsigned, unsigned> getlifetime(unsigned core,
                                             const std::string &function) {
     return schedule[core][coreOrz[core][function]];

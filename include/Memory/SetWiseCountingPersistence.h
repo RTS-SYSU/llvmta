@@ -31,11 +31,13 @@
 #include <set>
 
 #include "Memory/Classification.h"
+#include "Memory/UpdateReports.h"
 #include "Memory/progana/Lattice.h"
 #include "Memory/util/CacheUtils.h"
 #include "Memory/util/ImplicitSet.h"
 #include "Util/GlobalVars.h"
 #include "Util/Options.h"
+#include "Util/PersistenceScope.h"
 
 namespace TimingAnalysisPass {
 
@@ -170,6 +172,16 @@ public:
   void enterScope(const PersistenceScope &scope) {}
   void leaveScope(const PersistenceScope &scope) {}
   bool isPersistent(const TagType tag) const;
+
+  int getCSS(const TagType tag) const {
+    return accessedBlocks.size() + accessedArrays.size();
+  }
+
+  int getCSS(const GlobalVariable *var) const {
+    return accessedBlocks.size() + accessedArrays.size();
+  }
+
+  int getAge(const AbstractAddress addr) const { return -1; }
   bool isPersistent(const GlobalVariable *var) const;
   bool operator==(const Self &y) const;
   bool operator<(const Self &y) const;
@@ -204,7 +216,7 @@ UpdateReport *SetWiseCountingPersistence<T>::potentialUpdate(
   if (ArrayPersistenceAnalysis == ArrayPersistenceAnaType::NONE ||
       !addr.isArray()) {
     /* give up */
-    // this->gotoTop();
+    this->gotoTop();
     // std::cerr << "(" << T->ASSOCIATIVITY << ")";
     return wantReport ? new UpdateReport : nullptr;
   }
@@ -212,9 +224,9 @@ UpdateReport *SetWiseCountingPersistence<T>::potentialUpdate(
   const GlobalVariable *array = addr.getArray();
   /* only update if we can have more accesses to array */
   if (accessedArrays.count(array) < getPerArrayBound(array)) {
-    if (accessedBlocks.size() + accessedArrays.size() >= T->ASSOCIATIVITY) {
+    if (accessedBlocks.size() + accessedArrays.size() > T->ASSOCIATIVITY) {
       this->gotoTop();
-      // std::cerr << "(" << T->ASSOCIATIVITY << ")";
+      // std::cerr << "(" <<T->LEVEL<<"|"<< T->ASSOCIATIVITY << ")";
     } else {
       accessedArrays.insert(array);
     }
@@ -229,6 +241,7 @@ template <CacheTraits *T>
 UpdateReport *SetWiseCountingPersistence<T>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *,
     bool wantReport, const Classification assumption __attribute__((unused))) {
+  // std::cerr << "(" << T->LEVEL << "|" << T->ASSOCIATIVITY << ")";
   if (top) {
     return wantReport ? new UpdateReport : nullptr;
   }
@@ -243,7 +256,7 @@ UpdateReport *SetWiseCountingPersistence<T>::update(
   if (inserted) {
     if (accessedBlocks.size() + accessedArrays.size() > T->ASSOCIATIVITY) {
       this->gotoTop();
-      // std::cerr << "(" << T->ASSOCIATIVITY << ")";
+      // std::cerr << "(" << T->LEVEL << "|" << T->ASSOCIATIVITY << ")";
     }
   }
   return wantReport ? new UpdateReport : nullptr;
@@ -306,20 +319,26 @@ SetWiseCountingPersistence<T>::isPersistent(const TagType tag) const {
       return false;
     }
     unsigned CNN = 0;
-    for (std::string &funtion : conflicFunctions) {
-      for (unsigned address : mcif.addressinfo[funtion]) {
-        if (getindex<T>(address) == index && getTag<T>(address) != tag) {
-          unsigned i = 1;
-          for (const Block &B : accessedBlocks) {
-            if (getTag<T>(address) == B.tag) {
-              i = 0;
-              break;
+    // 计算CNN
+    if (MulCType == MultiCoreType::LiangY) {
+      for (int i = 0; i < mcif.coreinfo.size(); i++) {
+        if (i == CurrentCore) {
+          continue;
+        }
+        for (std::string entry : mcif.coreinfo[i]) {
+          for (functionaddr *f : functiontofs[entry]) {
+            for (unsigned address : f->addrlist) {
+              if (getindex<T>(address) == index && getTag<T>(address) != tag) {
+                CNN++;
+              }
             }
           }
-          CNN += i;
         }
       }
+    } else {
+      // 张伟的方法不管持久性的块
     }
+
     if (accessedBlocks.size() + accessedArrays.size() + CNN <=
         T->ASSOCIATIVITY) {
       return true;

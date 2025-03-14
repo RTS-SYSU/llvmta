@@ -1,17 +1,1 @@
 # Type: Normal
-ndes_init|Loop in file ndes.c near line 75|BB#5:for.cond2<header><exiting>_BB#6:for.body4_BB#7:for.inc7<latch>|49
-ndes_init|Loop in file ndes.c near line 73|BB#1:for.cond<header><exiting>_BB#2:for.body_BB#3:for.inc<latch>|57
-ndes_des|Loop in file ndes.c near line 161|BB#28:for.cond73<header><exiting>_BB#29:for.body76_BB#30:for.inc95<latch>|32
-ndes_des|Loop in file ndes.c near line 148|BB#21:for.cond52<header><exiting>_BB#22:for.body55_BB#24:cond.false_BB#23:cond.true_BB#25:cond.end_BB#26:for.inc64<latch>|16
-ndes_des|Loop in file ndes.c near line 142|BB#17:for.cond26<header><exiting>_BB#18:for.body29_BB#19:for.inc48<latch>|32
-ndes_des|Loop in file ndes.c near line 133|BB#12:for.cond16<header><exiting>_BB#13:for.body19_BB#14:for.inc22<latch>|16
-ndes_des|Loop in file ndes.c near line 127|BB#8:for.cond3<header><exiting>_BB#9:for.body5_BB#10:for.inc13<latch>|28
-ndes_des|Loop in file ndes.c near line 119|BB#2:for.cond<header><exiting>_BB#3:for.body_BB#4:for.inc<latch>|31
-ndes_ks|Loop in file ndes.c near line 313|BB#11:for.cond20<header><exiting>_BB#12:for.body22_BB#13:for.inc53<latch>|16
-ndes_ks|Loop in file ndes.c near line 305|BB#6:for.cond<header><exiting>_BB#7:for.body_BB#8:for.inc<latch>|2
-ndes_cyfun|Loop in file ndes.c near line 286|BB#13:for.cond84<header><exiting>_BB#14:for.body87_BB#15:for.inc89<latch>|32
-ndes_cyfun|Loop in file ndes.c near line 275|BB#9:for.cond53<header><exiting>_BB#10:for.body56_BB#11:for.inc81<latch>|8
-ndes_cyfun|Loop in file ndes.c near line 266|BB#5:for.cond40<header><exiting>_BB#6:for.body42_BB#7:for.inc50<latch>|4
-ndes_cyfun|Loop in file ndes.c near line 254|BB#1:for.cond<header><exiting>_BB#2:for.body_BB#3:for.inc<latch>|16
-binary_search|Loop in file bs.c near line 66|BB#1:while.cond<header><exiting>_BB#2:while.body_BB#4:if.else_BB#6:if.else8_BB#5:if.then6_BB#7:if.end_BB#3:if.then_BB#8:if.end10<latch>|4
-fib||BB#1:for.cond<header>_BB#2:land.rhs_BB#3:land.end<exiting>_BB#4:for.body_BB#5:for.inc<latch>|29

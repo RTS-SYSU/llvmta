@@ -38,6 +38,8 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_os_ostream.h"
 
+#include <iostream>
+#include <ostream>
 #include <sstream>
 
 using namespace llvm;
@@ -509,7 +511,7 @@ void StaticAddressProvider::dump(std::ostream &Mystream) const {
   if (!ArrayAnalysis) {
     LLVMstream << "Note: Array Awareness disabled\n";
   }
-
+  // llvm::raw_os_ostream LLVMstream2(std::cout);
   for (auto &Ga : Glvar2addr) {
     LLVMstream << *Ga.first << ": ";
     printHex(LLVMstream, Ga.second);

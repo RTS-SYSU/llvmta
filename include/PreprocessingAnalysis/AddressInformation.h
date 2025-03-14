@@ -87,6 +87,7 @@ public:
    * Dump all information we have about addresses.
    */
   void dump(std::ostream &mystream) const;
+  std::vector<unsigned> getvalueaddr(const MachineInstr *MI) const;
 
 protected:
   virtual std::unordered_set<Context>

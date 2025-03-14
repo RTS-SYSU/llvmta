@@ -80,7 +80,9 @@ public:
   }
 
   Classification classify(const AbstractAddress addr) const;
-
+  int getAge(const AbstractAddress addr) const {return -1;}
+  int getCSS(const AbstractAddress addr) const { return -1; }
+  int getCSS(const GlobalVariable *var) const { return -1; }
   LruMaxAgeUpdateReport<TagType> *
   update(const AbstractAddress addr, AccessType load_store, AnaDeps *,
          bool wantReport = false, const Classification assumption = CL_UNKNOWN);
@@ -107,7 +109,7 @@ public:
 };
 
 ///\see dom::cache::CacheSetAnalysis<T>::CacheSetAnalysis(bool
-///assumeAnEmptyCache)
+/// assumeAnEmptyCache)
 template <CacheTraits *T>
 inline LruMaxAgeArrayAwareCache<T>::LruMaxAgeArrayAwareCache(
     bool assumeAnEmptyCache __attribute__((unused))) {}
@@ -165,7 +167,7 @@ LruMaxAgeArrayAwareCache<T>::potentialUpdate(AbstractAddress addr,
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T>
 LruMaxAgeUpdateReport<typename CacheTraits::TagType> *
 LruMaxAgeArrayAwareCache<T>::update(const AbstractAddress addr,

@@ -44,12 +44,12 @@ cl::OptionCategory ArrayCat("5. Array-aware Cache Analysis");
 cl::OptionCategory
     CoRunnerSensitiveCat("6. Multi-Core Corunner-sensitive Analysis");
 cl::OptionCategory MultiCoreCat("7. TODO");
-//jjy
+// jjy
 cl::opt<std::string>
-    coreInfo("core-info", cl::init("CoreInfo.json"),
+    CoreInfo("core-info", cl::init("CoreInfo.json"),
              cl::desc("Used to descripe which core runs which function"),
              cl::cat(MultiCoreCat));
-             
+
 cl::opt<bool> ParallelPrograms("parallel-programs", cl::init(false),
                                cl::desc("Parallel Program Analysis"),
                                cl::cat(MultiCoreCat));
@@ -59,12 +59,32 @@ cl::opt<unsigned>
              cl::desc("The number of core for the analysis (default '1')"),
              cl::cat(MultiCoreCat));
 
-cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis", cl::init(false),
-                            cl::desc("(default 'F')"), cl::cat(MultiCoreCat));
+cl::opt<bool> SPersistenceA("shared-cache-Persistence-Analysis",
+                            cl::init(false), cl::desc("(default 'F')"),
+                            cl::cat(MultiCoreCat));
 
-cl::opt<unsigned> Core("core", cl::init(0),
-                       cl::desc("The core for the analysis (default '0')"),
-                       cl::cat(MultiCoreCat));
+cl::opt<unsigned>
+    CurrentCore("core", cl::init(0),
+                cl::desc("The core for the analysis (default '0')"),
+                cl::cat(MultiCoreCat));
+
+cl::opt<MultiCoreType> MulCType(
+    "ta-multicore-type",
+    cl::desc("Choose the multicore analysis type (default '')"),
+    cl::init(MultiCoreType::LiangY),
+    cl::values(
+               clEnumValN(MultiCoreType::LiangY, "liangy",
+                          "In paper:Timing analysis of concurrent programs "
+                          "running on shared cache multi-cores"),
+               clEnumValN(MultiCoreType::NONE, "none", "no analysis")),
+    cl::cat(MultiCoreCat));
+extern llvm::cl::opt<bool>
+    TimingAnomalyAnalysis("Timing anomaly analysis, state splitting",
+                          cl::init(true), cl::desc("(default 'T')"),
+                          cl::cat(MultiCoreCat)
+
+    );
+
 cl::opt<bool>
     QuietMode("ta-quiet", cl::init(false),
               cl::desc("Quiet mode: do not report on progress and do not dump "
@@ -174,7 +194,7 @@ cl::bits<LocalWorstCaseType> StallOnLocalWorstType(
     cl::values(
         //			clEnumValN(LocalWorstCaseType::ICMISS, "icmiss",
         //"Instruction cache miss"),
-        //clEnumValN(LocalWorstCaseType::DCMISS, "dcmiss", "Data cache miss"),
+        // clEnumValN(LocalWorstCaseType::DCMISS, "dcmiss", "Data cache miss"),
         //			clEnumValN(LocalWorstCaseType::WRITEBACK,
         //"writeback", "Writeback upon eviction of dirty line"),
         clEnumValN(LocalWorstCaseType::DRAMREFRESH, "dramrefresh",
@@ -227,12 +247,12 @@ cl::opt<unsigned> Ilinesize(
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Iassoc(
-    "ta-icache-assoc", cl::init(1),
+    "ta-icache-assoc", cl::init(2),
     cl::desc("The associativity of the instruction cache. The default is 2"),
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Insets(
-    "ta-icache-nsets", cl::init(16), 
+    "ta-icache-nsets", cl::init(16),
     cl::desc(
         "The number of cache sets of the instruction cache. The default is 32"),
     cl::cat(CacheConfigCat));
@@ -278,7 +298,7 @@ cl::opt<unsigned>
             cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    NN_SET("ta-l2cache-nsets", cl::init(64), 
+    NN_SET("ta-l2cache-nsets", cl::init(32),
            cl::desc("The number of cache sets of L2 cache. The default is 128"),
            cl::cat(MultiCoreCat));
 
@@ -318,23 +338,23 @@ cl::opt<unsigned> Dlinesize(
     cl::cat(CacheConfigCat));
 
 cl::opt<unsigned>
-    Dassoc("ta-dcache-assoc", cl::init(1),
+    Dassoc("ta-dcache-assoc", cl::init(2),
            cl::desc("The associativity of the data cache. The default is 2"),
            cl::cat(CacheConfigCat));
 
 cl::opt<unsigned> Dnsets(
-    "ta-dcache-nsets", cl::init(16), 
+    "ta-dcache-nsets", cl::init(16),
     cl::desc("The number of cache sets of the data cache. The default is 32"),
     cl::cat(CacheConfigCat));
-//写回
+// 写回
 cl::opt<bool>
-    DataCacheWriteBack("ta-dcache-write-back", cl::init(true),
+    DataCacheWriteBack("ta-dcache-write-back", cl::init(false),
                        cl::desc("Enables write-back mode of the cache. The "
                                 "default is write-through (false)"),
                        cl::cat(CacheConfigCat));
 
 cl::opt<bool> DataCacheWriteAllocate(
-    "ta-dcache-write-allocate", cl::init(true),
+    "ta-dcache-write-allocate", cl::init(false),
     cl::desc("Enables write-allocate mode of the cache. The default is =false "
              "to use write-non-allocate mode"),
     cl::cat(CacheConfigCat));
@@ -574,7 +594,7 @@ cl::opt<int> NumberCalleeTokens(
     cl::cat(ContextSensitivityCat));
 
 cl::opt<int> NumberCallsiteTokens(
-    "ta-num-callsite-tokens", cl::init(1),
+    "ta-num-callsite-tokens", cl::init(-1),
     cl::desc("The maximal number of callsite tokens in contexts that are "
              "distinguished during trace partitioning upon calls. -1 indicates "
              "unlimited length. Default 1."),
@@ -901,7 +921,7 @@ cl::opt<WBBoundType> WBBound(
 cl::opt<bool>
     AnalyseDirtiness("ta-dirtiness-analysis",
                      cl::desc("Toggles the dirtiness analysis (default: on)"),
-                     cl::init(true), cl::cat(WritebackCat));
+                     cl::init(false), cl::cat(WritebackCat));
 
 cl::opt<bool> StaticallyRefuteWritebacks(
     "ta-statically-refute-writebacks",

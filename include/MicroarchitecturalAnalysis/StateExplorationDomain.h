@@ -620,6 +620,7 @@ StateExplorationDomainBase<StateExplorationDom, MicroArchState>::print() const {
     for (auto &st : states) {
       stream << "[STATE " << i++ << ":\n";
       stream << st << "\n";
+
     }
     stream << "]";
   }

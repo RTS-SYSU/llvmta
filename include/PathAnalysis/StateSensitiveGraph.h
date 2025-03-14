@@ -27,6 +27,8 @@
 #ifndef STATESENSITIVEGRAPH_H
 #define STATESENSITIVEGRAPH_H
 
+#include "Util/AbstractAddress.h"
+#include "Util/GlobalVars.h"
 #include "Util/Graph.h"
 #include "Util/Util.h"
 
@@ -150,8 +152,8 @@ public:
 
     const std::function<void(unsigned, const std::set<unsigned> &)>
         dumpPersistSuccessors =
-            [this, &persistStatesAlreadyDumped, &funcName,
-             &functiontoid, &dumpPersistSuccessors](
+            [this, &persistStatesAlreadyDumped, &funcName, &functiontoid,
+             &dumpPersistSuccessors](
                 unsigned currId, const std::set<unsigned> &statesLeavingBB) {
               for (unsigned succId : graph.getSuccessors(currId)) {
                 if (persistStates.count(succId) > 0 &&
@@ -1833,6 +1835,8 @@ void StateSensitiveGraph<MicroArchDom>::dump(
                 persistStatesAlreadyDumped.count(succId) == 0) {
               mystream << succId << " [ label = \"Mid-" << succId
                        << "\", tooltip = <" << id2state.at(succId) << ">];\n";
+
+
               persistStatesAlreadyDumped.insert(succId);
               if (statesLeavingBB.count(succId) == 0) {
                 // if succId is a leaving state of the current BB,
@@ -1869,6 +1873,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
             for (auto cSt : currentCallStates) {
               mystream << cSt << " [ label = \"Call-" << cSt
                        << "\", tooltip = <" << id2state.at(cSt) << ">];\n";
+
             }
           }
         }
@@ -1880,6 +1885,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           for (auto outSts : currentStates) {
             mystream << outSts << " [ label = \"Out-" << outSts
                      << "\" , tooltip = <" << id2state.at(outSts) << ">];\n";
+
           }
         }
         // dump in states of the basic block
@@ -1887,6 +1893,8 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           for (auto inSts : ctxStMap.second) {
             mystream << inSts << " [ label = \"In-" << inSts
                      << "\" , tooltip = <" << id2state.at(inSts) << ">];\n";
+
+
             dumpPersistSuccessors(inSts, statesLeavingBB);
           }
         }
@@ -1895,6 +1903,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           for (auto addSt : additionalStates.at(&currMBB)) {
             mystream << addSt << " [ label = \"Mid-" << addSt
                      << "\" , tooltip = <" << id2state.at(addSt) << ">];\n";
+
             dumpPersistSuccessors(addSt, statesLeavingBB);
           }
         }
@@ -1905,6 +1914,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
               for (auto cSt : ctx2cSts.second) {
                 mystream << cSt << " [ label = \"Return-" << cSt
                          << "\" , tooltip = <" << id2state.at(cSt) << ">];\n";
+
                 dumpPersistSuccessors(cSt, statesLeavingBB);
               }
             }
@@ -2004,8 +2014,8 @@ void StateSensitiveGraph<MicroArchDom>::dump(
     for (MachineFunction *currFunc :
          machineFunctionCollector->getAllMachineFunctions()) {
       std::string funcName = currFunc->getName().str();
-      mystream << "graph : {\n	title : \"" << funcName << "\"\n	label : \""
-               << funcName << "\"\n";
+      mystream << "graph : {\n	title : \"" << funcName
+               << "\"\n	label : \"" << funcName << "\"\n";
       for (auto &currMBB : *currFunc) {
         std::string mbbName = currMBB.getFullName();
         mystream << "graph : {\n	title : \"" << mbbName
@@ -2037,7 +2047,7 @@ void StateSensitiveGraph<MicroArchDom>::dump(
           for (auto outSts : currentStates) {
             mystream << "node : {\n	title : \"" << outSts
                      << "\"\n	label : \"Out-" << outSts << "\"\n";
-            mystream << "info1 : \"" << id2state.at(outSts) << "\"\n}\n";
+            // mystream << "info1 : \"" << id2state.at(outSts) << "\"\n}\n";
           }
         }
         // dump in states of the basic block

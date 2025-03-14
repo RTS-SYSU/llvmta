@@ -34,6 +34,7 @@
 
 #include "AnalysisFramework/CallGraph.h"
 #include "LLVMPasses/MachineFunctionCollector.h"
+#include "LLVMPasses/StaticAddressProvider.h"
 #include "PartitionUtil/DirectiveHeuristics.h"
 #include "Util/Options.h"
 
@@ -104,6 +105,9 @@ public:
           raw_string_ostream llvmstr(instrdesc);
           currInstr.print(llvmstr);
           mystream << "## Instruction: " << llvmstr.str();
+		  unsigned addr=StaticAddrProvider->getAddr(&currInstr);
+          mystream << "## address: " << std::hex<<addr<<"\n";
+
           mystream << "# Before:\n";
           if (hasAnaInfoBefore(&currInstr)) {
             mystream << getAnaInfoBefore(&currInstr).print() << "\n";

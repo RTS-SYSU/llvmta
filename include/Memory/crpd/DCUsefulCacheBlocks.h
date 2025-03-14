@@ -73,14 +73,17 @@ public:
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *deps = nullptr, bool wantReport = false,
                        const Classification assumption = CL_UNKNOWN);
+  int getAge(const AbstractAddress addr) const { return -1; }
+  int getCSS(const TagType tag) const { return -1; }
+  int getCSS(const GlobalVariable *var) const { return -1; }
   UpdateReport *potentialUpdate(AbstractAddress addr, AccessType load_store,
                                 bool wantReport = false);
   void join(const Self &y);
   bool lessequal(const Self &y) const;
   void enterScope(const PersistenceScope &) {}
   void leaveScope(const PersistenceScope &) {}
-  auto getPersistentScopes(const Address addr) const
-      -> std::set<PersistenceScope>;
+  auto
+  getPersistentScopes(const Address addr) const -> std::set<PersistenceScope>;
   auto getPersistentScopes(const GlobalVariable *var) const
       -> std::set<PersistenceScope>;
   bool operator==(const Self &y) const;

@@ -76,6 +76,9 @@ public:
   UpdateReport *update(const AbstractAddress addr, AccessType load_store,
                        AnaDeps *, bool wantReport = false,
                        const Classification assumption = CL_UNKNOWN);
+  int getAge(const AbstractAddress addr) const { return -1; }
+  int getCSS(const TagType tag) const { return -1; }
+  int getCSS(const GlobalVariable *var) const { return -1; }
   UpdateReport *potentialUpdate(AbstractAddress addr, AccessType load_store,
                                 bool wantReport);
   void join(const Self &y);
@@ -221,7 +224,7 @@ void DirtinessAnalysis<T, MustAna, MayAna>::incorporateMustMayUpdates(
 }
 
 ///\see dom::cache::CacheSetAnalysis<T>::update(const TagType tag, const
-///Classification assumption)
+/// Classification assumption)
 template <CacheTraits *T, class MustAna, class MayAna>
 UpdateReport *DirtinessAnalysis<T, MustAna, MayAna>::update(
     const AbstractAddress addr, AccessType load_store, AnaDeps *deps,
